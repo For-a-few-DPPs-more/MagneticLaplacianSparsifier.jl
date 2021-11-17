@@ -19,7 +19,7 @@ function spMagneticIncidence(compGraph)
     return B
 end
 
-function magneticIncidence(compGraph)
+function magneticIncidence(compGraph)::Array{Complex, 2}
     n = nv(compGraph)
     m = ne(compGraph)
 
@@ -53,13 +53,4 @@ function mtsf_edge_indices(crsf, compGraph)
     end
 
     return ind_e
-end
-
-function angular_score(v)
-    n = length(v)
-    score = zeros(n, 1)
-    for i in 1:n
-        score[i] = angle(v[i])
-    end
-    return score
 end
