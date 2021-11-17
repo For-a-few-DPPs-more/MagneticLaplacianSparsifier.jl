@@ -19,7 +19,7 @@ function spMagneticIncidence(compGraph)
     return B
 end
 
-function magneticIncidence(compGraph)::Array{Complex,2}
+function magneticIncidence(compGraph)::Array{ComplexF64,2}
     n = nv(compGraph)
     m = ne(compGraph)
 
