@@ -1,14 +1,17 @@
-# name: docs
-# on:
-#   push:
-#     branches:
-#       - main
-#     tags: ["*"]
-#   pull_request:
-# jobs:
-#   docs:
-#     name: Documentation
-#     runs-on: ubuntu-latest
+name: docs
+on:
+  push:
+    branches:
+      - main
+    tags: ["*"]
+  pull_request:
+jobs:
+  docs:
+    name: Build and deploy documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Message
+        run: echo For we dont build the docs, when ready uncomment steps below in .github/workflow/docs.yml
 #     steps:
 #       - uses: actions/checkout@v2
 #       - uses: julia-actions/setup-julia@v1
