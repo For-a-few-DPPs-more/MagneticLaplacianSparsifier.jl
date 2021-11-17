@@ -11,7 +11,7 @@ function spMagneticIncidence(compGraph)
         ind_e += 1
         u = src(e)
         v = dst(e)
-        angle = get_edge_property(compGraph, e, :angle)
+        angle = get_edge_prop(compGraph, e, :angle)
         B[u, ind_e] = exp(-0.5 * angle * im)
         B[v, ind_e] = -exp(0.5 * angle * im)
     end
@@ -19,7 +19,7 @@ function spMagneticIncidence(compGraph)
     return B
 end
 
-function magneticIncidence(compGraph)::Array{Complex, 2}
+function magneticIncidence(compGraph)::Array{Complex,2}
     n = nv(compGraph)
     m = ne(compGraph)
 
@@ -31,7 +31,7 @@ function magneticIncidence(compGraph)::Array{Complex, 2}
         ind_e += 1
         u = src(e)
         v = dst(e)
-        angle = get_edge_property(compGraph, e, :angle)
+        angle = get_edge_prop(compGraph, e, :angle)
         B[u, ind_e] = exp(-0.5 * angle * im)
         B[v, ind_e] = -exp(0.5 * angle * im)
     end

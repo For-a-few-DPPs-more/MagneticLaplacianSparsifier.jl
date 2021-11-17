@@ -29,7 +29,6 @@ function multi_type_spanning_forest(
         if n0_is_root
             push!(roots, n0)
             add_edges_from!(mtsf, consecutive_pairs(walk))
-            add_angles_from!(mtsf, consecutive_pairs(walk), g)
             nv_mtsf += length(walk) - 1
             setdiff!(unvisited, walk)
             n0 = restart_walk_from_unvisited_node!(rng, walk, unvisited)
@@ -45,7 +44,6 @@ function multi_type_spanning_forest(
 
         elseif degree(mtsf, n1) > 0  # n1 in mtsf
             add_edges_from!(mtsf, consecutive_pairs(walk))
-            add_angles_from!(mtsf, consecutive_pairs(walk), g)
             nv_mtsf += length(walk) - 1
             setdiff!(unvisited, walk)
             n0 = restart_walk_from_unvisited_node!(rng, walk, unvisited)
@@ -58,7 +56,6 @@ function multi_type_spanning_forest(
             if keep  # cycle
                 weight *= max(alpha, 1)
                 add_edges_from!(mtsf, consecutive_pairs(walk))
-                add_angles_from!(mtsf, consecutive_pairs(walk), g)
                 nv_mtsf += length(walk) - 1 # since walk contains twice the knot
                 setdiff!(unvisited, walk)
                 n0 = restart_walk_from_unvisited_node!(rng, walk, unvisited)
@@ -71,6 +68,7 @@ function multi_type_spanning_forest(
             end
         end
     end
+    set_edges_prop_from!(mtsf, :angle, g, true)
     set_prop!(mtsf, :weight, weight)
     set_prop!(mtsf, :roots, roots)
     return mtsf
@@ -99,25 +97,8 @@ function curvature(
 )
     curvature_ = 0.0
     for e in edges
-        angle = get_edge_property(g, Edge(e), :angle, oriented, default_angle)
+        angle = get_edge_prop(g, Edge(e), :angle, oriented, default_angle)
         curvature_ += angle
     end
     return curvature_
-end
-
-function get_edge_property(
-    g::AbstractMetaGraph,
-    e::Edge,
-    property::Symbol=:angle,
-    oriented::Bool=true,
-    default::Real=1.0,
-)
-    if haskey(g.eprops, e) && haskey(g.eprops[e], property)
-        return g.eprops[e][property]
-    end
-    _e = reverse(e)
-    if oriented && haskey(g.eprops, _e) && haskey(g.eprops[_e], property)
-        return -g.eprops[_e][property]
-    end
-    return default
 end

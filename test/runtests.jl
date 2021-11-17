@@ -7,7 +7,7 @@ using Test
     # Write your tests here.
 end
 
-@testset "RandomSpanningForests.jl" begin
+@testset "Random spanning forests" begin
     g = complete_graph(10)
     meta_g = MetaGraph(g, :angle, 0.0)
 
@@ -18,9 +18,10 @@ end
     end
 
     @testset "crsf has only one cycle per component" begin
-        q = 0.0
-        mtsf = multi_type_spanning_forest(rng, meta_g, q).graph
-        cc = [induced_subgraph(mtsf, cc)[1] for cc in connected_components(mtsf)]
+        # crsf = cycle rooted spanning forest
+        q = 0
+        csrf = multi_type_spanning_forest(rng, meta_g, q).graph
+        cc = [induced_subgraph(csrf, cc)[1] for cc in connected_components(csrf)]
         @test all(length(cycle_basis(c)) == 1 for c in cc)
     end
     # Write your tests here.
