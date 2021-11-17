@@ -9,3 +9,11 @@ function add_edges_from!(g, edges)
         add_edge!(g, edge)
     end
 end
+
+function add_angles_from!(mtsf, edges,mg)
+    for e in edges
+        edge = isa(e, Edge) ? e : Edge(e)
+        θ = get_edge_property(mg, edge, :angle)
+        set_prop!(mtsf, edge, :angle, θ)
+    end
+end
