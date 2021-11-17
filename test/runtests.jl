@@ -21,6 +21,16 @@ using Test
     @test all(norm(sparseB - B_sampled) < 1e-10)
 end
 
+@testset "Magnetic vertex-edge incidence matrix" begin
+    g = complete_graph(10)
+    @testset "angle=0 recover oriented=$oriented incidence" for oriented in [true, false]
+        graph = MetaGraph(g, :angle, 0.0)
+        B = magnetic_incidence_matrix(graph; oriented=oriented)
+        B_theo = Graphs.LinAlg.incidence_matrix(graph, eltype(B); oriented=oriented)
+        @test B == B_theo
+    end
+end
+
 @testset "Random spanning forests" begin
     g = complete_graph(10)
     meta_g = MetaGraph(g, :angle, 0.0)

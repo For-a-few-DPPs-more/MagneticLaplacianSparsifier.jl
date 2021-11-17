@@ -21,6 +21,7 @@ export multi_type_spanning_forest,
     generateGraphERO,
     magneticIncidence,
     mtsf_edge_indices,
-    angular_score
+    angular_score,
+    magnetic_incidence_matrix
 
 end
