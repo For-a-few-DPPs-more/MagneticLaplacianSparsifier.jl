@@ -1,13 +1,14 @@
 module MagneticLaplacianSparsifier
 
-include("RandomSpanningForests.jl")
-using .RandomSpanningForests # note the dot
-
 using Graphs
 using MetaGraphs
 using Random
 using SparseArrays
 
+using IterTools: partition
+
+include("utils.jl")
+include("mtsf.jl")
 include("graphs.jl")
 include("laplacians.jl")
 include("syncrank.jl")
