@@ -10,6 +10,7 @@ using SparseArrays
 
 include("graphs.jl")
 include("laplacians.jl")
+include("syncrank.jl")
 
 export multi_type_spanning_forest,
     add_edges_from!,
@@ -18,6 +19,8 @@ export multi_type_spanning_forest,
     set_prop!,
     generateGraphMUN,
     generateGraphERO,
-    magneticIncidence
+    magneticIncidence,
+    mtsf_edge_indices,
+    angular_score
 
 end
