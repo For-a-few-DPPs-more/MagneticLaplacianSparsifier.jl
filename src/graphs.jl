@@ -30,8 +30,6 @@ function generateGraphMUN(n, p, eta)
     return meta_g
 end
 
-
-
 function generateGraphERO(n, p, eta)
     # Following M. Cucuringu to build comparison graph
     # SYNC-RANK: ROBUST RANKING, CONSTRAINED RANKING AND RANK AGGREGATION VIA EIGENVECTOR AND SDP SYNCHRONIZATION
@@ -50,7 +48,7 @@ function generateGraphERO(n, p, eta)
                     edges = consecutive_pairs(e)
                     add_edges_from!(meta_g, edges)
 
-                    if rand(1)[1] <  1 - eta
+                    if rand(1)[1] < 1 - eta
                         err = 0
                     else
                         err = (n - 1) * rand(1)[1]

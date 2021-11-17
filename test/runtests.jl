@@ -7,7 +7,6 @@ using Test
     # Write your tests here.
 end
 
-
 @testset "RandomSpanningForests.jl" begin
     g = complete_graph(10)
     meta_g = MetaGraph(g, :angle, 0.0)

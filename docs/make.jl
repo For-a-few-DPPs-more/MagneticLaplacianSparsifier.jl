@@ -1,7 +1,12 @@
 using MagneticLaplacianSparsifier
 using Documenter
 
-DocMeta.setdocmeta!(MagneticLaplacianSparsifier, :DocTestSetup, :(using MagneticLaplacianSparsifier); recursive=true)
+DocMeta.setdocmeta!(
+    MagneticLaplacianSparsifier,
+    :DocTestSetup,
+    :(using MagneticLaplacianSparsifier);
+    recursive=true,
+)
 
 makedocs(;
     modules=[MagneticLaplacianSparsifier],
@@ -13,12 +18,9 @@ makedocs(;
         canonical="https://For-a-few-DPPs-more.github.io/MagneticLaplacianSparsifier.jl",
         assets=String[],
     ),
-    pages=[
-        "Home" => "index.md",
-    ],
+    pages=["Home" => "index.md"],
 )
 
 deploydocs(;
-    repo="github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl",
-    devbranch="main",
+    repo="github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl", devbranch="main"
 )

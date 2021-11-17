@@ -11,6 +11,13 @@ using SparseArrays
 include("graphs.jl")
 include("laplacians.jl")
 
-export multi_type_spanning_forest, add_edges_from!, consecutive_pairs,get_edge_property, set_prop!, generateGraphMUN, generateGraphERO,magneticIncidence
+export multi_type_spanning_forest,
+    add_edges_from!,
+    consecutive_pairs,
+    get_edge_property,
+    set_prop!,
+    generateGraphMUN,
+    generateGraphERO,
+    magneticIncidence
 
 end
