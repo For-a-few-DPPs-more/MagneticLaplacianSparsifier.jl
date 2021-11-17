@@ -1,10 +1,24 @@
 using MagneticLaplacianSparsifier
 using Graphs, MetaGraphs
 using Random
+using LinearAlgebra
 using Test
 
 @testset "MagneticLaplacianSparsifier.jl" begin
-    # Write your tests here.
+    n = 10
+    p = 0.5
+    eta = 0.3
+
+    compGraph = generateGraphMUN(n, p, eta)
+    B = magneticIncidence(compGraph)
+    rng = Random.default_rng()
+    q = 0.0
+    crsf = multi_type_spanning_forest(rng, compGraph, q)
+    sparseB = magneticIncidence(crsf)
+
+    ind_e = mtsf_edge_indices(crsf, compGraph)
+    B_sampled = B[:, ind_e]
+    @test all(norm(sparseB - B_sampled) < 1e-10)
 end
 
 @testset "Random spanning forests" begin
