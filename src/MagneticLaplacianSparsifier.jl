@@ -7,7 +7,6 @@ using Graphs
 using MetaGraphs
 using Random
 using SparseArrays
-using Arpack
 
 include("graphs.jl")
 include("laplacians.jl")
