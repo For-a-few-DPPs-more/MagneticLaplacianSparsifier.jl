@@ -1,0 +1,74 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        // Julia
+        {
+            "label": "Julia - Format",
+            "type": "shell",
+            "command": "julia",
+            "args": [
+                "-e",
+                "'using JuliaFormatter; println(JuliaFormatter.format(\".\"))'",
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        },
+        {
+            "label": "Julia - Test",
+            "type": "shell",
+            "command": "julia",
+            "args": [
+                // "--project=${workspaceFolder}",
+                // "${workspaceFolder}/test/runtests.jl",
+                "--project=${workspaceFolder}",
+                "-e",
+                "'using Pkg; Pkg.test()'",
+            ],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        },
+        {
+            "label": "Julia documentation - Build",
+            "type": "shell",
+            "command": "julia",
+            "args": [
+                "--project=${workspaceFolder}/docs/",
+                "${workspaceFolder}/docs/make.jl"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        },
+        {
+            "label": "Julia documentation - Open",
+            "command": "open ${workspaceFolder}/docs/build/index.html",
+            "type": "shell",
+            "presentation": {
+                "reveal": "always"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+    ]
+}

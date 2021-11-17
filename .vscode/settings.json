@@ -1,0 +1,31 @@
+{
+    "[julia]": {
+        // https://github.com/invenia/BlueStyle#vs-code-settings
+        "editor.defaultFormatter": "singularitti.vscode-julia-formatter",
+        "editor.detectIndentation": false,
+        "editor.formatOnSave": true,
+        "editor.insertSpaces": true,
+        "editor.tabSize": 4,
+        "editor.wordWrapColumn": 92,
+        "editor.rulers": [
+            {
+                "column": 92,
+                "color": "#ff00FF"
+            },
+            100, // <- a ruler in the default color or as customized at column 0
+            {
+                "column": 120,
+                "color": "#ff0000"
+            },
+        ],
+        "files.insertFinalNewline": true,
+        "files.trimFinalNewlines": true,
+        "files.trimTrailingWhitespace": true,
+    },
+    "juliaFormatter.style": "blue",
+    "juliaFormatter.formatDocstrings": true,
+    "julia.execution.codeInREPL": true,
+    "julia.enableTelemetry": true,
+    "julia.enableCrashReporter": true,
+    "julia.additionalArgs": [],
+}
