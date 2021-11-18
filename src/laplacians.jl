@@ -47,7 +47,7 @@ function averageSparsifier(rng, compGraph, ls, useLS, q, t)
         D = props(crsf)
         w = D[:weight]
         w_tot += w
-        sparseB = magneticIncidence(crsf)
+        sparseB = magneticIncidence(crsf; oriented=true)
         ind_e = mtsf_edge_indices(crsf, compGraph)
         if useLS
             W = diagm(1 ./ ls[ind_e])
