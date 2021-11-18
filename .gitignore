@@ -6,3 +6,4 @@
 
 /notebooks/**
 !notebooks/demos.ipynb
+!notebooks/demo_chol.ipynb
