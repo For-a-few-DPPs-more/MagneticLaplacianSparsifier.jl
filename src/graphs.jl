@@ -19,6 +19,7 @@ function generateGraphMUN(n, p, eta)
 
                     err = eta * rand(1)[1]
                     a = pi * (i - j) * (1 + err) / (n - 1)
+
                     for e in edges
                         set_prop!(meta_g, Edge(e), :angle, a)
                     end
