@@ -1,5 +1,6 @@
 module MagneticLaplacianSparsifier
 
+using Distributions
 using Graphs
 using MetaGraphs
 using Random
