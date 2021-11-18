@@ -1,4 +1,6 @@
-getRNG(seed=nothing) = isnothing(seed) ? Random.default_rng() : Random.default_rng(seed)
+function getRNG(seed=nothing)
+    return isnothing(seed) ? Random.MersenneTwister() : Random.MersenneTwister(seed)
+end
 getRNG(seed::Random.AbstractRNG) = seed
 
 consecutive_pairs(path) = partition(path, 2, 1)

@@ -4,14 +4,17 @@ using Random
 using LinearAlgebra
 using Test
 
+using MagneticLaplacianSparsifier: getRNG
+
 @testset "MagneticLaplacianSparsifier.jl" begin
+    rng = getRNG()
+
     n = 10
     p = 0.5
     eta = 0.3
-
-    compGraph = gen_graph_mun(n, p, eta)
+    compGraph = gen_graph_mun(rng, n, p, eta)
     B = magnetic_incidence(compGraph)
-    rng = Random.default_rng()
+
     q = 0.0
     crsf = multi_type_spanning_forest(rng, compGraph, q)
     sparseB = magnetic_incidence(crsf)

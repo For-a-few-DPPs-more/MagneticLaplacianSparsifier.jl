@@ -1,8 +1,7 @@
 # todo write the docstrings
 
 function multi_type_spanning_forest(g::MetaGraph{T,U}, q::Real)::MetaGraph{T,U} where {T,U}
-    rng = getRNG()
-    return multi_type_spanning_forest(rng, g, q)
+    return multi_type_spanning_forest(getRNG(), g, q)
 end
 
 function multi_type_spanning_forest(
@@ -21,7 +20,6 @@ function multi_type_spanning_forest(
     unvisited = Set{T}(vertices(g))
 
     # Start the random walk
-    rng = getRNG(rng)
     n0 = rand(rng, unvisited)
     push!(walk, n0)
     setdiff!(unvisited, n0)
@@ -46,11 +44,11 @@ function multi_type_spanning_forest(
 
         elseif degree(mtsf, n1) > 0  # n1 in mtsf
             add_edges_from!(mtsf, consecutive_pairs(walk))
+            nv_mtsf += length(walk) - 1
+            setdiff!(unvisited, walk)
 
             push!(reverse_order_branches, walk[1:(end - 1)])
 
-            nv_mtsf += length(walk) - 1
-            setdiff!(unvisited, walk)
             n0 = restart_walk_from_unvisited_node!(rng, walk, unvisited)
 
         else  # if n1 in walk: identify unique cycle/loop in walk with knot n1
@@ -59,20 +57,22 @@ function multi_type_spanning_forest(
             keep, alpha = keep_cycle(rng, g, consecutive_pairs(cycle_nodes))
 
             if keep  # cycle
-                push!(nodes_in_cycles, [cycle_nodes[1:(end - 1)]])
-                push!(reverse_order_branches, walk[1:(idx_n1 - 1)])
-
                 weight *= max(alpha, 1)
                 add_edges_from!(mtsf, consecutive_pairs(walk))
                 nv_mtsf += length(walk) - 1 # since walk contains twice the knot
                 setdiff!(unvisited, walk)
+
+                push!(nodes_in_cycles, [cycle_nodes[2:(end - 1)]])
+                push!(reverse_order_branches, walk[1:(idx_n1 - 1)])
+
                 n0 = restart_walk_from_unvisited_node!(rng, walk, unvisited)
 
             else  # pop cycle but keep loopy node
                 union!(unvisited, cycle_nodes)
                 setdiff!(unvisited, n1)  # remove n1 which was part of cycle_nodes
                 resize!(walk, idx_n1)
-                n0 = n1  # continue the walk
+
+                n0 = n1
             end
         end
     end
@@ -89,7 +89,6 @@ function restart_walk_from_unvisited_node!(rng, walk, unvisited)
     empty!(walk)
     n0 = -1
     if !isempty(unvisited)
-        rng = getRNG(rng)
         n0 = rand(rng, unvisited)
         setdiff!(unvisited, n0)
         push!(walk, n0)
