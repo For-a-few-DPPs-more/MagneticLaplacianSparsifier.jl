@@ -1,5 +1,5 @@
 
-function generateGraphMUN(n, p, eta)
+function gen_graph_mun(n, p, eta)
     # Following M. Cucuringu to build comparison graph
     # SYNC-RANK: ROBUST RANKING, CONSTRAINED RANKING AND RANK AGGREGATION VIA EIGENVECTOR AND SDP SYNCHRONIZATION
     # Multiplicative Uniform Noise model
@@ -31,7 +31,7 @@ function generateGraphMUN(n, p, eta)
     return meta_g
 end
 
-function generateGraphERO(n, p, eta)
+function gen_graph_ero(n, p, eta)
     # Following M. Cucuringu to build comparison graph
     # SYNC-RANK: ROBUST RANKING, CONSTRAINED RANKING AND RANK AGGREGATION VIA EIGENVECTOR AND SDP SYNCHRONIZATION
     # Erdos-Renyi Outliers model

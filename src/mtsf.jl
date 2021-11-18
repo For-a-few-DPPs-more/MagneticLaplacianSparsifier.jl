@@ -13,6 +13,8 @@ function multi_type_spanning_forest(
     nv_mtsf = 0
     weight = 1.0
     roots = T[]
+    nodes_in_cycles = []
+    reverse_order_branches = []
 
     # Initialize the random walk
     walk = T[]
@@ -44,6 +46,9 @@ function multi_type_spanning_forest(
 
         elseif degree(mtsf, n1) > 0  # n1 in mtsf
             add_edges_from!(mtsf, consecutive_pairs(walk))
+
+            push!(reverse_order_branches, walk[1:(end - 1)])
+
             nv_mtsf += length(walk) - 1
             setdiff!(unvisited, walk)
             n0 = restart_walk_from_unvisited_node!(rng, walk, unvisited)
@@ -54,6 +59,9 @@ function multi_type_spanning_forest(
             keep, alpha = keep_cycle(rng, g, consecutive_pairs(cycle_nodes))
 
             if keep  # cycle
+                push!(nodes_in_cycles, [cycle_nodes[1:(end - 1)]])
+                push!(reverse_order_branches, walk[1:(idx_n1 - 1)])
+
                 weight *= max(alpha, 1)
                 add_edges_from!(mtsf, consecutive_pairs(walk))
                 nv_mtsf += length(walk) - 1 # since walk contains twice the knot
@@ -71,6 +79,9 @@ function multi_type_spanning_forest(
     set_edges_prop_from!(mtsf, :angle, g, true)
     set_prop!(mtsf, :weight, weight)
     set_prop!(mtsf, :roots, roots)
+    set_prop!(mtsf, :cycle_nodes, nodes_in_cycles)
+    set_prop!(mtsf, :branches, reverse(reverse_order_branches))
+
     return mtsf
 end
 

@@ -1,10 +1,10 @@
 
-function spMagneticIncidence(graph; oriented::Bool=false)
+function sp_magnetic_incidence(graph; oriented::Bool=false)
     return magnetic_incidence_matrix(graph; oriented=oriented)
 end
 
-function magneticIncidence(graph; oriented::Bool=false)::Matrix{Complex{Float64}}
-    return Array(spMagneticIncidence(graph; oriented=oriented))
+function magnetic_incidence(graph; oriented::Bool=false)::Matrix{Complex{Float64}}
+    return Array(sp_magnetic_incidence(graph; oriented=oriented))
 end
 
 function magnetic_incidence_matrix(
@@ -36,7 +36,7 @@ function mtsf_edge_indices(crsf, graph)
     return [i for (i, e) in enumerate(edges(graph)) if has_edge(crsf, src(e), dst(e))]
 end
 
-function averageSparsifier(rng, compGraph, ls, useLS, q, t)
+function average_sparsifier(rng, compGraph, ls, useLS, q, t)
     n = nv(compGraph)
     m = ne(compGraph)
     sparseL = zeros(n, n)
@@ -47,7 +47,7 @@ function averageSparsifier(rng, compGraph, ls, useLS, q, t)
         D = props(crsf)
         w = D[:weight]
         w_tot += w
-        sparseB = magneticIncidence(crsf; oriented=true)
+        sparseB = magnetic_incidence(crsf; oriented=true)
         ind_e = mtsf_edge_indices(crsf, compGraph)
         if useLS
             W = diagm(1 ./ ls[ind_e])
@@ -62,12 +62,12 @@ function averageSparsifier(rng, compGraph, ls, useLS, q, t)
     return sparseL
 end
 
-function leverageScore(B, q)
+function leverage_score(B, q)
     levScores = real(diag(B' * ((B * B' + q * I) \ B)))
     return levScores
 end
 
-function empLeverageScore(rng, compGraph, q, t)
+function emp_leverage_score(rng, compGraph, q, t)
     m = ne(compGraph)
     empLev = zeros(m, 1)
 

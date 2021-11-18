@@ -9,12 +9,12 @@ using Test
     p = 0.5
     eta = 0.3
 
-    compGraph = generateGraphMUN(n, p, eta)
-    B = magneticIncidence(compGraph)
+    compGraph = gen_graph_mun(n, p, eta)
+    B = magnetic_incidence(compGraph)
     rng = Random.default_rng()
     q = 0.0
     crsf = multi_type_spanning_forest(rng, compGraph, q)
-    sparseB = magneticIncidence(crsf)
+    sparseB = magnetic_incidence(crsf)
 
     ind_e = mtsf_edge_indices(crsf, compGraph)
     B_sampled = B[:, ind_e]
