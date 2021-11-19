@@ -26,15 +26,10 @@ function set_edges_prop_from!(
 end
 
 function get_edge_prop(
-    g::AbstractMetaGraph, e::Edge, property::Symbol, oriented::Bool=true, default::Real=1.0
+    g::AbstractMetaGraph, e::Edge, prop::Symbol, oriented::Bool=true, default::Real=1.0
 )
-    if haskey(g.eprops, e) && haskey(g.eprops[e], property)
-        return g.eprops[e][property]
-    end
-    _e = reverse(e)
-    if oriented && haskey(g.eprops, _e) && haskey(g.eprops[_e], property)
-        return -g.eprops[_e][property]
-    end
+    haskey(g.eprops, e) && haskey(g.eprops[e], prop) && return g.eprops[e][prop]
+    oriented && return -get_edge_prop(g, reverse(e), prop, false, default)
     return default
 end
 
