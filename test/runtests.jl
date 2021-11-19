@@ -2,6 +2,8 @@ using MagneticLaplacianSparsifier
 using Graphs, MetaGraphs
 using Random
 using LinearAlgebra
+using SparseArrays
+
 using Test
 
 using MagneticLaplacianSparsifier: getRNG
@@ -35,7 +37,7 @@ end
 end
 
 @testset "Random spanning forests" begin
-    n_v = 20
+    n_v = 10
     g = complete_graph(n_v)
     meta_g = MetaGraph(g, :angle, 0.0)
 
@@ -73,5 +75,35 @@ end
         nb += length(flt_branches)
         @test nb == n_v
     end
-    # Write your tests here.
+    @testset "cholesky crsf is as sparse as possible" begin
+        q = 0
+        # sample a CRSF
+        crsf = multi_type_spanning_forest(rng, meta_g, q)
+
+        ind = optimal_perm(crsf)
+
+        # construct Laplacian
+        B = sp_magnetic_incidence(crsf; oriented=true)
+        L = B * B'
+
+        # find cholesky with custom permutation
+        lower_factor = cholesky(L; perm=ind).L
+
+        chol_matrix = sparse(lower_factor)
+        # number of diag entries
+        nb_off_diag_entries = nnz(chol_matrix) - n_v
+
+        # upper bound on number of non-zero entries (Prop 2 in paper)
+        # n + sum_{cycle c}(n_c - 3)
+        cycles = get_prop(crsf, :cycle_nodes)
+        flt_cycles = collect(Iterators.flatten(cycles))
+
+        bound = 0
+        for i in 1:length(flt_cycles)
+            bound += length(flt_cycles[i]) - 3
+        end
+        bound += n_v
+
+        @test nb_off_diag_entries <= bound
+    end
 end

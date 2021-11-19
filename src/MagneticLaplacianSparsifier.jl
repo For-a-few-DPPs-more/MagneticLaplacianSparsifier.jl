@@ -30,6 +30,7 @@ export multi_type_spanning_forest,
     leverage_score,
     emp_leverage_score,
     modulus_entries,
-    nb_of_edges
+    nb_of_edges,
+    optimal_perm
 
 end

@@ -86,3 +86,17 @@ function nb_of_edges(L)
     nb_e = ((nnz(sparse(L)) - n) / 2)
     return nb_e
 end
+
+function optimal_perm(crsf)
+    n_v = nv(crsf)
+    #get the roots
+    roots = get_prop(crsf, :roots)
+    # get the branches in the (reverse) order there were sampled
+    branches = get_prop(crsf, :branches)
+    flt_branches = collect(Iterators.flatten(branches))
+
+    # indices array putting the nodes in the right order
+    non_cycle_nodes = [roots; flt_branches]
+    ind_perm = [non_cycle_nodes; setdiff(1:n_v, non_cycle_nodes)]
+    return ind_perm
+end
