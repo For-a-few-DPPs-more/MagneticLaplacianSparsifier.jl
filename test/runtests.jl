@@ -38,7 +38,7 @@ end
     g = complete_graph(10)
     meta_g = MetaGraph(g, :angle, 0.0)
 
-    rng = Random.default_rng()
+    rng = getRNG()
     for e in edges(meta_g)
         θ = 2 * π * rand(rng)
         set_prop!(meta_g, e, :angle, θ)
