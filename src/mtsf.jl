@@ -28,8 +28,9 @@ function multi_type_spanning_forest(
         n0_is_root = rand(rng) < q / (q + degree(g, n0))
         if n0_is_root
             push!(roots, n0)
+            push!(reverse_order_branches, walk[1:(end - 1)]) # register branch w/o  root
             add_edges_from!(mtsf, consecutive_pairs(walk))
-            nv_mtsf += length(walk) - 1
+            nv_mtsf += length(walk)  # why -1 ?
             setdiff!(unvisited, walk)
             n0 = restart_walk_from_unvisited_node!(rng, walk, unvisited)
             continue
@@ -62,7 +63,9 @@ function multi_type_spanning_forest(
                 nv_mtsf += length(walk) - 1 # since walk contains twice the knot
                 setdiff!(unvisited, walk)
 
+                # register cycle nodes: remove starting node so that it appears only once
                 push!(nodes_in_cycles, [cycle_nodes[2:end]])
+                # register branch without the knot
                 push!(reverse_order_branches, walk[1:(idx_n1 - 1)])
 
                 n0 = restart_walk_from_unvisited_node!(rng, walk, unvisited)

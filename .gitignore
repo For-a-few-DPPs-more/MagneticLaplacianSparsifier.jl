@@ -5,5 +5,6 @@
 /docs/build/
 
 /notebooks/**
-!notebooks/demos.ipynb
+!notebooks/demo_crsf.ipynb
+!notebooks/demo_mtsf.ipynb
 !notebooks/demo_chol.ipynb

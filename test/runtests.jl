@@ -35,7 +35,8 @@ end
 end
 
 @testset "Random spanning forests" begin
-    g = complete_graph(10)
+    n_v = 20
+    g = complete_graph(n_v)
     meta_g = MetaGraph(g, :angle, 0.0)
 
     rng = Random.default_rng()
@@ -50,6 +51,27 @@ end
         csrf = multi_type_spanning_forest(rng, meta_g, q).graph
         cc = [induced_subgraph(csrf, cc)[1] for cc in connected_components(csrf)]
         @test all(length(cycle_basis(c)) == 1 for c in cc)
+    end
+    @testset "mtsf has correct number of roots, cycles, branches" begin
+        # mtsf = cycle rooted spanning forest
+        q = 1
+        mtsf = multi_type_spanning_forest(rng, meta_g, q)
+        # get the roots
+        roots = get_prop(mtsf, :roots)
+        # get the nodes in the cycle(s)
+        cycles = get_prop(mtsf, :cycle_nodes)
+        # get the branches in the (reverse) order there were sampled
+        branches = get_prop(mtsf, :branches)
+
+        flt_branches = collect(Iterators.flatten(branches))
+        flt_cycles = collect(Iterators.flatten(cycles))
+        nb = 0
+        for i in 1:length(flt_cycles)
+            nb += length(flt_cycles[i])
+        end
+        nb += length(roots)
+        nb += length(flt_branches)
+        @test nb == n_v
     end
     # Write your tests here.
 end
