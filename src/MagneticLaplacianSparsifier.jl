@@ -32,5 +32,4 @@ export multi_type_spanning_forest,
     modulus_entries,
     nb_of_edges,
     optimal_perm
-
 end

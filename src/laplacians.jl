@@ -1,25 +1,15 @@
 
-function sp_magnetic_incidence(graph; oriented::Bool=false)
+function sp_magnetic_incidence(graph; oriented::Bool=true)
     return magnetic_incidence_matrix(graph; oriented=oriented)
 end
 
-function magnetic_incidence(graph; oriented::Bool=false)::Matrix{Complex{Float64}}
+function magnetic_incidence(graph; oriented::Bool=true)::Matrix{Complex{Float64}}
     return Array(sp_magnetic_incidence(graph; oriented=oriented))
 end
 
 function magnetic_incidence_matrix(
     graph::AbstractGraph; oriented::Bool=true
 )::SparseMatrixCSC{Complex{Float64}}
-    #B = spzeros(Complex, nv(graph), ne(graph))
-    #for (idx_e, e) in enumerate(edges(graph))
-    #    u = src(e)
-    #    v = dst(e)
-    #    angle = get_edge_prop(graph, e, :angle)
-    #    print(angle)
-    #    B[u, idx_e] = exp(0.5 * angle * im)
-    #    B[v, idx_e] = -exp(-0.5 * angle * im)
-    #end
-    #return B
     n_v, n_e = nv(graph), ne(graph)
 
     I = vcat(src.(edges(graph)), dst.(edges(graph)))
@@ -36,24 +26,24 @@ function mtsf_edge_indices(crsf, graph)
     return [i for (i, e) in enumerate(edges(graph)) if has_edge(crsf, src(e), dst(e))]
 end
 
-function average_sparsifier(rng, compGraph, ls, useLS, q, t)
-    n = nv(compGraph)
-    m = ne(compGraph)
+function average_sparsifier(rng, meta_g, ls, q, nb_samples)
+    n = nv(meta_g)
+    m = ne(meta_g)
     sparseL = zeros(n, n)
     w_tot = 0
 
-    for i in 1:t
-        crsf = multi_type_spanning_forest(rng, compGraph, q)
+    for _ in 1:nb_samples
+        crsf = multi_type_spanning_forest(rng, meta_g, q)
         D = props(crsf)
         w = D[:weight]
         w_tot += w
         sparseB = magnetic_incidence(crsf; oriented=true)
-        ind_e = mtsf_edge_indices(crsf, compGraph)
-        if useLS
-            W = diagm(1 ./ ls[ind_e])
-        else
+        ind_e = mtsf_edge_indices(crsf, meta_g)
+        if ls === nothing
             nb_e = length(ind_e)
             W = I / (nb_e / m)
+        else
+            W = diagm(1 ./ ls[ind_e])
         end
         sparseL = sparseL + w * sparseB * W * sparseB'
     end
@@ -67,25 +57,20 @@ function leverage_score(B, q)
     return levScores
 end
 
-function emp_leverage_score(rng, compGraph, q, t)
-    m = ne(compGraph)
-    empLev = zeros(m, 1)
-
-    for i in 1:t
-        crsf = multi_type_spanning_forest(rng, compGraph, q)
-        ind_e = mtsf_edge_indices(crsf, compGraph)
-        empLev[ind_e] = empLev[ind_e] .+ 1
+function emp_leverage_score(rng, meta_g, q, t)
+    m = ne(meta_g)
+    emp_lev = zeros(m, 1)
+    for _ in 1:t
+        crsf = multi_type_spanning_forest(rng, meta_g, q)
+        ind_e = mtsf_edge_indices(crsf, meta_g)
+        emp_lev[ind_e] = emp_lev[ind_e] .+ 1
     end
-    empLev = empLev / t
+    emp_lev /= t
 
-    return empLev
+    return emp_lev
 end
 
-function nb_of_edges(L)
-    n = size(L)[1]
-    nb_e = ((nnz(sparse(L)) - n) / 2)
-    return nb_e
-end
+nb_of_edges(L::AbstractMatrix) = (nnz(sparse(L)) - size(L, 1)) / 2
 
 function optimal_perm(crsf)
     n_v = nv(crsf)
@@ -102,20 +87,9 @@ function optimal_perm(crsf)
 end
 # Refactoring Proposition
 
-# function average_sparsifier(rng, compGraph, ls, useLS, q, t)
-#     return average_sparsifier_bis(rng, compGraph, q, t, useLS ? ls : nothing)
+# function average_sparsifier(rng, meta_g, ls, useLS, q, t)
+#     return average_sparsifier_bis(rng, meta_g, q, t, useLS ? ls : nothing)
 # end
-
-# function leverage_score(B, q)
-#     return leverage_scores_from_incidence(B, q)
-# end
-
-# function emp_leverage_score(rng, compGraph, q, t)
-#     ls_dict = leverage_scores_empirical(rng, compGraph; q=q, nb_samples=t)
-#     return collect(values(ls_dict))
-# end
-
-# nb_of_edges(L::AbstractMatrix) = (nnz(sparse(L)) - size(L, 1)) / 2
 
 # function average_sparsifier_bis(
 #     rng,
@@ -144,6 +118,17 @@ end
 #     return L
 # end
 
+# function leverage_score(B, q)
+#     return leverage_scores_from_incidence(B, q)
+# end
+
+# function emp_leverage_score(rng, meta_g, q, t)
+#     ls_dict = leverage_scores_empirical(rng, meta_g; q=q, nb_samples=t)
+#     return collect(values(ls_dict))
+# end
+
+# nb_of_edges(L::AbstractMatrix) = (nnz(sparse(L)) - size(L, 1)) / 2
+
 # function leverage_scores_from_incidence(B::AbstractMatrix, q::Real=0.0)
 #     return real(diag(B' * ((B * B' + q * I) \ B)))
 # end
@@ -162,8 +147,9 @@ end
 #     for _ in 1:nb_samples
 #         mtsf = multi_type_spanning_forest(rng, graph, q)
 #         for e in edges(mtsf)
-#             leverage_scores[e] += 1 / nb_samples
+#             leverage_scores[e] += 1.0
 #         end
 #     end
+#     map!(x->x/nb_samples, values(leverage_scores))
 #     return leverage_scores
 # end

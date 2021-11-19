@@ -92,7 +92,6 @@ end
         chol_matrix = sparse(lower_factor)
         nb_off_diag_entries = nnz(chol_matrix) - n_v
 
-
         cycles = get_prop(crsf, :cycle_nodes)
         bound = isempty(cycles) ? 0 : sum(length(c) - 3 for c in cycles)
         bound += nv(crsf)
@@ -130,4 +129,36 @@ end
         print("relative_error: ", relative_error, "\n")
         @test relative_error < 0.05
     end
+end
+
+@testset "average sparsifier crsf is good " begin
+    n = 20
+    p = 0.5
+    eta = 0.3
+    q = 0
+
+    rng = getRNG()
+    meta_g = gen_graph_mun(rng, n, p, eta)
+    B = magnetic_incidence(meta_g; oriented=true)
+    L = B * B'
+    lev = leverage_score(B, q)
+    avgL = average_sparsifier(rng, meta_g, lev, q, 10)
+    relative_error = norm(avgL - L) / norm(L)
+    @test relative_error < 0.3
+end
+
+@testset "average sparsifier ltsf is good " begin
+    n = 20
+    p = 0.5
+    eta = 0.1
+    q = 1
+
+    rng = getRNG()
+    meta_g = gen_graph_mun(rng, n, p, eta)
+    B = magnetic_incidence(meta_g; oriented=true)
+    L = B * B'
+    lev = leverage_score(B, q)
+    avgL = average_sparsifier(rng, meta_g, lev, q, 10)
+    relative_error = norm(avgL - L) / norm(L)
+    @test relative_error < 0.3
 end
