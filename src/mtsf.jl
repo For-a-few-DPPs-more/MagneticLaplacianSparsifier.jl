@@ -12,8 +12,8 @@ function multi_type_spanning_forest(
     nv_mtsf = 0
     weight = 1.0
     roots = T[]
-    nodes_in_cycles = []
-    reverse_order_branches = []
+    nodes_in_cycles = Vector{T}[]
+    reverse_order_branches = Vector{T}[]
 
     # Initialize the random walk
     walk = T[]
@@ -64,7 +64,7 @@ function multi_type_spanning_forest(
                 setdiff!(unvisited, walk)
 
                 # register cycle nodes: remove starting node so that it appears only once
-                push!(nodes_in_cycles, [cycle_nodes[2:end]])
+                push!(nodes_in_cycles, cycle_nodes[2:end])
                 # register branch without the knot
                 push!(reverse_order_branches, walk[1:(idx_n1 - 1)])
 

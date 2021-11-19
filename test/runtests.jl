@@ -42,6 +42,7 @@ end
     meta_g = MetaGraph(g, :angle, 0.0)
 
     rng = getRNG()
+
     for e in edges(meta_g)
         θ = 2 * π * rand(rng)
         set_prop!(meta_g, e, :angle, θ)
@@ -65,24 +66,23 @@ end
         # get the branches in the (reverse) order there were sampled
         branches = get_prop(mtsf, :branches)
 
+        println("roots ", roots)
         flt_branches = collect(Iterators.flatten(branches))
-        flt_cycles = collect(Iterators.flatten(cycles))
-        nb = 0
-        for i in 1:length(flt_cycles)
-            nb += length(flt_cycles[i])
-        end
+        println("flt_branches ", flt_branches)
+        println("cycles ", cycles)
+        nb = isempty(cycles) ? 0 : sum(length(c) for c in cycles)
         nb += length(roots)
         nb += length(flt_branches)
-        @test nb == n_v
+        @test nb == nv(mtsf)
     end
-    @testset "cholesky crsf is as sparse as possible" begin
+    @testset "cholesky bound on number of non-zero entries" begin
+        # upper bound on number of non-zero entries (Prop 2 in paper)
+        # n + sum_{cycle c}(n_c - 3)
         q = 0
-        # sample a CRSF
         crsf = multi_type_spanning_forest(rng, meta_g, q)
 
         ind = optimal_perm(crsf)
 
-        # construct Laplacian
         B = sp_magnetic_incidence(crsf; oriented=true)
         L = B * B'
 
@@ -90,20 +90,44 @@ end
         lower_factor = cholesky(L; perm=ind).L
 
         chol_matrix = sparse(lower_factor)
-        # number of diag entries
         nb_off_diag_entries = nnz(chol_matrix) - n_v
 
-        # upper bound on number of non-zero entries (Prop 2 in paper)
-        # n + sum_{cycle c}(n_c - 3)
-        cycles = get_prop(crsf, :cycle_nodes)
-        flt_cycles = collect(Iterators.flatten(cycles))
 
-        bound = 0
-        for i in 1:length(flt_cycles)
-            bound += length(flt_cycles[i]) - 3
-        end
-        bound += n_v
+        cycles = get_prop(crsf, :cycle_nodes)
+        bound = isempty(cycles) ? 0 : sum(length(c) - 3 for c in cycles)
+        bound += nv(crsf)
 
         @test nb_off_diag_entries <= bound
+    end
+end
+
+@testset "Leverage scores approximation" begin
+    n = 20
+    p = 0.5
+    eta = 0.3
+
+    rng = getRNG()
+    meta_g = gen_graph_mun(rng, n, p, eta)
+    B = magnetic_incidence(meta_g; oriented=true)
+    L = B * B'
+
+    t = 100000
+    @testset " for q = 0" begin
+        q = 0
+        emp_lev = emp_leverage_score(rng, meta_g, q, t)
+        lev = leverage_score(B, q)
+
+        relative_error = (norm(emp_lev - lev) / norm(lev))
+        print("relative_error: ", relative_error, "\n")
+        @test relative_error < 0.05
+    end
+    @testset " for q = 1" begin
+        q = 1
+        emp_lev = emp_leverage_score(rng, meta_g, q, t)
+        lev = leverage_score(B, q)
+
+        relative_error = (norm(emp_lev - lev) / norm(lev))
+        print("relative_error: ", relative_error, "\n")
+        @test relative_error < 0.05
     end
 end
