@@ -8,10 +8,11 @@
     B = magnetic_incidence(meta_g; oriented=true)
     L = B * B'
 
-    t = 100000
+    nb_samples = 100000
     @testset " for q = 0" begin
+        rng = getRNG()
         q = 0
-        emp_lev = emp_leverage_score(rng, meta_g, q, t)
+        emp_lev = emp_leverage_score(rng, meta_g, q, nb_samples)
         lev = leverage_score(B, q)
 
         relative_error = (norm(emp_lev - lev) / norm(lev))
@@ -19,8 +20,9 @@
         @test relative_error < 0.05
     end
     @testset " for q = 1" begin
+        rng = getRNG()
         q = 1
-        emp_lev = emp_leverage_score(rng, meta_g, q, t)
+        emp_lev = emp_leverage_score(rng, meta_g, q, nb_samples)
         lev = leverage_score(B, q)
 
         relative_error = (norm(emp_lev - lev) / norm(lev))

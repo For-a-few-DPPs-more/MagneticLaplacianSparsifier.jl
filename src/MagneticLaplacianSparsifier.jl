@@ -15,14 +15,14 @@ include("graphs.jl")
 include("laplacians.jl")
 include("sync-rank.jl")
 
+# todo cleamtidy up exports
 export multi_type_spanning_forest,
     add_edges_from!,
     consecutive_pairs,
     get_edge_prop,
+    erdos_renyi,
     gen_graph_mun,
     gen_graph_ero,
-    gen_graph_mun_basic,
-    gen_graph_ero_basic,
     magnetic_incidence,
     mtsf_edge_indices,
     angular_score,
