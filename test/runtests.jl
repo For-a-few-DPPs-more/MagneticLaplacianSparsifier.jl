@@ -4,6 +4,7 @@ using Graphs, MetaGraphs
 using Random
 using LinearAlgebra
 using SparseArrays
+using StatsBase
 
 using MagneticLaplacianSparsifier: getRNG
 
@@ -14,6 +15,7 @@ const name_test_file = [
     "magnetic_incidence_matrix",
     "leverage_scores",
     "sparsifiers",
+    "edge_statistics",
 ]
 
 @testset verbose = true "MagneticLaplacianSparsifier.jl" begin
