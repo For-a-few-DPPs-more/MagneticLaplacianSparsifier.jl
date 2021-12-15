@@ -22,8 +22,8 @@ function magnetic_incidence_matrix(
 end
 
 # todo naming mtsf, csrf
-function mtsf_edge_indices(crsf, graph)
-    return [i for (i, e) in enumerate(edges(graph)) if has_edge(crsf, src(e), dst(e))]
+function mtsf_edge_indices(mtsf, graph)
+    return [i for (i, e) in enumerate(edges(graph)) if has_edge(mtsf, src(e), dst(e))]
 end
 
 function average_sparsifier(rng, meta_g, ls, q, nb_samples)
@@ -33,12 +33,12 @@ function average_sparsifier(rng, meta_g, ls, q, nb_samples)
     w_tot = 0
 
     for _ in 1:nb_samples
-        crsf = multi_type_spanning_forest(rng, meta_g, q)
-        D = props(crsf)
+        mtsf = multi_type_spanning_forest(rng, meta_g, q)
+        D = props(mtsf)
         w = D[:weight]
         w_tot += w
-        sparseB = magnetic_incidence(crsf; oriented=true)
-        ind_e = mtsf_edge_indices(crsf, meta_g)
+        sparseB = magnetic_incidence(mtsf; oriented=true)
+        ind_e = mtsf_edge_indices(mtsf, meta_g)
         if ls === nothing
             nb_e = length(ind_e)
             W = I / (nb_e / m)
@@ -61,8 +61,8 @@ function emp_leverage_score(rng, meta_g, q, t)
     m = ne(meta_g)
     emp_lev = zeros(m, 1)
     for _ in 1:t
-        crsf = multi_type_spanning_forest(rng, meta_g, q)
-        ind_e = mtsf_edge_indices(crsf, meta_g)
+        mtsf = multi_type_spanning_forest(rng, meta_g, q)
+        ind_e = mtsf_edge_indices(mtsf, meta_g)
         emp_lev[ind_e] = emp_lev[ind_e] .+ 1
     end
     emp_lev /= t
@@ -72,12 +72,12 @@ end
 
 nb_of_edges(L::AbstractMatrix) = (nnz(sparse(L)) - size(L, 1)) / 2
 
-function optimal_perm(crsf)
-    n_v = nv(crsf)
+function optimal_perm(mtsf)
+    n_v = nv(mtsf)
     #get the roots
-    roots = get_prop(crsf, :roots)
+    roots = get_prop(mtsf, :roots)
     # get the branches in the (reverse) order there were sampled
-    branches = get_prop(crsf, :branches)
+    branches = get_prop(mtsf, :branches)
     flt_branches = collect(Iterators.flatten(branches))
 
     # indices array putting the nodes in the right order
@@ -101,10 +101,10 @@ end
 #     L = spzeros(ComplexF64, nv(graph), nv(graph))
 #     weight_total = 0.0
 #     for _ in 1:nb_samples
-#         crsf = multi_type_spanning_forest(rng, graph, q)
-#         w_csrf = get_prop(crsf, :weight)
+#         mtsf = multi_type_spanning_forest(rng, graph, q)
+#         w_csrf = get_prop(mtsf, :weight)
 #         weight_total += w_csrf
-#         B = magneticIncidence(crsf; oriented=true)
+#         B = magneticIncidence(mtsf; oriented=true)
 #         # L += B * W * B'
 #         if isnothing(leverage_scores)
 #             w = w_csrf * ne(graph) / ne(csrf)
