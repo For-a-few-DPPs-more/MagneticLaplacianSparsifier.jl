@@ -7,6 +7,30 @@
         @test B == B_theo
     end
 
+    @testset "correct node order for incidence of spanning subgraph" begin
+        n = 50
+        p = 0.8
+        g_ero = Graphs.erdos_renyi(n, p)
+        meta_g_ero_base = MetaGraph(g_ero, :angle, 0.0)
+        m = ne(meta_g_ero_base)
+
+        B = magnetic_incidence(meta_g_ero_base)
+
+        q = 0.1
+        rng = Random.default_rng()
+        mtsf = multi_type_spanning_forest(rng, meta_g_ero_base, q)
+        D = props(mtsf)
+        w = D[:weight]
+        ind_e = mtsf_edge_indices(mtsf, meta_g_ero_base)
+
+        B_mtsf = magnetic_incidence(mtsf)
+
+        L_from_indices = Matrix(B[:, ind_e] * B[:, ind_e]')
+        L_from_subgraph = Matrix(B_mtsf * B_mtsf')
+
+        @test norm(L_from_indices - L_from_subgraph) < 1e-12
+    end
+
     @testset "λ_min(L = B B') ≈ 0 when trivial ranking $model" for model in [:mun, :ero]
         n = 100
         p = 0.5
