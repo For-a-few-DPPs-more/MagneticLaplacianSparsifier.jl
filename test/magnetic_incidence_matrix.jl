@@ -1,7 +1,10 @@
 @testset verbose = true "Magnetic vertex-edge incidence matrix B" begin
     @testset "angle=0 recover oriented=$oriented incidence" for oriented in [true, false]
         g = complete_graph(10)
-        graph = MetaGraph(g, :angle, 0.0)
+        graph = MetaGraph(g)
+        for e in edges(graph)
+            set_prop!(graph, e, :angle, 0.0)
+        end
         B = magnetic_incidence_matrix(graph; oriented=oriented)
         B_theo = Graphs.LinAlg.incidence_matrix(graph, eltype(B); oriented=oriented)
         @test B == B_theo
@@ -10,25 +13,28 @@
     @testset "correct node order for incidence of spanning subgraph" begin
         n = 50
         p = 0.8
-        g_ero = Graphs.erdos_renyi(n, p)
-        meta_g_ero_base = MetaGraph(g_ero, :angle, 0.0)
-        m = ne(meta_g_ero_base)
+        g = Graphs.erdos_renyi(n, p)
+        meta_g = MetaGraph(g)
+        for e in edges(meta_g)
+            set_prop!(meta_g, e, :angle, 0.0)
+        end
 
-        B = magnetic_incidence(meta_g_ero_base)
+        m = ne(meta_g)
 
-        q = 0.1
+        B = magnetic_incidence(meta_g)
+
+        q = 0.5
         rng = Random.default_rng()
-        mtsf = multi_type_spanning_forest(rng, meta_g_ero_base, q)
-        D = props(mtsf)
-        w = D[:weight]
-        ind_e = mtsf_edge_indices(mtsf, meta_g_ero_base)
+        mtsf = multi_type_spanning_forest(rng, meta_g, q)
+
+        ind_e = mtsf_edge_indices(mtsf, meta_g)
 
         B_mtsf = magnetic_incidence(mtsf)
 
         L_from_indices = Matrix(B[:, ind_e] * B[:, ind_e]')
         L_from_subgraph = Matrix(B_mtsf * B_mtsf')
 
-        @test norm(L_from_indices - L_from_subgraph) < 1e-12
+        @test norm(abs.(Matrix(B[:, ind_e])) - abs.(Matrix(B_mtsf))) < 1e-12
     end
 
     @testset "λ_min(L = B B') ≈ 0 when trivial ranking $model" for model in [:mun, :ero]
