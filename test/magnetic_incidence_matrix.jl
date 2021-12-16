@@ -20,7 +20,6 @@
         end
 
         m = ne(meta_g)
-
         B = magnetic_incidence(meta_g)
 
         q = 0.5
@@ -28,11 +27,7 @@
         mtsf = multi_type_spanning_forest(rng, meta_g, q)
 
         ind_e = mtsf_edge_indices(mtsf, meta_g)
-
         B_mtsf = magnetic_incidence(mtsf)
-
-        L_from_indices = Matrix(B[:, ind_e] * B[:, ind_e]')
-        L_from_subgraph = Matrix(B_mtsf * B_mtsf')
 
         @test norm(abs.(Matrix(B[:, ind_e])) - abs.(Matrix(B_mtsf))) < 1e-12
     end
