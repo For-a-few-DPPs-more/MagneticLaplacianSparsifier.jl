@@ -1,5 +1,4 @@
 @testset verbose = true "Laplacian sparsifier" begin
-
     @testset "magnetic incidence sparsifier" begin
         rng = getRNG()
 
@@ -15,7 +14,7 @@
 
         ind_e = mtsf_edge_indices(crsf, compGraph)
         B_sampled = B[:, ind_e]
-        @test all(norm(sparseB - B_sampled) < 1e-10)
+        @test norm(sparseB - B_sampled) < 1e-10
     end
 
     @testset "average sparsifier mtsf is good" begin

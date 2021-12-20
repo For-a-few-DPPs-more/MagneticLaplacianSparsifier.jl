@@ -6,6 +6,7 @@ using MetaGraphs
 using Random
 using SparseArrays
 using LinearAlgebra
+using Arpack
 
 using IterTools: partition
 
@@ -33,5 +34,8 @@ export multi_type_spanning_forest,
     emp_leverage_score,
     modulus_entries,
     nb_of_edges,
-    optimal_perm
+    optimal_perm,
+    nb_upsets,
+    syncrank,
+    cond_numbers
 end
