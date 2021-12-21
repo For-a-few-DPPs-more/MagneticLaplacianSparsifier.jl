@@ -30,10 +30,10 @@
         lev = leverage_score(B, q)
         avgL = average_sparsifier(rng, meta_g, lev, q, 10)
         relative_error = norm(avgL - L) / norm(L)
-        @test relative_error < 0.3
+        @test relative_error < 0.4
     end
 
-    @testset "average sparsifier ltsf is good" begin
+    @testset "average sparsifier mtsf is good" begin
         n = 20
         p = 0.5
         eta = 0.1
@@ -46,6 +46,6 @@
         lev = leverage_score(B, q)
         avgL = average_sparsifier(rng, meta_g, lev, q, 10)
         relative_error = norm(avgL - L) / norm(L)
-        @test relative_error < 0.3
+        @test relative_error < 0.4
     end
 end
