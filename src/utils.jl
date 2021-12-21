@@ -73,53 +73,49 @@ function syncrank(L, meta_g)
     return score
 end
 
+function cond_numbers(meta_g, q, n_tot, n_rep, rng)
+    m = ne(meta_g)
+    cnd_number = zeros(n_tot, 1)
+    cnd_number_no_lev = zeros(n_tot, 1)
+    sp_L = zeros(n_tot, 1)
+    sp_L_nl = zeros(n_tot, 1)
+    percent_edges = zeros(n_tot, 1)
 
-function cond_numbers(meta_g,q,n_tot,n_rep)
-
-    cnd_number = zeros(n_tot,1)
-    cnd_number_no_lev = zeros(n_tot,1)
-    sp_L = zeros(n_tot,1)
-    sp_L_nl = zeros(n_tot,1)
-    percent_edges = zeros(n_tot,1)
-
-
-    cnd_number_std = zeros(n_tot,1)
-    cnd_number_no_lev_std = zeros(n_tot,1)
-    sp_L_std = zeros(n_tot,1)
-    sp_L_nl_std = zeros(n_tot,1)
-    percent_edges_std = zeros(n_tot,1)
+    cnd_number_std = zeros(n_tot, 1)
+    cnd_number_no_lev_std = zeros(n_tot, 1)
+    sp_L_std = zeros(n_tot, 1)
+    sp_L_nl_std = zeros(n_tot, 1)
+    percent_edges_std = zeros(n_tot, 1)
 
     B = magnetic_incidence(meta_g)
-    Lap = B*B'
+    Lap = B * B'
     lev = leverage_score(B, q)
 
-    for i=1:n_tot
+    for i in 1:n_tot
+        cnd_number_tp = zeros(n_rep, 1)
+        cnd_number_no_lev_tp = zeros(n_rep, 1)
+        sp_L_tp = zeros(n_rep, 1)
+        sp_L_nl_tp = zeros(n_rep, 1)
+        percent_edges_tp = zeros(n_rep, 1)
 
-        cnd_number_tp = zeros(n_rep,1)
-        cnd_number_no_lev_tp = zeros(n_rep,1)
-        sp_L_tp = zeros(n_rep,1)
-        sp_L_nl_tp = zeros(n_rep,1)
-        percent_edges_tp = zeros(n_rep,1)
-
-        for j =1:n_rep
+        for j in 1:n_rep
             avgL = average_sparsifier(rng, meta_g, lev, q, i)
-            avgL_no_lev = average_sparsifier(rng,meta_g,nothing,q,i);
-            avgL = (avgL + avgL')/2
-            avgL_no_lev = (avgL_no_lev + avgL_no_lev')/2
+            avgL_no_lev = average_sparsifier(rng, meta_g, nothing, q, i)
+            avgL = (avgL + avgL') / 2
+            avgL_no_lev = (avgL_no_lev + avgL_no_lev') / 2
 
             R = cholesky(avgL + q * I).L
             R_nl = cholesky(avgL_no_lev + q * I).L
 
-
             sp_L_tp[j] = nnz(sparse(R))
             sp_L_nl_tp[j] = nnz(sparse(R_nl))
 
-            precond_L = R\((Lap + q * I)/R')
-            precond_L_nl = R_nl\((Lap + q * I)/R_nl')
+            precond_L = R \ ((Lap + q * I) / R')
+            precond_L_nl = R_nl \ ((Lap + q * I) / R_nl')
 
             cnd_number_tp[j] = cond(precond_L)
             cnd_number_no_lev_tp[j] = cond(precond_L_nl)
-            percent_edges_tp[j] = nb_of_edges(avgL)/m
+            percent_edges_tp[j] = nb_of_edges(avgL) / m
         end
 
         cnd_number[i] = mean(cnd_number_tp)
@@ -128,14 +124,21 @@ function cond_numbers(meta_g,q,n_tot,n_rep)
         sp_L_nl[i] = mean(sp_L_nl_tp)
         percent_edges[i] = mean(percent_edges_tp)
 
-
         cnd_number_std[i] = std(cnd_number_tp)
         cnd_number_no_lev_std[i] = std(cnd_number_no_lev_tp)
         sp_L_std[i] = std(sp_L_tp)
         sp_L_nl_std[i] = std(sp_L_nl_tp)
         percent_edges_std[i] = std(percent_edges_tp)
-
     end
 
-    return  cnd_number,cnd_number_no_lev,sp_L,sp_L_nl,percent_edges,cnd_number_std,cnd_number_no_lev_std,sp_L_std,sp_L_nl_std,percent_edges_std
+    return cnd_number,
+    cnd_number_no_lev,
+    sp_L,
+    sp_L_nl,
+    percent_edges,
+    cnd_number_std,
+    cnd_number_no_lev_std,
+    sp_L_std,
+    sp_L_nl_std,
+    percent_edges_std
 end
