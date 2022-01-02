@@ -37,5 +37,7 @@ export multi_type_spanning_forest,
     optimal_perm,
     nb_upsets,
     syncrank,
-    cond_numbers
+    cond_numbers,
+    average_sparsifier_iid,
+    pcond_Lap
 end

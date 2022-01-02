@@ -52,6 +52,54 @@ function average_sparsifier(rng, meta_g, ls, q, nb_samples)
     return sparseL
 end
 
+function sample_subgraph_iid(rng, meta_g, ls, batch)
+    n = nv(meta_g)
+    m = ne(meta_g)
+    subgraph = MetaGraph(n)
+    if ls === nothing
+        ind_rd = rand(rng, 1:m, (batch, 1))
+    else
+        p = vec(ls / sum(ls))
+        ind_rd = rand(rng, Categorical(p), (batch, 1))
+    end
+    all_edges = collect(edges(meta_g))
+    subset_edges = all_edges[ind_rd]
+
+    for e in subset_edges
+        add_edge!(subgraph, e)
+        angle = get_edge_prop(meta_g, e, :angle, true)
+        set_prop!(subgraph, e, :angle, angle)
+    end
+
+    return subgraph
+end
+
+function average_sparsifier_iid(rng, meta_g, ls, batch, nb_samples)
+    n = nv(meta_g)
+    m = ne(meta_g)
+    sparseL = zeros(n, n)
+    w_tot = 0
+
+    for _ in 1:nb_samples
+        subgraph = sample_subgraph_iid(rng, meta_g, ls, batch)
+        w = 1
+        w_tot += w
+        sparseB = magnetic_incidence(subgraph; oriented=true)
+        ind_e = mtsf_edge_indices(subgraph, meta_g)
+        if ls === nothing
+            nb_e = length(ind_e)
+            W = I / (nb_e / m)
+        else
+            W = diagm(1 ./ ls[ind_e])
+        end
+
+        sparseL = sparseL + w * sparseB * W * sparseB'
+    end
+    sparseL = sparseL / w_tot
+
+    return sparseL
+end
+
 function leverage_score(B, q)
     levScores = real(diag(B' * ((B * B' + q * I) \ B)))
     return levScores
