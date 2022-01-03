@@ -26,14 +26,14 @@ function mtsf_edge_indices(mtsf, graph)
     return [i for (i, e) in enumerate(edges(graph)) if has_edge(mtsf, src(e), dst(e))]
 end
 
-function average_sparsifier(rng, meta_g, ls, q, nb_samples)
+function average_sparsifier(rng, meta_g, ls, q, nb_samples; weighted::Bool=false)
     n = nv(meta_g)
     m = ne(meta_g)
     sparseL = zeros(n, n)
     w_tot = 0
 
     for _ in 1:nb_samples
-        mtsf = multi_type_spanning_forest(rng, meta_g, q)
+        mtsf = multi_type_spanning_forest(rng, meta_g, q; weighted)
         D = props(mtsf)
         w = D[:weight]
         w_tot += w
@@ -45,6 +45,11 @@ function average_sparsifier(rng, meta_g, ls, q, nb_samples)
         else
             W = diagm(1 ./ ls[ind_e])
         end
+        if weighted
+            e_weights = get_edges_prop(meta_g, :e_weight, true, 1.0)
+            W *= diagm(e_weights[ind_e])
+        end
+
         sparseL = sparseL + w * sparseB * W * sparseB'
     end
     sparseL = sparseL / w_tot
@@ -74,7 +79,7 @@ function sample_subgraph_iid(rng, meta_g, ls, batch)
     return subgraph
 end
 
-function average_sparsifier_iid(rng, meta_g, ls, batch, nb_samples)
+function average_sparsifier_iid(rng, meta_g, ls, batch, nb_samples; weighted::Bool=false)
     n = nv(meta_g)
     m = ne(meta_g)
     sparseL = zeros(n, n)
@@ -93,6 +98,11 @@ function average_sparsifier_iid(rng, meta_g, ls, batch, nb_samples)
             W = diagm(1 ./ ls[ind_e])
         end
 
+        if weighted
+            e_weights = edge_weights(meta_g)
+            W *= diagm(e_weights[ind_e])
+        end
+
         sparseL = sparseL + w * sparseB * W * sparseB'
     end
     sparseL = sparseL / w_tot
@@ -100,22 +110,28 @@ function average_sparsifier_iid(rng, meta_g, ls, batch, nb_samples)
     return sparseL
 end
 
-function leverage_score(B, q)
-    levScores = real(diag(B' * ((B * B' + q * I) \ B)))
+function leverage_score(B, q; W=I)
+    levScores = real(diag(W * B' * ((B * W * B' + q * I) \ B)))
+
     return levScores
 end
 
-function emp_leverage_score(rng, meta_g, q, t)
+function emp_leverage_score(rng, meta_g, q, t; weighted::Bool=false)
     m = ne(meta_g)
     emp_lev = zeros(m, 1)
     for _ in 1:t
-        mtsf = multi_type_spanning_forest(rng, meta_g, q)
+        mtsf = multi_type_spanning_forest(rng, meta_g, q; weighted)
         ind_e = mtsf_edge_indices(mtsf, meta_g)
         emp_lev[ind_e] = emp_lev[ind_e] .+ 1
     end
     emp_lev /= t
 
     return emp_lev
+end
+
+function edge_weights(g)
+    e_weights = get_edges_prop(g, :e_weight, true, 1.0)
+    return e_weights
 end
 
 nb_of_edges(L::AbstractMatrix) = (nnz(sparse(L)) - size(L, 1)) / 2

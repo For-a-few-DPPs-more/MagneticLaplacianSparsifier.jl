@@ -39,5 +39,9 @@ export multi_type_spanning_forest,
     syncrank,
     cond_numbers,
     average_sparsifier_iid,
-    pcond_Lap
+    pcond_Lap,
+    rand_step,
+    step_to_root,
+    get_edges_prop,
+    edge_weights
 end

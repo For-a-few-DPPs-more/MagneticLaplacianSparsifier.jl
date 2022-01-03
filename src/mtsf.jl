@@ -5,7 +5,7 @@ function multi_type_spanning_forest(g::MetaGraph{T,U}, q::Real)::MetaGraph{T,U} 
 end
 
 function multi_type_spanning_forest(
-    rng::Random.AbstractRNG, g::MetaGraph{T,U}, q::Real
+    rng::Random.AbstractRNG, g::MetaGraph{T,U}, q::Real; weighted::Bool=false
 )::MetaGraph{T,U} where {T,U}
     # Initialize the multi type spanning forest
     mtsf = MetaGraph{T,U}(nv(g))
@@ -25,7 +25,10 @@ function multi_type_spanning_forest(
     setdiff!(unvisited, n0)
 
     while nv_mtsf < nv(g)
-        n0_is_root = rand(rng) < q / (q + degree(g, n0))
+
+        #n0_is_root = rand(rng) < q / (q + degree(g, n0))
+        n0_is_root = step_to_root(rng, g, n0, q, weighted)
+
         if n0_is_root
             push!(roots, n0)
             add_edges_from!(mtsf, consecutive_pairs(walk))
@@ -39,7 +42,9 @@ function multi_type_spanning_forest(
             continue
         end
 
-        n1 = rand(rng, neighbors(g, n0))
+        #n1 = rand(rng, neighbors(g, n0))
+        n1 = rand_step(rng, g, n0, weighted)
+
         push!(walk, n1)
 
         if n1 in unvisited
@@ -117,4 +122,43 @@ function curvature(
         curvature += angle
     end
     return curvature
+end
+
+function rand_step(rng, g, n0, weighted::Bool=false)
+    if weighted
+        nb_list = neighbors(g, n0)
+        p = Vector{Float64}(undef, length(nb_list))
+        it = 0
+        for v in nb_list
+            it += 1
+            e = (n0, v)
+            w = get_edge_prop(g, Edge(e), :e_weight)
+            p[it] = abs(w)
+        end
+        p = p / sum(p)
+
+        ind_nb = rand(rng, Categorical(p), 1)[1]
+        n1 = nb_list[ind_nb]
+    else
+        n1 = rand(rng, neighbors(g, n0))
+    end
+
+    return n1
+end
+
+function step_to_root(rng, g, n0, q, weighted::Bool=false)
+    if weighted
+        nb_list = neighbors(g, n0)
+        sum_of_w = 0
+        for v in nb_list
+            e = (n0, v)
+            w = get_edge_prop(g, Edge(e), :e_weight)
+            sum_of_w += abs(w)
+        end
+        n0_is_root = rand(rng) < q / (q + sum_of_w)
+    else
+        n0_is_root = rand(rng) < q / (q + degree(g, n0))
+    end
+
+    return n0_is_root
 end

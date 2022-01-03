@@ -60,4 +60,97 @@
 
         @test nb_off_diag_entries <= bound
     end
+
+    @testset "random walk steps have a correct distribution" begin
+        rng = Random.default_rng()
+
+        k = 5
+        x1 = randn(rng, (k, 2))
+        x2 = randn(rng, (k, 2)) .+ 3
+        x = [x1; x2]
+
+        n = size(x, 1)
+        g = MetaGraph(n)
+
+        bw = 1.0
+        for i in 1:n
+            for j in (i + 1):n
+                w = exp(-norm(x[i, :] - x[j, :])^2 / bw^2)
+                if w > 1e-6
+                    e = (i, j)
+                    add_edge!(g, i, j, :angle, 0.0)
+                    set_prop!(g, Edge(e), :e_weight, w)
+                end
+            end
+        end
+
+        n0 = 1
+        nb_list = neighbors(g, n0)
+
+        @testset "without absording node" begin
+            count = zeros(size(nb_list))
+            nb_MC = 2 * 1e6
+
+            weighted = true
+
+            for i in 1:nb_MC
+                nb = rand_step(rng, g, n0, weighted)
+                id_nb = findfirst(nb_list .== nb)
+                count[id_nb] += 1
+            end
+
+            empirical_p = count / nb_MC
+
+            p = Vector{Float64}(undef, length(nb_list))
+            it = 0
+            for v in nb_list
+                it += 1
+                e = (n0, v)
+                w = get_edge_prop(g, Edge(e), :e_weight)
+                p[it] = abs(w)
+            end
+            p = p / sum(p)
+
+            err = norm(empirical_p - p)
+            println("error: ", err)
+
+            @test err < 1e-3
+        end
+        @testset "with absording node" begin
+            count = zeros(length(nb_list) + 1, 1)
+            nb_MC = 2 * 1e6
+
+            weighted = true
+            q = 0.1
+
+            for i in 1:nb_MC
+                isroot = step_to_root(rng, g, n0, q, weighted)
+                if isroot
+                    count[end] += 1
+                else
+                    nb = rand_step(rng, g, n0, weighted)
+                    id_nb = findfirst(nb_list .== nb)
+                    count[id_nb] += 1
+                end
+            end
+
+            empirical_p = count / nb_MC
+
+            p = Vector{Float64}(undef, length(nb_list) + 1)
+            it = 0
+            for v in nb_list
+                it += 1
+                e = (n0, v)
+                w = get_edge_prop(g, Edge(e), :e_weight)
+                p[it] = abs(w)
+            end
+            p[end] = q
+            p = p / sum(p)
+
+            err = norm(empirical_p - p)
+            println("error: ", err)
+
+            @test err < 1e-3
+        end
+    end
 end
