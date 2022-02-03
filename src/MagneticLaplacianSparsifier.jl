@@ -43,5 +43,7 @@ export multi_type_spanning_forest,
     rand_step,
     step_to_root,
     get_edges_prop,
-    edge_weights
+    edge_weights,
+    least_eigenvector,
+    eigenvec_dist
 end
