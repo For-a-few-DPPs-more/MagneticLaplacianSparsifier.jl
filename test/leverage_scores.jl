@@ -70,7 +70,7 @@ end
 
         relative_error = (norm(emp_lev - lev) / norm(lev))
         print("relative_error: ", relative_error, "\n")
-        @test relative_error < 0.05
+        @test relative_error < 0.07
     end
 
     @testset "LS approximation with weights and q = 1." begin
@@ -80,6 +80,6 @@ end
 
         relative_error = (norm(emp_lev - lev) / norm(lev))
         print("relative_error: ", relative_error, "\n")
-        @test relative_error < 0.05
+        @test relative_error < 0.07
     end
 end

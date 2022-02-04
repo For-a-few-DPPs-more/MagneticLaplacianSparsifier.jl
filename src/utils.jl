@@ -39,7 +39,6 @@ function get_edges_prop(
     return [get_edge_prop(g, e, prop, oriented, default) for e in edges(g)]
 end
 
-
 function pcond_Lap(avgL, q, Lap)
     avgL = (avgL + avgL') / 2
     R = cholesky(avgL + q * I).L
@@ -166,5 +165,185 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng)
         "sp_L_iid_lev_std" => sp_L_iid_lev_std,
         "percent_edges_std" => percent_edges_std,
         "percent_edges_iid" => percent_edges_iid,
+    )
+end
+
+function benchmark_syncrank(meta_g, planted_ranking, n_batch, n_rep, rng)
+    n = nv(meta_g)
+    m = ne(meta_g)
+
+    # parameters for benchmarking
+    batch = Int(floor(n))
+
+    # technical parameters
+    weighted = true
+    singular = true
+
+    # full magnetic Laplacian
+    q = 0
+    B = magnetic_incidence(meta_g)
+    lev = leverage_score(B, q)
+    L = B * B'
+
+    # normalization
+    normalize_Lap!(L)
+    normalize_meta_g!(meta_g)
+
+    # least eigenvector full Laplacian
+    v = least_eigenvector(L; singular)
+
+    # recovered ranking full Laplacian
+    ranking_full = syncrank(L, meta_g; singular)
+    tau_full = corkendall(planted_ranking, ranking_full)
+
+    rangebatch = 1:n_batch
+
+    # initialization
+    err_dpp_unif = zeros(size(rangebatch))
+    err_dpp_lev = zeros(size(rangebatch))
+    err_iid_unif = zeros(size(rangebatch))
+    err_iid_lev = zeros(size(rangebatch))
+
+    err_dpp_unif_std = zeros(size(rangebatch))
+    err_dpp_lev_std = zeros(size(rangebatch))
+    err_iid_unif_std = zeros(size(rangebatch))
+    err_iid_lev_std = zeros(size(rangebatch))
+
+    tau_dpp_unif = zeros(size(rangebatch))
+    tau_dpp_lev = zeros(size(rangebatch))
+    tau_iid_unif = zeros(size(rangebatch))
+    tau_iid_lev = zeros(size(rangebatch))
+
+    tau_dpp_unif_std = zeros(size(rangebatch))
+    tau_dpp_lev_std = zeros(size(rangebatch))
+    tau_iid_unif_std = zeros(size(rangebatch))
+    tau_iid_lev_std = zeros(size(rangebatch))
+
+    percent_edges_dpp = zeros(size(rangebatch))
+    percent_edges_dpp_std = zeros(size(rangebatch))
+
+    percent_edges_iid_unif = zeros(size(rangebatch))
+    percent_edges_iid_lev = zeros(size(rangebatch))
+
+    percent_edges_iid_unif_std = zeros(size(rangebatch))
+    percent_edges_iid_lev_std = zeros(size(rangebatch))
+
+    for i in 1:length(rangebatch)
+        err_dpp_unif_tp = zeros(n_rep, 1)
+        err_dpp_lev_tp = zeros(n_rep, 1)
+        err_iid_unif_tp = zeros(n_rep, 1)
+        err_iid_lev_tp = zeros(n_rep, 1)
+
+        tau_dpp_unif_tp = zeros(n_rep, 1)
+        tau_dpp_lev_tp = zeros(n_rep, 1)
+        tau_iid_unif_tp = zeros(n_rep, 1)
+        tau_iid_lev_tp = zeros(n_rep, 1)
+
+        percent_edges_dpp_tp = zeros(n_rep, 1)
+        percent_edges_iid_unif_tp = zeros(n_rep, 1)
+        percent_edges_iid_lev_tp = zeros(n_rep, 1)
+
+        t = rangebatch[i]
+
+        for j in 1:n_rep
+
+            # DPP uniform weighting
+            avgL_dpp_unif = average_sparsifier(rng, meta_g, nothing, q, t; weighted)
+            v_dpp_unif = least_eigenvector(avgL_dpp_unif; singular)
+            err_dpp_unif_tp[j] = eigenvec_dist(v, v_dpp_unif)
+
+            ranking_dpp_unif = syncrank(avgL_dpp_unif, meta_g; singular)
+            tau_dpp_unif_tp[j] = corkendall(planted_ranking, ranking_dpp_unif)
+
+            percent_edges_dpp_tp[j] = nb_of_edges(avgL_dpp_unif) / m
+
+            # DPP leverage score weighting
+            avgL_dpp_lev = average_sparsifier(rng, meta_g, lev, q, t; weighted)
+            v_dpp_lev = least_eigenvector(avgL_dpp_lev; singular)
+            err_dpp_lev_tp[j] = eigenvec_dist(v, v_dpp_lev)
+
+            ranking_dpp_lev = syncrank(avgL_dpp_lev, meta_g; singular)
+            tau_dpp_lev_tp[j] = corkendall(planted_ranking, ranking_dpp_lev)
+
+            # iid uniform with uniform weighting
+            avgL_iid_unif = average_sparsifier_iid(rng, meta_g, nothing, batch, t; weighted)
+            v_iid_unif = least_eigenvector(avgL_iid_unif; singular)
+            err_iid_unif_tp[j] = eigenvec_dist(v, v_iid_unif)
+
+            ranking_iid_unif = syncrank(avgL_iid_unif, meta_g; singular)
+            tau_iid_unif_tp[j] = corkendall(planted_ranking, ranking_iid_unif)
+
+            percent_edges_iid_unif_tp[j] = nb_of_edges(avgL_iid_unif) / m
+
+            # iid leverage score with leverage score weighting
+            avgL_iid_lev = average_sparsifier_iid(rng, meta_g, lev, batch, t; weighted)
+            v_iid_lev = least_eigenvector(avgL_iid_lev; singular)
+            err_iid_lev_tp[j] = eigenvec_dist(v, v_iid_lev)
+
+            ranking_iid_lev = syncrank(avgL_iid_lev, meta_g; singular)
+            tau_iid_lev_tp[j] = corkendall(planted_ranking, ranking_iid_lev)
+
+            percent_edges_iid_lev_tp[j] = nb_of_edges(avgL_iid_lev) / m
+        end
+        err_dpp_unif[i] = mean(err_dpp_unif_tp)
+        err_dpp_lev[i] = mean(err_dpp_lev_tp)
+        err_iid_unif[i] = mean(err_iid_unif_tp)
+        err_iid_lev[i] = mean(err_iid_lev_tp)
+
+        err_dpp_unif_std[i] = std(err_dpp_unif_tp)
+        err_dpp_lev_std[i] = std(err_dpp_lev_tp)
+        err_iid_unif_std[i] = std(err_iid_unif_tp)
+        err_iid_lev_std[i] = std(err_iid_lev_tp)
+
+        tau_dpp_unif[i] = mean(tau_dpp_unif_tp)
+        tau_dpp_lev[i] = mean(tau_dpp_lev_tp)
+        tau_iid_unif[i] = mean(tau_iid_unif_tp)
+        tau_iid_lev[i] = mean(tau_iid_lev_tp)
+
+        tau_dpp_unif_std[i] = std(tau_dpp_unif_tp)
+        tau_dpp_lev_std[i] = std(tau_dpp_lev_tp)
+        tau_iid_unif_std[i] = std(tau_iid_unif_tp)
+        tau_iid_lev_std[i] = std(tau_iid_lev_tp)
+
+        percent_edges_dpp[i] = mean(percent_edges_dpp_tp)
+        percent_edges_dpp_std[i] = std(percent_edges_dpp_tp)
+
+        percent_edges_iid_unif[i] = mean(percent_edges_iid_unif_tp)
+        percent_edges_iid_unif_std[i] = std(percent_edges_iid_unif_tp)
+
+        percent_edges_iid_lev[i] = mean(percent_edges_iid_lev_tp)
+        percent_edges_iid_lev_std[i] = std(percent_edges_iid_lev_tp)
+    end
+
+    return Dict(
+        "err_dpp_unif" => err_dpp_unif,
+        "err_dpp_lev" => err_dpp_lev,
+        "err_iid_unif" => err_iid_unif,
+        "err_iid_lev" => err_iid_lev,
+        #
+        "err_dpp_unif_std" => err_dpp_unif_std,
+        "err_dpp_lev_std" => err_dpp_lev_std,
+        "err_iid_unif_std" => err_iid_unif_std,
+        "err_iid_lev_std" => err_iid_lev_std,
+        #
+        "tau_dpp_unif" => tau_dpp_unif,
+        "tau_dpp_lev" => tau_dpp_lev,
+        "tau_iid_unif" => tau_iid_unif,
+        "tau_iid_lev" => tau_iid_lev,
+        #
+        "tau_dpp_unif_std" => tau_dpp_unif_std,
+        "tau_dpp_lev_std" => tau_dpp_lev_std,
+        "tau_iid_unif_std" => tau_iid_unif_std,
+        "tau_iid_lev_std" => tau_iid_lev_std,
+        #
+        "percent_edges_dpp" => percent_edges_dpp,
+        "percent_edges_iid_lev" => percent_edges_iid_lev,
+        "percent_edges_iid_unif" => percent_edges_iid_unif,
+        #
+        "percent_edges_dpp_std" => percent_edges_dpp_std,
+        "percent_edges_iid_unif_std" => percent_edges_iid_unif_std,
+        "percent_edges_iid_lev_std" => percent_edges_iid_lev_std,
+        #
+        "tau_full" => tau_full,
     )
 end

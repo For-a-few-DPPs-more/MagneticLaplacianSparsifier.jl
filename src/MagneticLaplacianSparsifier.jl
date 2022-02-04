@@ -7,6 +7,9 @@ using Random
 using SparseArrays
 using LinearAlgebra
 using Arpack
+using Statistics
+using Measures
+using StatsBase
 
 using IterTools: partition
 
@@ -45,5 +48,8 @@ export multi_type_spanning_forest,
     get_edges_prop,
     edge_weights,
     least_eigenvector,
-    eigenvec_dist
+    eigenvec_dist,
+    normalize_Lap!,
+    normalize_meta_g!,
+    benchmark_syncrank
 end
