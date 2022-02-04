@@ -1,6 +1,7 @@
 .DS_Store
 
 /notebooks/**
+!/notebooks/demo_eigen_CRSF_normalize.ipynb
 
 tmp.jl
 
