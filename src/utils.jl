@@ -185,8 +185,10 @@ function benchmark_syncrank(meta_g, planted_ranking, n_batch, n_rep, rng)
     lev = leverage_score(B, q)
     L = B * B'
 
-    # normalization
+    # normalization of L
     normalize_Lap!(L)
+
+    # include edge weights in meta_g
     normalize_meta_g!(meta_g)
 
     # least eigenvector full Laplacian
@@ -248,42 +250,42 @@ function benchmark_syncrank(meta_g, planted_ranking, n_batch, n_rep, rng)
         for j in 1:n_rep
 
             # DPP uniform weighting
-            avgL_dpp_unif = average_sparsifier(rng, meta_g, nothing, q, t; weighted)
-            v_dpp_unif = least_eigenvector(avgL_dpp_unif; singular)
-            err_dpp_unif_tp[j] = eigenvec_dist(v, v_dpp_unif)
+            L_av = average_sparsifier(rng, meta_g, nothing, q, t; weighted)
+            v_av = least_eigenvector(L_av; singular)
+            err_dpp_unif_tp[j] = eigenvec_dist(v, v_av)
 
-            ranking_dpp_unif = syncrank(avgL_dpp_unif, meta_g; singular)
-            tau_dpp_unif_tp[j] = corkendall(planted_ranking, ranking_dpp_unif)
+            ranking = syncrank(L_av, meta_g; singular)
+            tau_dpp_unif_tp[j] = corkendall(planted_ranking, ranking)
 
-            percent_edges_dpp_tp[j] = nb_of_edges(avgL_dpp_unif) / m
+            percent_edges_dpp_tp[j] = nb_of_edges(L_av) / m
 
             # DPP leverage score weighting
-            avgL_dpp_lev = average_sparsifier(rng, meta_g, lev, q, t; weighted)
-            v_dpp_lev = least_eigenvector(avgL_dpp_lev; singular)
-            err_dpp_lev_tp[j] = eigenvec_dist(v, v_dpp_lev)
+            L_av = average_sparsifier(rng, meta_g, lev, q, t; weighted)
+            v_av = least_eigenvector(L_av; singular)
+            err_dpp_lev_tp[j] = eigenvec_dist(v, v_av)
 
-            ranking_dpp_lev = syncrank(avgL_dpp_lev, meta_g; singular)
-            tau_dpp_lev_tp[j] = corkendall(planted_ranking, ranking_dpp_lev)
+            ranking = syncrank(L_av, meta_g; singular)
+            tau_dpp_lev_tp[j] = corkendall(planted_ranking, ranking)
 
             # iid uniform with uniform weighting
-            avgL_iid_unif = average_sparsifier_iid(rng, meta_g, nothing, batch, t; weighted)
-            v_iid_unif = least_eigenvector(avgL_iid_unif; singular)
-            err_iid_unif_tp[j] = eigenvec_dist(v, v_iid_unif)
+            L_av = average_sparsifier_iid(rng, meta_g, nothing, batch, t; weighted)
+            v_av = least_eigenvector(L_av; singular)
+            err_iid_unif_tp[j] = eigenvec_dist(v, v_av)
 
-            ranking_iid_unif = syncrank(avgL_iid_unif, meta_g; singular)
-            tau_iid_unif_tp[j] = corkendall(planted_ranking, ranking_iid_unif)
+            ranking = syncrank(L_av, meta_g; singular)
+            tau_iid_unif_tp[j] = corkendall(planted_ranking, ranking)
 
-            percent_edges_iid_unif_tp[j] = nb_of_edges(avgL_iid_unif) / m
+            percent_edges_iid_unif_tp[j] = nb_of_edges(L_av) / m
 
             # iid leverage score with leverage score weighting
-            avgL_iid_lev = average_sparsifier_iid(rng, meta_g, lev, batch, t; weighted)
-            v_iid_lev = least_eigenvector(avgL_iid_lev; singular)
-            err_iid_lev_tp[j] = eigenvec_dist(v, v_iid_lev)
+            L_av = average_sparsifier_iid(rng, meta_g, lev, batch, t; weighted)
+            v_av = least_eigenvector(L_av; singular)
+            err_iid_lev_tp[j] = eigenvec_dist(v, v_av)
 
-            ranking_iid_lev = syncrank(avgL_iid_lev, meta_g; singular)
-            tau_iid_lev_tp[j] = corkendall(planted_ranking, ranking_iid_lev)
+            ranking = syncrank(L_av, meta_g; singular)
+            tau_iid_lev_tp[j] = corkendall(planted_ranking, ranking)
 
-            percent_edges_iid_lev_tp[j] = nb_of_edges(avgL_iid_lev) / m
+            percent_edges_iid_lev_tp[j] = nb_of_edges(L_av) / m
         end
         err_dpp_unif[i] = mean(err_dpp_unif_tp)
         err_dpp_lev[i] = mean(err_dpp_lev_tp)
