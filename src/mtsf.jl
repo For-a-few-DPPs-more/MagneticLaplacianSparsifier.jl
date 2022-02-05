@@ -51,7 +51,7 @@ function multi_type_spanning_forest(
             setdiff!(unvisited, n1)
             n0 = n1  # continue the walk
 
-        elseif degree(mtsf, n1) > 0  # n1 in mtsf
+        elseif degree(mtsf, n1) > 0 || n1 in roots
             add_edges_from!(mtsf, consecutive_pairs(walk))
             nv_mtsf += length(walk) - 1
             setdiff!(unvisited, walk)
