@@ -42,8 +42,8 @@ end
 function pcond_Lap(avgL, q, Lap)
     avgL = (avgL + avgL') / 2
     R = cholesky(avgL + q * I).L
-    pd_Lap = (avgL + q * I) \ (Lap + q * I)
-    #pd_Lap = R \ ((Lap + q * I) / R')
+    #pd_Lap = (avgL + q * I) \ (Lap + q * I)
+    pd_Lap = R \ ((Lap + q * I) / R')
     return pd_Lap, R
 end
 
@@ -52,118 +52,121 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng)
     n = nv(meta_g)
     batch = n
 
-    cnd_number = zeros(n_tot, 1)
-    cnd_number_no_lev = zeros(n_tot, 1)
-    cnd_number_iid_unif = zeros(n_tot, 1)
-    cnd_number_iid_lev = zeros(n_tot, 1)
+    cnd_nb_dpp_unif = zeros(n_tot, 1)
+    cnd_nb_dpp_lev = zeros(n_tot, 1)
+    cnd_nb_iid_unif = zeros(n_tot, 1)
+    cnd_nb_iid_lev = zeros(n_tot, 1)
 
-    sp_L = zeros(n_tot, 1)
-    sp_L_nl = zeros(n_tot, 1)
+    sp_L_dpp_unif = zeros(n_tot, 1)
+    sp_L_dpp_lev = zeros(n_tot, 1)
     sp_L_iid_unif = zeros(n_tot, 1)
     sp_L_iid_lev = zeros(n_tot, 1)
 
-    percent_edges = zeros(n_tot, 1)
+    percent_edges_dpp = zeros(n_tot, 1)
     percent_edges_iid = zeros(n_tot, 1)
 
-    cnd_number_std = zeros(n_tot, 1)
-    cnd_number_no_lev_std = zeros(n_tot, 1)
-    cnd_number_iid_unif_std = zeros(n_tot, 1)
-    cnd_number_iid_lev_std = zeros(n_tot, 1)
+    cnd_nb_dpp_unif_std = zeros(n_tot, 1)
+    cnd_nb_dpp_lev_std = zeros(n_tot, 1)
+    cnd_nb_iid_unif_std = zeros(n_tot, 1)
+    cnd_nb_iid_lev_std = zeros(n_tot, 1)
 
-    sp_L_std = zeros(n_tot, 1)
-    sp_L_nl_std = zeros(n_tot, 1)
+    sp_L_dpp_unif_std = zeros(n_tot, 1)
+    sp_L_dpp_lev_std = zeros(n_tot, 1)
     sp_L_iid_unif_std = zeros(n_tot, 1)
     sp_L_iid_lev_std = zeros(n_tot, 1)
 
-    percent_edges_std = zeros(n_tot, 1)
+    percent_edges_dpp_std = zeros(n_tot, 1)
 
     B = magnetic_incidence(meta_g)
     Lap = B * B'
     lev = leverage_score(B, q)
 
     for i in 1:n_tot
-        cnd_number_tp = zeros(n_rep, 1)
-        cnd_number_no_lev_tp = zeros(n_rep, 1)
-        cnd_number_iid_unif_tp = zeros(n_rep, 1)
-        cnd_number_iid_lev_tp = zeros(n_rep, 1)
+        cnd_nb_dpp_unif_tp = zeros(n_rep, 1)
+        cnd_nb_dpp_lev_tp = zeros(n_rep, 1)
+        cnd_nb_iid_unif_tp = zeros(n_rep, 1)
+        cnd_nb_iid_lev_tp = zeros(n_rep, 1)
 
-        sp_L_tp = zeros(n_rep, 1)
-        sp_L_nl_tp = zeros(n_rep, 1)
+        sp_L_dpp_unif_tp = zeros(n_rep, 1)
+        sp_L_dpp_lev_tp = zeros(n_rep, 1)
         sp_L_iid_unif_tp = zeros(n_rep, 1)
         sp_L_iid_lev_tp = zeros(n_rep, 1)
 
-        percent_edges_tp = zeros(n_rep, 1)
+        percent_edges_dpp_tp = zeros(n_rep, 1)
 
         for j in 1:n_rep
-            avgL = average_sparsifier(rng, meta_g, lev, q, i)
-            avgL_no_lev = average_sparsifier(rng, meta_g, nothing, q, i)
-            avgL_iid_unif = average_sparsifier_iid(rng, meta_g, nothing, batch, i)
-            avgL_iid_lev = average_sparsifier_iid(rng, meta_g, lev, batch, i)
+            # DPP uniform weighting
+            L_av = average_sparsifier(rng, meta_g, nothing, q, i)
+            pcd_L, R = pcond_Lap(L_av, q, Lap)
+            sp_L_dpp_unif_tp[j] = nnz(sparse(R))
+            cnd_nb_dpp_unif_tp[j] = cond(pcd_L)
+            percent_edges_dpp_tp[j] = nb_of_edges(L_av) / m
 
-            precond_L, R = pcond_Lap(avgL, q, Lap)
-            precond_L_nl, R_nl = pcond_Lap(avgL_no_lev, q, Lap)
+            # DPP leverage score weighting
+            L_av = average_sparsifier(rng, meta_g, lev, q, i)
+            pcd_L, R = pcond_Lap(L_av, q, Lap)
+            sp_L_dpp_lev_tp[j] = nnz(sparse(R))
+            cnd_nb_dpp_lev_tp[j] = cond(pcd_L)
 
-            precond_L_iid_unif, R_iid_unif = pcond_Lap(avgL_iid_unif, q, Lap)
-            precond_L_iid_lev, R_iid_lev = pcond_Lap(avgL_iid_lev, q, Lap)
+            # iid uniform weighting
+            L_av = average_sparsifier_iid(rng, meta_g, nothing, batch, i)
+            pcd_L, R = pcond_Lap(L_av, q, Lap)
+            sp_L_iid_unif_tp[j] = nnz(sparse(R))
+            cnd_nb_iid_unif_tp[j] = cond(pcd_L)
 
-            sp_L_tp[j] = nnz(sparse(R))
-            sp_L_nl_tp[j] = nnz(sparse(R_nl))
-            sp_L_iid_unif_tp[j] = nnz(sparse(R_iid_unif))
-            sp_L_iid_lev_tp[j] = nnz(sparse(R_iid_lev))
+            # iid leverage score weighting
+            L_av = average_sparsifier_iid(rng, meta_g, lev, batch, i)
+            pcd_L, R = pcond_Lap(L_av, q, Lap)
+            sp_L_iid_lev_tp[j] = nnz(sparse(R))
+            cnd_nb_iid_lev_tp[j] = cond(pcd_L)
 
-            cnd_number_tp[j] = cond(precond_L)
-            cnd_number_no_lev_tp[j] = cond(precond_L_nl)
-            cnd_number_iid_unif_tp[j] = cond(precond_L_iid_unif)
-            cnd_number_iid_lev_tp[j] = cond(precond_L_iid_lev)
-
-            percent_edges_tp[j] = nb_of_edges(avgL) / m
-            percent_edges_iid[i] = nb_of_edges(avgL_iid_unif) / m
+            percent_edges_iid[i] = nb_of_edges(L_av) / m
         end
 
-        cnd_number[i] = mean(cnd_number_tp)
-        cnd_number_no_lev[i] = mean(cnd_number_no_lev_tp)
-        cnd_number_iid_unif[i] = mean(cnd_number_iid_unif_tp)
-        cnd_number_iid_lev[i] = mean(cnd_number_iid_lev_tp)
+        cnd_nb_dpp_unif[i] = mean(cnd_nb_dpp_unif_tp)
+        cnd_nb_dpp_lev[i] = mean(cnd_nb_dpp_lev_tp)
+        cnd_nb_iid_unif[i] = mean(cnd_nb_iid_unif_tp)
+        cnd_nb_iid_lev[i] = mean(cnd_nb_iid_lev_tp)
 
-        sp_L[i] = mean(sp_L_tp)
-        sp_L_nl[i] = mean(sp_L_nl_tp)
+        sp_L_dpp_unif[i] = mean(sp_L_dpp_unif_tp)
+        sp_L_dpp_lev[i] = mean(sp_L_dpp_lev_tp)
         sp_L_iid_unif[i] = mean(sp_L_iid_unif_tp)
         sp_L_iid_lev[i] = mean(sp_L_iid_lev_tp)
 
-        percent_edges[i] = mean(percent_edges_tp)
+        percent_edges_dpp[i] = mean(percent_edges_dpp_tp)
 
-        cnd_number_std[i] = std(cnd_number_tp)
-        cnd_number_no_lev_std[i] = std(cnd_number_no_lev_tp)
-        cnd_number_iid_unif_std[i] = std(cnd_number_iid_unif_tp)
-        cnd_number_iid_lev_std[i] = std(cnd_number_iid_lev_tp)
+        cnd_nb_dpp_unif_std[i] = std(cnd_nb_dpp_unif_tp)
+        cnd_nb_dpp_lev_std[i] = std(cnd_nb_dpp_lev_tp)
+        cnd_nb_iid_unif_std[i] = std(cnd_nb_iid_unif_tp)
+        cnd_nb_iid_lev_std[i] = std(cnd_nb_iid_lev_tp)
 
-        sp_L_std[i] = std(sp_L_tp)
-        sp_L_nl_std[i] = std(sp_L_nl_tp)
+        sp_L_dpp_unif_std[i] = std(sp_L_dpp_unif_tp)
+        sp_L_dpp_lev_std[i] = std(sp_L_dpp_lev_tp)
         sp_L_iid_unif_std[i] = std(sp_L_iid_unif_tp)
         sp_L_iid_lev_std[i] = std(sp_L_iid_lev_tp)
 
-        percent_edges_std[i] = std(percent_edges_tp)
+        percent_edges_dpp_std[i] = std(percent_edges_dpp_tp)
     end
 
     return Dict(
-        "cnd_number" => cnd_number,
-        "cnd_number_no_lev" => cnd_number_no_lev,
-        "cnd_number_iid_unif" => cnd_number_iid_unif,
-        "cnd_number_iid_lev" => cnd_number_iid_lev,
-        "sp_L" => sp_L,
-        "sp_L_nl" => sp_L_nl,
+        "cnd_nb_dpp_unif" => cnd_nb_dpp_unif,
+        "cnd_nb_dpp_lev" => cnd_nb_dpp_lev,
+        "cnd_nb_iid_unif" => cnd_nb_iid_unif,
+        "cnd_nb_iid_lev" => cnd_nb_iid_lev,
+        "sp_L_dpp_unif" => sp_L_dpp_unif,
+        "sp_L_dpp_lev" => sp_L_dpp_lev,
         "sp_L_iid_unif" => sp_L_iid_unif,
         "sp_L_iid_lev" => sp_L_iid_lev,
-        "percent_edges" => percent_edges,
-        "cnd_number_std" => cnd_number_std,
-        "cnd_number_no_lev_std" => cnd_number_no_lev_std,
-        "cnd_number_iid_unif_std" => cnd_number_iid_unif_std,
-        "cnd_number_iid_lev_std" => cnd_number_iid_lev_std,
-        "sp_L_std" => sp_L_std,
-        "sp_L_nl_std" => sp_L_nl_std,
+        "cnd_nb_dpp_unif_std" => cnd_nb_dpp_unif_std,
+        "cnd_nb_dpp_lev_std" => cnd_nb_dpp_lev_std,
+        "cnd_nb_iid_unif_std" => cnd_nb_iid_unif_std,
+        "cnd_nb_iid_lev_std" => cnd_nb_iid_lev_std,
+        "sp_L_dpp_unif_std" => sp_L_dpp_unif_std,
+        "sp_L_dpp_lev_std" => sp_L_dpp_lev_std,
         "sp_L_iid_unif_std" => sp_L_iid_unif_std,
         "sp_L_iid_lev_std" => sp_L_iid_lev_std,
-        "percent_edges_std" => percent_edges_std,
+        "percent_edges_dpp" => percent_edges_dpp,
+        "percent_edges_dpp_std" => percent_edges_dpp_std,
         "percent_edges_iid" => percent_edges_iid,
     )
 end
@@ -172,6 +175,9 @@ function benchmark_syncrank(meta_g, planted_ranking, n_batch, n_rep, rng)
     n = nv(meta_g)
     m = ne(meta_g)
 
+    # include edge weights in meta_g
+    normalize_meta_g!(meta_g)
+
     # parameters for benchmarking
     batch = Int(floor(n))
 
@@ -179,17 +185,23 @@ function benchmark_syncrank(meta_g, planted_ranking, n_batch, n_rep, rng)
     weighted = true
     singular = true
 
-    # full magnetic Laplacian
-    q = 0
+    # incidence matrix
     B = magnetic_incidence(meta_g)
+
+    # leverage score
+    q = 0
     lev = leverage_score(B, q)
-    L = B * B'
+
+    # full magnetic Laplacian
+    W = I # weight matrix
+    if weighted
+        e_weights = get_edges_prop(meta_g, :e_weight, true, 1.0)
+        W *= diagm(e_weights)
+    end
+    L = B * W * B'
 
     # normalization of L
     normalize_Lap!(L)
-
-    # include edge weights in meta_g
-    normalize_meta_g!(meta_g)
 
     # least eigenvector full Laplacian
     v = least_eigenvector(L; singular)

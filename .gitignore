@@ -2,6 +2,7 @@
 
 /notebooks/**
 !/notebooks/demo_eigen_CRSF_normalize.ipynb
+!/notebooks/demo_precond.ipynb
 
 tmp.jl
 
