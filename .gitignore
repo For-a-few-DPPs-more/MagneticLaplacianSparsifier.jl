@@ -3,6 +3,7 @@
 /notebooks/**
 !/notebooks/syncrank.ipynb
 !/notebooks/preconditioning.ipynb
+!/notebooks/real_graphs_preconditioning.ipynb
 
 tmp.jl
 
