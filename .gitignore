@@ -1,8 +1,8 @@
 .DS_Store
 
 /notebooks/**
-!/notebooks/demo_eigen_CRSF_normalize.ipynb
-!/notebooks/demo_precond.ipynb
+!/notebooks/syncrank.ipynb
+!/notebooks/preconditioning.ipynb
 
 tmp.jl
 
