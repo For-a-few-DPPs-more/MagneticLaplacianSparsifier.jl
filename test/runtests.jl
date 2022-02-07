@@ -16,6 +16,7 @@ const name_test_file = [
     "leverage_scores",
     "sparsifiers",
     "edge_statistics",
+    "syncrank",
 ]
 
 @testset verbose = true "MagneticLaplacianSparsifier.jl" begin
