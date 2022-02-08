@@ -13,7 +13,7 @@
 
         set_prop!(mtsf, :roots, roots)
 
-        vectors = cumulate_angles(mtsf)
+        vectors, _ = cumulate_angles(mtsf)
         v1 = vectors[1]
         v2 = vectors[2]
         angles1 = [0; 1; 2; 3; 3; 0; 0; 0]
@@ -43,7 +43,7 @@
         H = zeros(ComplexF64, n, n)
         for l in 1:n_rep
             mtsf = multi_type_spanning_forest(rng, meta_g, q)
-            vectors = cumulate_angles(mtsf)
+            vectors, _ = cumulate_angles(mtsf)
             for v in vectors
                 H += v * v'
             end
