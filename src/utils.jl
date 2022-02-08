@@ -171,7 +171,7 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng)
     )
 end
 
-function benchmark_syncrank(meta_g, planted_ranking, n_batch, n_rep, rng)
+function benchmark_syncrank(meta_g, planted_ranking_score, n_batch, n_rep, rng)
     n = nv(meta_g)
     m = ne(meta_g)
 
@@ -182,8 +182,8 @@ function benchmark_syncrank(meta_g, planted_ranking, n_batch, n_rep, rng)
     batch = Int(floor(n))
 
     # technical parameters
-    weighted = true
-    singular = true
+    weighted = true # normalized Laplacian is used
+    singular = true # all eigenpairs are computed for more stability
 
     # incidence matrix
     B = magnetic_incidence(meta_g)
@@ -208,6 +208,8 @@ function benchmark_syncrank(meta_g, planted_ranking, n_batch, n_rep, rng)
 
     # recovered ranking full Laplacian
     ranking_full = syncrank(L, meta_g; singular)
+
+    planted_ranking = ranking_from_score(planted_ranking_score)
     tau_full = corkendall(planted_ranking, ranking_full)
 
     rangebatch = 1:n_batch

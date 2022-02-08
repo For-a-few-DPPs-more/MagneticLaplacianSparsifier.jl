@@ -1,23 +1,106 @@
+@testset verbose = true "syncrank" begin
+    @testset "cumulate angles along tree" begin
+        n = 8
+        mtsf = MetaGraph(Graph(n))
+        t = 1
+        roots = [1; 6]
+        add_edge!(mtsf, 1, 2, :angle, t)
+        add_edge!(mtsf, 2, 3, :angle, t)
+        add_edge!(mtsf, 3, 4, :angle, t)
+        add_edge!(mtsf, 3, 5, :angle, t)
+        add_edge!(mtsf, 6, 7, :angle, t)
+        add_edge!(mtsf, 6, 8, :angle, t)
 
-@testset "cumulate angles along tree" begin
-    n = 8
-    mtsf = MetaGraph(Graph(n))
-    t1 = 1
-    t2 = 1
-    t3 = 1
-    t4 = 1
-    roots = [1; 6]
-    add_edge!(mtsf, 1, 2, :angle, t1)
-    add_edge!(mtsf, 2, 3, :angle, t2)
-    add_edge!(mtsf, 3, 4, :angle, t3)
-    add_edge!(mtsf, 3, 5, :angle, t4)
-    add_edge!(mtsf, 6, 7, :angle, t4)
-    add_edge!(mtsf, 6, 8, :angle, t4)
+        set_prop!(mtsf, :roots, roots)
 
-    set_prop!(mtsf, :roots, roots)
+        vectors = cumulate_angles(mtsf)
+        v1 = vectors[1]
+        v2 = vectors[2]
+        angles1 = [0; 1; 2; 3; 3; 0; 0; 0]
+        u1 = zeros(ComplexF64, n, 1)
+        u1[1:5] = exp.(im * angles1[1:5]) / sqrt(5)
+        u2 = zeros(ComplexF64, n, 1)
+        angles2 = [0; 0; 0; 0; 0; 0; 1; 1]
+        u2[6:8] = exp.(im * angles2[6:8]) / sqrt(3)
 
-    angles = cumulate_angles(mtsf)
+        @test norm(v1 - u1) < 1e-14
+        @test norm(v2 - u2) < 1e-14
+    end
+    @testset "MC estimator on toy graph" begin
+        n = 15
+        p = 0.9
+        eta = 0.1
+        rng = Random.default_rng()
+        meta_g = gen_graph_mun(rng, n, p, eta)
 
-    result = [0; -1; -2; -3; -3; 0; -1; -1]
-    @test norm(angles - result) < 1e-14
+        B = magnetic_incidence(meta_g)
+        L = B * B'
+
+        q = 2
+        H_target = q * inv(L + q * I)
+        n_rep = 10000
+
+        H = zeros(ComplexF64, n, n)
+        for l in 1:n_rep
+            mtsf = multi_type_spanning_forest(rng, meta_g, q)
+            vectors = cumulate_angles(mtsf)
+            for v in vectors
+                H += v * v'
+            end
+        end
+        H /= n_rep
+
+        @test norm(H_target - H) < 0.02
+    end
+    @testset "ranking from score" begin
+        score = [2 3 1]
+        ranking = ranking_from_score(score)
+        @test norm(vec(ranking) - vec([2 1 3])) < 1e-14
+    end
+
+    @testset "syncrank retrieves noiseless ranking" begin
+        rng = Random.default_rng()
+        # graph parameters
+        n = 10
+        p = 0.7
+        eta = 0.0
+        # planted ranking
+        planted_score = randperm(rng, n)
+        planted_ranking = ranking_from_score(planted_score)
+        # graph model
+        meta_g = gen_graph_mun(rng, n, p, eta; planted_score)
+        # unnormalized Laplacian
+        B = magnetic_incidence(meta_g)
+        L = B * B'
+        ranking = syncrank(L, meta_g)
+        @test corkendall(ranking, planted_ranking) > 0.999
+    end
+
+    @testset "least magnetic eigenvector noiseless case" begin
+        rng = Random.default_rng()
+
+        # graph parameters
+        n = 10
+        p = 0.7
+        eta = 0.0
+        # planted ranking
+        planted_score = randperm(rng, n)
+        planted_ranking = ranking_from_score(planted_score)
+        # graph model
+        type = "MUN"
+
+        if type == "MUN"
+            meta_g = gen_graph_mun(rng, n, p, eta; planted_score)
+        elseif type == "ERO"
+            meta_g = gen_graph_ero(rng, n, p, eta; planted_score)
+        end
+
+        B = magnetic_incidence(meta_g)
+        L = B * B'
+
+        temp = -planted_score * π / (n - 1)
+        y = exp.(im * temp)
+
+        @test abs(norm(L * y)) < 1e-10
+    end
 end

@@ -51,5 +51,8 @@ export multi_type_spanning_forest,
     eigenvec_dist,
     normalize_Lap!,
     normalize_meta_g!,
-    benchmark_syncrank
+    benchmark_syncrank,
+    cumulate_angles,
+    best_shift,
+    ranking_from_score
 end

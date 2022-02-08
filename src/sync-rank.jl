@@ -1,14 +1,14 @@
-angular_score(v) = angle.(v)
+angular_score(v) = mod.(angle.(v), 2 * pi)
 modulus_entries(v) = abs.(v)
 
-function nb_upsets(meta_g, ranking_score)
+function nb_upsets(meta_g, ranking)
     oriented = true
     upsets = 0
     for e in edges(meta_g)
         a = get_edge_prop(meta_g, e, :angle, oriented)
-        d = ranking_score[src(e)] - ranking_score[dst(e)]
+        d = ranking[src(e)] - ranking[dst(e)]
         # upset if score assignment contradicts the pairwise comparison
-        if sign(a) * sign(d) < 0
+        if sign(a) * sign(d) > 0
             upsets += 1
         end
     end
@@ -16,34 +16,40 @@ function nb_upsets(meta_g, ranking_score)
 end
 
 function syncrank(L, meta_g; singular=true)
-    n = nv(meta_g)
-
     # least eigenvector
     v = least_eigenvector(L; singular)
-    ranking_score = angular_score(v)
+    score = -angular_score(v)
+    p = ranking_from_score(score)
+    ranking = best_shift(p, meta_g)
+    return ranking
+end
 
+function ranking_from_score(score)
     # find permutation putting ranking_score in descending order
-    p = sortperm(vec(ranking_score); rev=true)
-
+    p = sortperm(vec(score); rev=true)
     # find inverse permutation containing score of each entry
     p = invperm(p)
+    return p
+end
 
+function best_shift(p, meta_g)
+    n = nv(meta_g)
     # best circular shift to minimize upsets
     upsets = ne(meta_g)
-    score = zeros(n, 1)
-    for shift in 0:n
-        # shift p by 'shift'
-        shifted_order = circshift(p, shift)
+    ranking = p
+    for shift in 0:(n - 1)
+        # shift ranking by 'shift'
+        shifted_ranking = mod.(p .+ shift, n) .+ 1
         # compute # of upsets
-        upsets_score = nb_upsets(meta_g, shifted_order)
+        upsets_score = nb_upsets(meta_g, shifted_ranking)
+
         if upsets_score <= upsets
             # if # of upsets is lower, update score
             upsets = upsets_score
-            score = shifted_order
+            ranking = shifted_ranking
         end
     end
-
-    return score
+    return ranking
 end
 
 function least_eigenvector(L; singular=true)
@@ -82,4 +88,42 @@ function normalize_meta_g!(meta_g)
         w = 1 / sqrt(deg_scr * deg_dst)
         set_prop!(meta_g, e, :e_weight, w)
     end
+end
+
+function cumulate_angles(mtsf)
+    n = nv(mtsf)
+    roots = get_prop(mtsf, :roots)
+    vectors = []
+    nb_nodes_in_trees = 0
+    for cc in connected_components(mtsf)
+        angles = zeros(Float64, n, 1)
+        tree, nodes = induced_subgraph(mtsf, cc)
+        for r in roots
+            if r in cc
+                s = 1
+                parents = bfs_parents(tree, s)
+                nb_nodes_in_trees += length(nodes)
+                for i in 1:length(parents)
+                    src_t = i
+                    tgt_t = parents[i]
+                    angle = 0
+                    while src_t !== s
+                        scr_node = nodes[src_t]
+                        tgt_node = nodes[tgt_t]
+                        theta = get_edge_prop(mtsf, Edge(scr_node, tgt_node), :angle)
+                        angle += theta
+                        src_t = tgt_t
+                        tgt_t = parents[src_t]
+                    end
+                    angles[nodes[i]] = angle
+                end
+            end
+        end
+        v = zeros(ComplexF64, n, 1)
+        v[nodes] = exp.(-im * angles[nodes])
+        v /= sqrt(length(nodes))
+        push!(vectors, v)
+    end
+    percent_nodes_in_trees = nb_nodes_in_trees / n
+    return vectors, percent_nodes_in_trees
 end
