@@ -101,6 +101,7 @@ function cumulate_angles(mtsf)
         for r in roots
             if r in cc
                 s = 1
+                # breadth first search
                 parents = bfs_parents(tree, s)
                 nb_nodes_in_trees += length(nodes)
                 for i in 1:length(parents)
