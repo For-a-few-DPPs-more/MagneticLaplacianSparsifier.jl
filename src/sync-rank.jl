@@ -18,18 +18,25 @@ end
 function syncrank(L, meta_g; singular=true)
     # least eigenvector
     v = least_eigenvector(L; singular)
-    score = -angular_score(v)
+    # entry uv of L is -exp(i * theta(u,v))
+    # with theta(u,v) approx h(u) - h(v) where h(u) is the score of node u
+    score = angular_score(v)
+    # since v(u) approx exp( i h(u) )
     p = ranking_from_score(score)
     ranking = best_shift(p, meta_g)
     return ranking
 end
 
 function ranking_from_score(score)
-    # find permutation putting ranking_score in descending order
+    # score is such that score[1] is the score of node 1
+    # we find permutation putting ranking_score in descending order
     p = sortperm(vec(score); rev=true)
+    # such that score[p[1]] > score[p[2]] > ...
+    #
     # find inverse permutation containing score of each entry
-    p = invperm(p)
-    return p
+    ranking = invperm(p)
+    # such that ranking[1] is the ranking of node 1, etc ...
+    return ranking
 end
 
 function best_shift(p, meta_g)
@@ -121,7 +128,7 @@ function cumulate_angles(mtsf)
             end
         end
         v = zeros(ComplexF64, n, 1)
-        v[nodes] = exp.(-im * angles[nodes])
+        v[nodes] = exp.(im * angles[nodes])
         v /= sqrt(length(nodes))
         push!(vectors, v)
     end

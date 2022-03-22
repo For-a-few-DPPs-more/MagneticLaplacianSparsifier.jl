@@ -18,10 +18,10 @@
         v2 = vectors[2]
         angles1 = [0; 1; 2; 3; 3; 0; 0; 0]
         u1 = zeros(ComplexF64, n, 1)
-        u1[1:5] = exp.(im * angles1[1:5]) / sqrt(5)
+        u1[1:5] = exp.(-im * angles1[1:5]) / sqrt(5)
         u2 = zeros(ComplexF64, n, 1)
         angles2 = [0; 0; 0; 0; 0; 0; 1; 1]
-        u2[6:8] = exp.(im * angles2[6:8]) / sqrt(3)
+        u2[6:8] = exp.(-im * angles2[6:8]) / sqrt(3)
 
         @test norm(v1 - u1) < 1e-14
         @test norm(v2 - u2) < 1e-14
@@ -50,7 +50,7 @@
         end
         H /= n_rep
 
-        @test norm(H_target - H) < 0.02
+        @test norm(H_target - H) < 0.03
     end
     @testset "ranking from score" begin
         score = [2 3 1]
@@ -85,7 +85,7 @@
         eta = 0.0
         # planted ranking
         planted_score = randperm(rng, n)
-        planted_ranking = ranking_from_score(planted_score)
+
         # graph model
         type = "MUN"
 
@@ -98,7 +98,7 @@
         B = magnetic_incidence(meta_g)
         L = B * B'
 
-        temp = -planted_score * π / (n - 1)
+        temp = planted_score * π / (n - 1)
         y = exp.(im * temp)
 
         @test abs(norm(L * y)) < 1e-10

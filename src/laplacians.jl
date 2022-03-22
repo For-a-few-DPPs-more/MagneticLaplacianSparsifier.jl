@@ -17,7 +17,8 @@ function magnetic_incidence_matrix(
 
     θ = get_edges_prop(graph, :angle, true, 0.0)
     w = @. exp(im * 0.5 * θ)
-    V = vcat(oriented ? -conj.(w) : w, w)
+    V = vcat(oriented ? -w : w, conj.(w))
+    # here different sign wrt paper but unimportant
     return sparse(I, J, V, n_v, n_e)
 end
 

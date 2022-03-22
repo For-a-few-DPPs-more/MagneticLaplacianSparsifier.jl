@@ -261,24 +261,25 @@ function benchmark_syncrank(meta_g, planted_ranking_score, n_batch, n_rep, rng)
     n = nv(meta_g)
     m = ne(meta_g)
 
-    # include edge weights in meta_g
+    # compute ground truth
+    planted_ranking = ranking_from_score(planted_ranking_score)
+
+    #  include edge weights in meta_g: w_{uv} = 1/sqrt{d(u)d(v)}
     normalize_meta_g!(meta_g)
 
     # parameters for benchmarking
     batch = Int(floor(n))
 
     # technical parameters
-    weighted = true # normalized Laplacian is used
+    weighted = true # weighted graph is used
+    extra_normalization = false # normalized Laplacian is used
     singular = true # all eigenpairs are computed for more stability
 
     # incidence matrix
     B = magnetic_incidence(meta_g)
 
-    # leverage score
-    q = 0
-    lev = leverage_score(B, q)
-
-    # full magnetic Laplacian
+    #######################################
+    # syncrank with full magnetic Laplacian
     W = I # weight matrix
     if weighted
         e_weights = get_edges_prop(meta_g, :e_weight, true, 1.0)
@@ -286,17 +287,26 @@ function benchmark_syncrank(meta_g, planted_ranking_score, n_batch, n_rep, rng)
     end
     L = B * W * B'
 
-    # normalization of L
-    normalize_Lap!(L)
+    # leverage score
+    q = 0
+    lev = leverage_score(B, q; W)
+
+    N = 0
+    if extra_normalization
+        normalize_Lap!(L)
+        Deg = Diagonal(L)
+        N = inv(sqrt(Deg))
+    end
 
     # least eigenvector full Laplacian
     v = least_eigenvector(L; singular)
 
     # recovered ranking full Laplacian
     ranking_full = syncrank(L, meta_g; singular)
-
-    planted_ranking = ranking_from_score(planted_ranking_score)
     tau_full = corkendall(planted_ranking, ranking_full)
+    #######################################
+
+    # start benchmarking
 
     rangebatch = 1:n_batch
 
@@ -340,6 +350,12 @@ function benchmark_syncrank(meta_g, planted_ranking_score, n_batch, n_rep, rng)
                 elseif method == "iid LS"
                     # iid leverage score with leverage score weighting
                     L_av = average_sparsifier_iid(rng, meta_g, lev, batch, t; weighted)
+                end
+
+                if extra_normalization
+                    # normalization step with N = inv(sqrt(Deg)) and Deg is the full degree matrix
+                    L_av = N * L_av * N
+                    #normalize_Lap!(L_av)
                 end
 
                 v_av = least_eigenvector(L_av; singular)
@@ -574,24 +590,24 @@ end
 #     )
 # end
 
-function syncrank(rng, meta_g, lev, q, t, planted_ranking, weighted, singular, method)
-    if method == "DPP unif"
-        L_av = average_sparsifier(rng, meta_g, nothing, q, t; weighted)
-    elseif method == "DPP lev"
-        L_av = average_sparsifier(rng, meta_g, lev, q, t; weighted)
-    elseif method == "iid unif"
-        L_av = average_sparsifier_iid(rng, meta_g, nothing, batch, t; weighted)
-    elseif method == "iid lev"
-        L_av = average_sparsifier_iid(rng, meta_g, lev, batch, t; weighted)
-    end
+# function syncrank(rng, meta_g, lev, q, t, planted_ranking, weighted, singular, method)
+#     if method == "DPP unif"
+#         L_av = average_sparsifier(rng, meta_g, nothing, q, t; weighted)
+#     elseif method == "DPP lev"
+#         L_av = average_sparsifier(rng, meta_g, lev, q, t; weighted)
+#     elseif method == "iid unif"
+#         L_av = average_sparsifier_iid(rng, meta_g, nothing, batch, t; weighted)
+#     elseif method == "iid lev"
+#         L_av = average_sparsifier_iid(rng, meta_g, lev, batch, t; weighted)
+#     end
 
-    v_av = least_eigenvector(L_av; singular)
-    err = eigenvec_dist(v, v_av)
+#     v_av = least_eigenvector(L_av; singular)
+#     err = eigenvec_dist(v, v_av)
 
-    ranking = syncrank(L_av, meta_g; singular)
-    tau = corkendall(planted_ranking, ranking)
+#     ranking = syncrank(L_av, meta_g; singular)
+#     tau = corkendall(planted_ranking, ranking)
 
-    percent_edges = nb_of_edges(L_av) / m
+#     percent_edges = nb_of_edges(L_av) / m
 
-    return err, tau, percent_edges
-end
+#     return err, tau, percent_edges
+# end
