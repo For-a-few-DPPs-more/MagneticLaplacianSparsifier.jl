@@ -53,6 +53,7 @@
         @test norm(H_target - H) < 0.03
     end
     @testset "projector well approximated" begin
+        rng = Random.default_rng()
         n = 50
         p = 0.9
         eta = 0.2
