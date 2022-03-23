@@ -125,12 +125,12 @@ function cumulate_angles(mtsf)
                     end
                     angles[nodes[i]] = angle
                 end
+                v = zeros(ComplexF64, n, 1)
+                v[nodes] = exp.(im * angles[nodes])
+                v /= sqrt(length(nodes))
+                push!(vectors, v)
             end
         end
-        v = zeros(ComplexF64, n, 1)
-        v[nodes] = exp.(im * angles[nodes])
-        v /= sqrt(length(nodes))
-        push!(vectors, v)
     end
     percent_nodes_in_trees = nb_nodes_in_trees / n
     return vectors, percent_nodes_in_trees

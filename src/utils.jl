@@ -42,7 +42,6 @@ end
 function pcond_Lap(avgL, q, Lap)
     avgL = (avgL + avgL') / 2
     R = cholesky(avgL + q * I).L
-    #pd_Lap = (avgL + q * I) \ (Lap + q * I)
     pd_Lap = R \ ((Lap + q * I) / R')
     return pd_Lap, R
 end
