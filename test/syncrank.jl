@@ -52,6 +52,53 @@
 
         @test norm(H_target - H) < 0.03
     end
+    @testset "projector well approximated" begin
+        n = 50
+        p = 0.9
+        eta = 0.2
+
+        q = 5
+
+        # planted ranking
+        planted_score = randperm(rng, n)
+        planted_ranking = ranking_from_score(planted_score)
+
+        # graph model
+        type = "ERO"
+
+        if type == "MUN"
+            meta_g = gen_graph_mun(rng, n, p, eta; planted_score)
+        elseif type == "ERO"
+            meta_g = gen_graph_ero(rng, n, p, eta; planted_score)
+        end
+
+        mtsf = multi_type_spanning_forest(rng, meta_g, q; weighted=false)
+
+        vectors, pc_nodes = cumulate_angles(mtsf)
+
+        P = zeros(n, n)
+        for u in vectors
+            P += u * u'
+        end
+
+        B_mtsf = magnetic_incidence(mtsf)
+        L_mtsf = B_mtsf * B_mtsf'
+
+        F = eigen(L_mtsf)
+        val = F.values
+
+        V = F.vectors
+
+        P_mtsf = zeros(n, n)
+        for l in 1:n
+            if val[l] < 1e-13
+                v = V[:, l]
+                P_mtsf += v * v'
+            end
+        end
+
+        @test norm(P_mtsf - P) < 1e-10
+    end
     @testset "ranking from score" begin
         score = [2 3 1]
         ranking = ranking_from_score(score)
