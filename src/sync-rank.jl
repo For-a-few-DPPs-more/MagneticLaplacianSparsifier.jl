@@ -15,6 +15,24 @@ function nb_upsets(meta_g, ranking)
     return upsets
 end
 
+function nb_upsets_in_top(meta_g, ranking, k)
+    oriented = true
+    upsets = 0
+    for e in edges(meta_g)
+        a = get_edge_prop(meta_g, e, :angle, oriented)
+        r_scr = ranking[src(e)]
+        r_dst = ranking[dst(e)]
+        if (r_scr <= k) && (r_dst <= k)
+            d = r_scr - r_dst
+            # upset if score assignment contradicts the pairwise comparison
+            if sign(a) * sign(d) > 0
+                upsets += 1
+            end
+        end
+    end
+    return upsets
+end
+
 function syncrank(L, meta_g; singular=true)
     # least eigenvector
     v = least_eigenvector(L; singular)
