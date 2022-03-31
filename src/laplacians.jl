@@ -8,7 +8,7 @@ function magnetic_incidence(graph; oriented::Bool=true)::Matrix{Complex{Float64}
 end
 
 function magnetic_incidence_matrix(
-    graph::AbstractGraph; oriented::Bool=true
+    graph::AbstractGraph; oriented::Bool=true, phases::Bool=true
 )::SparseMatrixCSC{Complex{Float64}}
     n_v, n_e = nv(graph), ne(graph)
 
@@ -17,6 +17,9 @@ function magnetic_incidence_matrix(
 
     θ = get_edges_prop(graph, :angle, true, 0.0)
     w = @. exp(im * 0.5 * θ)
+    if !phases
+        w = abs.(w)
+    end
     V = vcat(oriented ? -w : w, conj.(w))
     # here different sign wrt paper but unimportant
     return sparse(I, J, V, n_v, n_e)
@@ -27,14 +30,23 @@ function mtsf_edge_indices(mtsf, graph)
     return [i for (i, e) in enumerate(edges(graph)) if has_edge(mtsf, src(e), dst(e))]
 end
 
-function average_sparsifier(rng, meta_g, ls, q, nb_samples; weighted::Bool=false)
+function average_sparsifier(
+    rng,
+    meta_g,
+    ls,
+    q,
+    nb_samples;
+    weighted::Bool=false,
+    absorbing_node::Bool=false,
+    ust::Bool=false,
+)
     n = nv(meta_g)
     m = ne(meta_g)
-    sparseL = zeros(n, n)
+    L = zeros(n, n)
     w_tot = 0
 
     for _ in 1:nb_samples
-        mtsf = multi_type_spanning_forest(rng, meta_g, q; weighted)
+        mtsf = multi_type_spanning_forest(rng, meta_g, q; weighted, absorbing_node, ust)
         D = props(mtsf)
         w = D[:weight]
         w_tot += w
@@ -51,12 +63,50 @@ function average_sparsifier(rng, meta_g, ls, q, nb_samples; weighted::Bool=false
             W *= diagm(e_weights[ind_e])
         end
 
-        sparseL = sparseL + w * sparseB * W * sparseB'
+        L = L + w * sparseB * W * sparseB'
     end
-    sparseL = sparseL / w_tot
+    L = L / w_tot
 
-    return sparseL
+    return L
 end
+
+# function average_sparsifier!(
+#     L,
+#     rng,
+#     meta_g,
+#     ls,
+#     q,
+#     nb_samples;
+#     weighted::Bool=false,
+#     absorbing_node::Bool=false,
+#     ust::Bool=false,
+# )
+#     n = nv(meta_g)
+#     m = ne(meta_g)
+#     w_tot = 0
+
+#     for _ in 1:nb_samples
+#         mtsf = multi_type_spanning_forest(rng, meta_g, q; weighted, absorbing_node, ust)
+#         D = props(mtsf)
+#         w = D[:weight]
+#         w_tot += w
+#         sparseB = magnetic_incidence(mtsf; oriented=true)
+#         ind_e = mtsf_edge_indices(mtsf, meta_g)
+#         if ls === nothing
+#             nb_e = length(ind_e)
+#             W = I / (nb_e / m)
+#         else
+#             W = diagm(1 ./ ls[ind_e])
+#         end
+#         if weighted
+#             e_weights = get_edges_prop(meta_g, :e_weight, true, 1.0)
+#             W *= diagm(e_weights[ind_e])
+#         end
+
+#         L = L + w * sparseB * W * sparseB'
+#     end
+#     return L = L / w_tot
+# end
 
 function sample_subgraph_iid(rng, meta_g, ls, batch)
     n = nv(meta_g)
@@ -83,7 +133,7 @@ end
 function average_sparsifier_iid(rng, meta_g, ls, batch, nb_samples; weighted::Bool=false)
     n = nv(meta_g)
     m = ne(meta_g)
-    sparseL = zeros(n, n)
+    L = zeros(n, n)
     w_tot = 0
 
     for _ in 1:nb_samples
@@ -104,24 +154,61 @@ function average_sparsifier_iid(rng, meta_g, ls, batch, nb_samples; weighted::Bo
             W *= diagm(e_weights[ind_e])
         end
 
-        sparseL = sparseL + w * sparseB * W * sparseB'
+        L = L + w * sparseB * W * sparseB'
     end
-    sparseL = sparseL / w_tot
+    L = L / w_tot
 
-    return sparseL
+    return L
 end
 
+# function average_sparsifier_iid!(
+#     L, rng, meta_g, ls, batch, nb_samples; weighted::Bool=false
+# )
+#     n = nv(meta_g)
+#     m = ne(meta_g)
+#     L = zeros(n, n)
+#     w_tot = 0
+
+#     for _ in 1:nb_samples
+#         subgraph = sample_subgraph_iid(rng, meta_g, ls, batch)
+#         w = 1
+#         w_tot += w
+#         sparseB = magnetic_incidence(subgraph; oriented=true)
+#         ind_e = mtsf_edge_indices(subgraph, meta_g)
+#         if ls === nothing
+#             nb_e = length(ind_e)
+#             W = I / (nb_e / m)
+#         else
+#             W = diagm(1 ./ ls[ind_e])
+#         end
+
+#         if weighted
+#             e_weights = edge_weights(meta_g)
+#             W *= diagm(e_weights[ind_e])
+#         end
+
+#         L = L + w * sparseB * W * sparseB'
+#     end
+#     return L = L / w_tot
+# end
+
 function leverage_score(B, q; W=I)
-    levScores = real(diag(W * B' * ((B * W * B' + q * I) \ B)))
+    if q > 1e-13
+        levScores = real(diag(W * B' * ((B * W * B' + q * I) \ B)))
+    else
+        levScores = real(diag(W * B' * pinv(B * W * B' + q * I) * B))
+    end
 
     return levScores
 end
 
-function emp_leverage_score(rng, meta_g, q, t; weighted::Bool=false)
+function emp_leverage_score(
+    rng, meta_g, q, t; weighted::Bool=false, absorbing_node::Bool=false, ust::Bool=false
+)
     m = ne(meta_g)
     emp_lev = zeros(m, 1)
     for _ in 1:t
-        mtsf = multi_type_spanning_forest(rng, meta_g, q; weighted)
+        mtsf = multi_type_spanning_forest(rng, meta_g, q; weighted, absorbing_node, ust)
         ind_e = mtsf_edge_indices(mtsf, meta_g)
         emp_lev[ind_e] = emp_lev[ind_e] .+ 1
     end
