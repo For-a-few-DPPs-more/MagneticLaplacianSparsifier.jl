@@ -5,6 +5,7 @@ using Random
 using LinearAlgebra
 using SparseArrays
 using StatsBase
+using Plots
 
 using MagneticLaplacianSparsifier: getRNG
 
