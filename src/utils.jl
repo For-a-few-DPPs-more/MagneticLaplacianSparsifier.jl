@@ -461,7 +461,7 @@ function benchmark_syncrank(meta_g, planted_ranking_score, n_batch, n_rep, rng)
     return D_all
 end
 
-function plot_comparison(metric::String, D_all)
+function plot_comparison(metric::String, D_all;y_limits,legendposition::Symbol=:bottomright)
     metric_std = metric * "_std"
 
     method = "DPP unif"
@@ -566,7 +566,6 @@ function plot_comparison(metric::String, D_all)
         markerstrokecolor=:auto,
         markersize=5,
         markershape=:dtriangle,
-        legend=:bottomright,
         linewidth=2,
         markerstrokewidth=2,
         framestyle=:box,
@@ -589,19 +588,19 @@ function plot_comparison(metric::String, D_all)
         markerstrokecolor=:auto,
         markersize=5,
         markershape=:octagon,
-        legend=:bottomright,
         linewidth=2,
         markerstrokewidth=2,
         framestyle=:box,
         margins=0.1 * 2Plots.cm,
+        legend=legendposition,
     )
 
     xlabel!("percentage of edges")
+    ylims!(y_limits)
 
     if metric === "err"
         ylabel!("Distance between eigenvectors")
         yaxis!(:log)
-        ylims!((1.3 * 1e-2, 1.4))
 
     elseif metric === "tau"
         x = D["percent_edges"]
@@ -613,22 +612,6 @@ function plot_comparison(metric::String, D_all)
         ylabel!("number of upsets in top 10 ")
 
     elseif metric === "spear"
-        Plots.plot!(
-            x,
-            y;
-            xerror=x_er,
-            yerror=y_er,
-            labels=method,
-            markerstrokecolor=:auto,
-            markersize=5,
-            markershape=:octagon,
-            legend=:bottomright,
-            linewidth=2,
-            markerstrokewidth=2,
-            framestyle=:box,
-            margins=0.1 * 2Plots.cm,
-        )
-
         x = D["percent_edges"]
         y = D["spear_full"] * ones(size(x))
         Plots.plot!(x, y; labels="full")
