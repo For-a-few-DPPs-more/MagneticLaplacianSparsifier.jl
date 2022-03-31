@@ -5,7 +5,12 @@ function multi_type_spanning_forest(g::MetaGraph{T,U}, q::Real)::MetaGraph{T,U} 
 end
 
 function multi_type_spanning_forest(
-    rng::Random.AbstractRNG, g::MetaGraph{T,U}, q::Real; weighted::Bool=false
+    rng::Random.AbstractRNG,
+    g::MetaGraph{T,U},
+    q::Real;
+    weighted::Bool=false,
+    absorbing_node::Bool=false,
+    ust::Bool=false,
 )::MetaGraph{T,U} where {T,U}
     # Initialize the multi type spanning forest
     mtsf = MetaGraph{T,U}(nv(g))
@@ -19,15 +24,25 @@ function multi_type_spanning_forest(
     walk = T[]
     unvisited = Set{T}(vertices(g))
 
+    #fix a root if necessary
+    if absorbing_node
+        ab_node = rand(rng, unvisited)
+        push!(roots, ab_node)
+        setdiff!(unvisited, ab_node)
+        nv_mtsf += 1
+    end
+
     # Start the random walk
     n0 = rand(rng, unvisited)
     push!(walk, n0)
     setdiff!(unvisited, n0)
 
     while nv_mtsf < nv(g)
-
-        #n0_is_root = rand(rng) < q / (q + degree(g, n0))
-        n0_is_root = step_to_root(rng, g, n0, q, weighted)
+        n0_is_root = false
+        if q > 1e-10
+            #n0_is_root = rand(rng) < q / (q + degree(g, n0))
+            n0_is_root = step_to_root(rng, g, n0, q, weighted)
+        end
 
         if n0_is_root
             push!(roots, n0)
@@ -51,7 +66,7 @@ function multi_type_spanning_forest(
             setdiff!(unvisited, n1)
             n0 = n1  # continue the walk
 
-        elseif degree(mtsf, n1) > 0 || n1 in roots
+        elseif (degree(mtsf, n1) > 0 || n1 in roots) || (n1 in roots && ust)
             add_edges_from!(mtsf, consecutive_pairs(walk))
             nv_mtsf += length(walk) - 1
             setdiff!(unvisited, walk)
@@ -63,9 +78,13 @@ function multi_type_spanning_forest(
         else  # if n1 in walk: identify unique cycle/loop in walk with knot n1
             idx_n1 = findfirst(x -> x == n1, walk)
             cycle_nodes = @view walk[idx_n1:end]
-            keep, alpha = keep_cycle(rng, g, consecutive_pairs(cycle_nodes))
+            keep = false
+            alpha = 0
+            if !ust
+                keep, alpha = keep_cycle(rng, g, consecutive_pairs(cycle_nodes))
+            end
 
-            if keep  # cycle
+            if keep # cycle
                 weight *= max(alpha, 1)
                 add_edges_from!(mtsf, consecutive_pairs(walk))
                 nv_mtsf += length(walk) - 1 # since walk contains twice the knot
