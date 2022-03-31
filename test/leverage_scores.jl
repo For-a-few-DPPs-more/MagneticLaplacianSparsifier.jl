@@ -1,4 +1,4 @@
-@testset verbose = true "Leverage scores approximation" begin
+@testset verbose = true "Leverage scores approximation (magnetic case)" begin
     n = 20
     p = 0.5
     eta = 0.3
@@ -24,6 +24,31 @@
         q = 1
         emp_lev = emp_leverage_score(rng, meta_g, q, nb_samples)
         lev = leverage_score(B, q)
+
+        relative_error = (norm(emp_lev - lev) / norm(lev))
+        print("relative_error: ", relative_error, "\n")
+        @test relative_error < 0.05
+    end
+end
+
+@testset verbose = true "Leverage scores approximation (UST case)" begin
+    n = 20
+    p = 0.5
+    eta = 0.0
+
+    rng = getRNG()
+    meta_g = gen_graph_mun(rng, n, p, eta)
+    B_ust = Matrix(magnetic_incidence_matrix(meta_g; oriented=true, phases=false))
+
+    nb_samples = 100000
+    @testset " ust " begin
+        rng = getRNG()
+        q = 0
+        emp_lev = emp_leverage_score(
+            rng, meta_g, q, nb_samples; weighted=false, absorbing_node=true, ust=true
+        )
+
+        lev = leverage_score(B_ust, q)
 
         relative_error = (norm(emp_lev - lev) / norm(lev))
         print("relative_error: ", relative_error, "\n")
