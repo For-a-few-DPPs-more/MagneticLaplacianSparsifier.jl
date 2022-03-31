@@ -10,6 +10,7 @@ using Arpack
 using Statistics
 using Measures
 using StatsBase
+using Plots
 
 using IterTools: partition
 
@@ -54,5 +55,12 @@ export multi_type_spanning_forest,
     benchmark_syncrank,
     cumulate_angles,
     best_shift,
-    ranking_from_score
+    ranking_from_score,
+    timings_cond_numbers,
+    number_of_upsets_in_top,
+    gen_graph_mun_basic,
+    gen_graph_ero_basic,
+    ero_mun,
+    ero_mun_sbm,
+    plot_comparison
 end
