@@ -43,10 +43,18 @@ function average_sparsifier(
     n = nv(meta_g)
     m = ne(meta_g)
     L = zeros(n, n)
+    nb_cycles = zeros(nb_samples, 1)
+    nb_roots = zeros(nb_samples, 1)
     w_tot = 0
 
-    for _ in 1:nb_samples
+    for i_sample in 1:nb_samples
         mtsf = multi_type_spanning_forest(rng, meta_g, q; weighted, absorbing_node, ust)
+        # check nb roots and cycles
+        cycles = get_prop(mtsf, :cycle_nodes)
+        nb_cycles[i_sample] = length(cycles)
+        roots = get_prop(mtsf, :roots)
+        nb_roots[i_sample] = length(roots)
+
         D = props(mtsf)
         w = D[:weight]
         w_tot += w
@@ -65,9 +73,12 @@ function average_sparsifier(
 
         L = L + w * sparseB * W * sparseB'
     end
+    nb_sampled_cycles = sum(nb_cycles)
+    nb_sampled_roots = sum(nb_roots)
+
     L = L / w_tot
 
-    return L
+    return L, nb_sampled_cycles, nb_sampled_roots
 end
 
 # function average_sparsifier!(
