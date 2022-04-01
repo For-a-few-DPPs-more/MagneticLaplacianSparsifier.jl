@@ -57,6 +57,8 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q)
     Lap = B * B'
     lev = leverage_score(B, q)
 
+    cdL = cond(Lap + q * I)
+
     B_ust = magnetic_incidence_matrix(meta_g; oriented=true, phases=false)
     lev_ust = leverage_score(Matrix(B_ust), 0)
 
@@ -189,6 +191,8 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q)
             cycles_std[i] = std(cycles_tp)
         end
         D = Dict(
+            "cdL" => cdL,
+            #
             "cnd" => cnd,
             #
             "cnd_std" => cnd_std,
@@ -684,9 +688,11 @@ function plot_comparison_sync(
     end
 end
 
-function plot_comparison_cond(D_all, cdL; legendposition::Symbol=:bottomright)
+function plot_comparison_cond(D_all, y_limits; legendposition::Symbol=:bottomright)
     method = "DPP unif"
     D = D_all[method]
+
+    cdL = D["cdL"]
 
     x = D["percent_edges"]
     y = D["cnd"]
@@ -831,7 +837,7 @@ function plot_comparison_cond(D_all, cdL; legendposition::Symbol=:bottomright)
         legend=legendposition,
     )
 
-    ylims!((1e0, 2 * cdL))
+    ylims!(y_limits)
     # foldername = "figures/"
     # type = "precond"
     # name = type*"n"*string(n)*"p"*string(p)*"eta"*string(eta)*"q"*string(q)*".pdf"
