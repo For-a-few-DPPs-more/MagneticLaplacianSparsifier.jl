@@ -46,7 +46,7 @@ function pcond_Lap(avgL, q, Lap)
     return pd_Lap, R
 end
 
-function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q)
+function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q,methods=nothing)
     m = ne(meta_g)
     n = nv(meta_g)
     batch = n
@@ -57,16 +57,19 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q)
     Lap = B * B'
     lev = leverage_score(B, q)
 
-    cdL = cond(Lap + q * I)
+    cdL = cond(Lap + q_system * I)
 
     B_ust = magnetic_incidence_matrix(meta_g; oriented=true, phases=false)
     lev_ust = leverage_score(Matrix(B_ust), 0)
 
-    methods = ["DPP unif", "DPP LS", "iid unif", "iid LS", "UST unif", "UST LS"]
+    if methods===nothing
+        methods = ["DPP unif", "DPP LS", "iid unif", "iid LS", "UST unif", "UST LS"]
+    end
+
     D_all = Dict()
 
     for method in methods
-
+        println(method)
         # initialization
         cnd = zeros(n_tot, 1)
         sp_L = zeros(n_tot, 1)
@@ -310,10 +313,10 @@ end
 #     return D_all
 # end
 
-function benchmark_syncrank(meta_g, planted_ranking_score, n_batch, n_rep, rng)
+function benchmark_syncrank(meta_g, planted_ranking_score, n_batch, n_rep, rng;methods=nothing)
     n = nv(meta_g)
     m = ne(meta_g)
-
+    println("start")
     #
     # compute ground truth
     planted_ranking = ranking_from_score(planted_ranking_score)
@@ -344,6 +347,7 @@ function benchmark_syncrank(meta_g, planted_ranking_score, n_batch, n_rep, rng)
     L = B * W * B'
 
     # leverage scores
+    println("computing leverage scores")
     q = 0
     lev = leverage_score(B, q; W)
     lev_ust = leverage_score(Matrix(B_ust), q; W)
@@ -368,10 +372,13 @@ function benchmark_syncrank(meta_g, planted_ranking_score, n_batch, n_rep, rng)
 
     rangebatch = 1:n_batch
 
-    methods = ["DPP unif", "DPP LS", "iid unif", "iid LS", "UST unif", "UST LS"]
+    if methods===nothing
+        methods = ["DPP unif", "DPP LS", "iid unif", "iid LS", "UST unif", "UST LS"]
+    end
     D_all = Dict()
 
     for method in methods
+        println(method)
 
         # initialization
         err = zeros(size(rangebatch))
