@@ -28,7 +28,7 @@
         B = magnetic_incidence(meta_g; oriented=true)
         L = B * B'
         lev = leverage_score(B, q)
-        avgL = average_sparsifier(rng, meta_g, lev, q, 10)
+        avgL, _, _ = average_sparsifier(rng, meta_g, lev, q, 10)
         relative_error = norm(avgL - L) / norm(L)
         @test relative_error < 0.4
     end
@@ -44,7 +44,7 @@
         B = magnetic_incidence(meta_g; oriented=true)
         L = B * B'
         lev = leverage_score(B, q)
-        avgL = average_sparsifier(rng, meta_g, lev, q, 10)
+        avgL, _, _ = average_sparsifier(rng, meta_g, lev, q, 10)
         relative_error = norm(avgL - L) / norm(L)
         @test relative_error < 0.4
     end
