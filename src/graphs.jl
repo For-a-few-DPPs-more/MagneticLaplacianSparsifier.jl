@@ -1,15 +1,15 @@
 # Following M. Cucuringu to build comparison graph
 # SYNC-RANK: ROBUST RANKING, CONSTRAINED RANKING AND RANK AGGREGATION VIA EIGENVECTOR AND SDP SYNCHRONIZATION
 # Multiplicative Uniform Noise model
-function gen_graph_mun(rng, n, p, eta; planted_score=nothing)
-    return erdos_renyi(rng, n, p, eta, :mun; planted_score)
+function gen_graph_mun(rng, n, p, eta; planted_score=nothing, scaling=1)
+    return erdos_renyi(rng, n, p, eta, :mun; planted_score, scaling)
 end
 
 # Following M. Cucuringu to build comparison graph
 # SYNC-RANK: ROBUST RANKING, CONSTRAINED RANKING AND RANK AGGREGATION VIA EIGENVECTOR AND SDP SYNCHRONIZATION
 # Erdos-Renyi Outliers model
-function gen_graph_ero(rng, n, p, eta; planted_score=nothing)
-    return erdos_renyi(rng, n, p, eta, :ero; planted_score)
+function gen_graph_ero(rng, n, p, eta; planted_score=nothing, scaling=1)
+    return erdos_renyi(rng, n, p, eta, :ero; planted_score, scaling)
 end
 
 function erdos_renyi(
@@ -19,10 +19,11 @@ function erdos_renyi(
     η::Real,
     model::Symbol;
     planted_score=nothing,
+    scaling::Real=1.0,
 )
     m = div(nv * (nv - 1), 2)
     ne = rand(rng, Binomial(m, p)) # nb of edges is a sum of m Bernoulli's of parameter p.
-    return erdos_renyi(rng, nv, ne, η, model; planted_score)
+    return erdos_renyi(rng, nv, ne, η, model; planted_score, scaling)
 end
 
 function erdos_renyi(
@@ -32,6 +33,7 @@ function erdos_renyi(
     η::Real,
     model::Symbol;
     planted_score=nothing,
+    scaling::Real=1.0,
 )::AbstractMetaGraph
     g = MetaGraph(n_v)
     # convention: ranking score of node i is r_i = score[i]
@@ -50,6 +52,7 @@ function erdos_renyi(
             elseif model === :mun # Multiplicative Uniform Noise
                 θ *= 1.0 + η * 2 * (rand(rng) - 0.5)
             end
+            θ *= scaling
             add_edge!(g, u, v, :angle, θ)
         end
     end
@@ -63,6 +66,7 @@ function ero_mun(
     η::Real,
     noise::Real;
     planted_score=nothing,
+    scaling::Real=1.0,
 )::AbstractMetaGraph
     g = MetaGraph(n_v)
 
@@ -84,6 +88,7 @@ function ero_mun(
             else
                 θ *= 1.0 + noise * 2 * (rand(rng) - 0.5)
             end
+            θ *= scaling
             add_edge!(g, u, v, :angle, θ)
         end
     end
@@ -98,6 +103,7 @@ function ero_mun_sbm(
     η::Real,
     noise::Real;
     planted_score=nothing,
+    scaling::Real=1.0,
 )::AbstractMetaGraph
     g = MetaGraph(n_v)
 
@@ -124,6 +130,7 @@ function ero_mun_sbm(
                     else
                         θ *= 1.0 + noise * 2 * (rand(rng) - 0.5)
                     end
+                    θ *= scaling
                     add_edge!(g, u, v, :angle, θ)
                 end
             end
@@ -132,7 +139,7 @@ function ero_mun_sbm(
     return g
 end
 
-function gen_graph_mun_basic(n, p, eta)
+function gen_graph_mun_basic(n, p, eta; scaling=1)
     # Following M. Cucuringu to build comparison graph
     # SYNC-RANK: ROBUST RANKING, CONSTRAINED RANKING AND RANK AGGREGATION VIA EIGENVECTOR AND SDP SYNCHRONIZATION
     # Multiplicative Uniform Noise model
@@ -151,7 +158,7 @@ function gen_graph_mun_basic(n, p, eta)
                     add_edges_from!(meta_g, edges)
 
                     err = eta * rand(1)[1]
-                    a = pi * (i - j) * (1 + err) / (n - 1)
+                    a = scaling * pi * (i - j) * (1 + err) / (n - 1)
 
                     for e in edges
                         set_prop!(meta_g, Edge(e), :angle, a)
@@ -164,7 +171,7 @@ function gen_graph_mun_basic(n, p, eta)
     return meta_g
 end
 
-function gen_graph_ero_basic(n, p, eta)
+function gen_graph_ero_basic(n, p, eta; scaling=1)
     # Following M. Cucuringu to build comparison graph
     # SYNC-RANK: ROBUST RANKING, CONSTRAINED RANKING AND RANK AGGREGATION VIA EIGENVECTOR AND SDP SYNCHRONIZATION
     # Erdos-Renyi Outliers model
@@ -187,7 +194,7 @@ function gen_graph_ero_basic(n, p, eta)
                     else
                         err = (n - 1) * rand(1)[1]
                     end
-                    a = pi * (i - j + err) / (n - 1)
+                    a = scaling * pi * (i - j + err) / (n - 1)
                     for e in edges
                         set_prop!(meta_g, Edge(e), :angle, a)
                     end
