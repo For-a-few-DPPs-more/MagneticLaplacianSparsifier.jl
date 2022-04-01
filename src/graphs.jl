@@ -205,3 +205,58 @@ function gen_graph_ero_basic(n, p, eta; scaling=1)
 
     return meta_g
 end
+
+
+function gen_graph_cliques(rng,n,noise;planted_score=nothing)
+    n_v = 2*n
+    g = Graph(n_v)
+    meta_g = MetaGraph(g)
+
+    # convention: ranking score of node i is r_i = score[i]
+    if planted_score === nothing
+        planted_score = collect(1:n_v)
+    end
+
+    # first clique
+    for u=1:n
+        for v=1:n
+            if u < v
+                e = [u v]
+                edges = consecutive_pairs(e)
+                add_edges_from!(meta_g, edges)
+
+                h_u = planted_score[u]
+                h_v = planted_score[v]
+                θ = (h_u - h_v) * π / (n_v - 1)
+                θ *= 1.0 + noise * 2 * (rand(rng) - 0.5)
+            end
+        end
+    end
+    # bottleneck
+    u = n
+    v = n + 1
+    e = [u v]
+    edges = consecutive_pairs(e)
+    add_edges_from!(meta_g, edges)
+    h_u = planted_score[u]
+    h_v = planted_score[v]
+    θ = (h_u - h_v) * π / (n_v - 1)
+    θ *= 1.0 + noise * 2 * (rand(rng) - 0.5)
+
+    # second clique
+    for u=(n+1):(2*n)
+        for v=(n+1):(2*n)
+            if u < v
+                e = [u v]
+                edges = consecutive_pairs(e)
+                add_edges_from!(meta_g, edges)
+
+                h_u = planted_score[u]
+                h_v = planted_score[v]
+                θ = (h_u - h_v) * π / (n_v - 1)
+                θ *= 1.0 + noise * 2 * (rand(rng) - 0.5)
+            end
+        end
+    end
+    return meta_g
+end
