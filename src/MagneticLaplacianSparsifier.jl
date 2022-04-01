@@ -65,5 +65,6 @@ export multi_type_spanning_forest,
     plot_comparison_sync,
     plot_comparison_cond,
     plot_nb_cycles,
-    plot_nb_roots
+    plot_nb_roots,
+    gen_graph_cliques
 end
