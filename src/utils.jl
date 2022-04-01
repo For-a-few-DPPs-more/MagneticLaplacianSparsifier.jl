@@ -524,7 +524,7 @@ function benchmark_syncrank(meta_g, planted_ranking_score, n_batch, n_rep, rng)
     return D_all
 end
 
-function plot_comparison(
+function plot_comparison_sync(
     metric::String, D_all, y_limits; legendposition::Symbol=:bottomright
 )
     metric_std = metric * "_std"
@@ -682,4 +682,233 @@ function plot_comparison(
         Plots.plot!(x, y; labels="full")
         ylabel!("Spearman")
     end
+end
+
+function plot_comparison_cond(D_all, cdL; legendposition::Symbol=:bottomright)
+    method = "DPP unif"
+    D = D_all[method]
+
+    x = D["percent_edges"]
+    y = D["cnd"]
+    y_er = D["cnd_std"]
+
+    plot(
+        x,
+        y;
+        yerror=y_er,
+        xlabel="fraction of edges",
+        yaxis=:log,
+        labels=method,
+        markerstrokecolor=:auto,
+        markershape=:xcross,
+        markersize=5,
+        xtickfont=font(13),
+        ytickfont=font(13),
+        guidefont=font(13),
+        legendfont=font(13),
+        linewidth=2,
+        markerstrokewidth=2,
+    )
+
+    method = "DPP LS"
+    D = D_all[method]
+
+    x = D["percent_edges"]
+    y = D["cnd"]
+    y_er = D["cnd_std"]
+
+    plot!(
+        x,
+        y;
+        yerror=y_er,
+        yaxis=:log,
+        labels=method,
+        markerstrokecolor=:auto,
+        markershape=:circle,
+        markersize=5,
+        linewidth=2,
+        markerstrokewidth=2,
+    )
+
+    method = "iid unif"
+    D = D_all[method]
+
+    x = D["percent_edges"]
+    y = D["cnd"]
+    y_er = D["cnd_std"]
+
+    plot!(
+        x,
+        y;
+        yerror=y_er,
+        yaxis=:log,
+        labels=method,
+        markerstrokecolor=:auto,
+        markershape=:rtriangle,
+        markersize=5,
+        linestyle=:dash,
+        linewidth=2,
+        markerstrokewidth=2,
+    )
+
+    method = "iid LS"
+    D = D_all[method]
+
+    x = D["percent_edges"]
+    y = D["cnd"]
+    y_er = D["cnd_std"]
+
+    plot!(
+        x,
+        y;
+        yerror=y_er,
+        yaxis=:log,
+        labels=method,
+        markerstrokecolor=:auto,
+        markershape=:utriangle,
+        markersize=5,
+        linestyle=:dash,
+        linewidth=2,
+        markerstrokewidth=2,
+    )
+
+    method = "UST unif"
+    D = D_all[method]
+
+    x = D["percent_edges"]
+    y = D["cnd"]
+    y_er = D["cnd_std"]
+
+    plot!(
+        x,
+        y;
+        yerror=y_er,
+        yaxis=:log,
+        labels=method,
+        markerstrokecolor=:auto,
+        markershape=:dtriangle,
+        markersize=5,
+        linewidth=2,
+        markerstrokewidth=2,
+    )
+
+    method = "UST LS"
+    D = D_all[method]
+
+    x = D["percent_edges"]
+    y = D["cnd"]
+    y_er = D["cnd_std"]
+
+    plot!(
+        x,
+        y;
+        yerror=y_er,
+        yaxis=:log,
+        labels=method,
+        markerstrokecolor=:auto,
+        markershape=:octagon,
+        markersize=5,
+        linewidth=2,
+        markerstrokewidth=2,
+    )
+
+    x = D["percent_edges"]
+    y = cdL * ones(size(x))
+    plot!(
+        x,
+        y;
+        labels="no precond.",
+        ylabel="condition number",
+        xtickfontsize=13,
+        ytickfontsize=13,
+        xguidefontsize=13,
+        yguidefontsize=13,
+        legendfontsize=10,
+        linewidth=2,
+        framestyle=:box,
+        margins=0.1 * 2Plots.cm,
+        markerstrokewidth=2,
+        legend=legendposition,
+    )
+
+    ylims!((1e0, 2 * cdL))
+    # foldername = "figures/"
+    # type = "precond"
+    # name = type*"n"*string(n)*"p"*string(p)*"eta"*string(eta)*"q"*string(q)*".pdf"
+    # savefig(foldername*name)
+end
+
+function plot_nb_cycles(D_all, method; legendposition=:topleft)
+    D = D_all[method]
+
+    x = D["percent_edges"]
+    y = D["cycles"]
+    y_err = D["cycles_std"]
+
+    n_batch = length(x)
+
+    plot(
+        x,
+        y;
+        ribbon=y_err,
+        labels="average number of unicycles",
+        xlabel="percentage of edges",
+        markersize=5,
+        markershape=:circle,
+        markerstrokecolor=:auto,
+        linewidth=2,
+        markerstrokewidth=2,
+        xtickfont=font(13),
+        ytickfont=font(13),
+        guidefont=font(13),
+        legendfont=font(13),
+        framestyle=:box,
+        margins=0.1 * 2cm,
+    )
+    # baseline
+    plot!(
+        x,
+        1:n_batch;
+        linewidth=2,
+        labels="minimum number of unicycles",
+        legend=legendposition,
+    )
+    # end
+end
+
+function plot_nb_roots(D_all, method; legendposition=:topleft)
+    D = D_all[method]
+
+    x = D["percent_edges"]
+    y = D["roots"]
+    y_err = D["roots_std"]
+
+    n_batch = length(x)
+
+    plot(
+        x,
+        y;
+        ribbon=y_err,
+        xlabel="percentage of edges",
+        labels="average number of roots",
+        markersize=5,
+        markershape=:circle,
+        markerstrokecolor=:auto,
+        linewidth=2,
+        markerstrokewidth=2,
+        xtickfont=font(13),
+        ytickfont=font(13),
+        guidefont=font(13),
+        legendfont=font(13),
+        framestyle=:box,
+        margins=0.1 * 2cm,
+    )
+    # baseline
+    plot!(
+        x, 1:n_batch;
+        linewidth=2,
+        labels="minimum number of roots",
+        legend=legendposition
+    )
+    # end
 end

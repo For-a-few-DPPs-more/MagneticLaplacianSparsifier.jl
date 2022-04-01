@@ -62,5 +62,8 @@ export multi_type_spanning_forest,
     gen_graph_ero_basic,
     ero_mun,
     ero_mun_sbm,
-    plot_comparison
+    plot_comparison_sync,
+    plot_comparison_cond,
+    plot_nb_cycles,
+    plot_nb_roots
 end
