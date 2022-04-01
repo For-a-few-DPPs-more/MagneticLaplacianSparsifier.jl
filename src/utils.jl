@@ -70,11 +70,15 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q)
         sp_L = zeros(n_tot, 1)
         timing = zeros(n_tot, 1)
         percent_edges = zeros(n_tot, 1)
+        cycles = zeros(n_tot, 1)
+        roots = zeros(n_tot, 1)
 
         cnd_std = zeros(n_tot, 1)
         sp_L_std = zeros(n_tot, 1)
         timing_std = zeros(n_tot, 1)
         percent_edges_std = zeros(n_tot, 1)
+        roots_std = zeros(n_tot, 1)
+        cycles_std = zeros(n_tot, 1)
 
         for i in 1:n_tot
 
@@ -83,21 +87,31 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q)
             sp_L_tp = zeros(n_rep, 1)
             time_tp = zeros(n_rep, 1)
             percent_edges_tp = zeros(n_rep, 1)
+            roots_tp = zeros(n_rep, 1)
+            cycles_tp = zeros(n_rep, 1)
 
             for j in 1:n_rep
                 L_av = zeros(n, n)
                 time = 0
+                n_cls = 0
+                n_rts = 0
                 if method == "DPP unif"
                     # DPP uniform weighting
                     # L_av = average_sparsifier(rng, meta_g, nothing, q, i; weighted)
                     vec = @timed average_sparsifier(rng, meta_g, nothing, q, i; weighted)
-                    L_av = vec[1]
+                    out = vec[1]
+                    L_av = out[1]
+                    n_cls = out[2]
+                    n_rts = out[3]
                     time = vec[2]
                 elseif method == "DPP LS"
                     # DPP leverage score weighting
                     # L_av = average_sparsifier(rng, meta_g, lev, q, i; weighted)
                     vec = @timed average_sparsifier(rng, meta_g, lev, q, i; weighted)
-                    L_av = vec[1]
+                    out = vec[1]
+                    L_av = out[1]
+                    n_cls = out[2]
+                    n_rts = out[3]
                     time = vec[2]
                 elseif method == "iid unif"
                     # iid uniform with uniform weighting
@@ -128,7 +142,10 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q)
                     vec = @timed average_sparsifier(
                         rng, meta_g, nothing, q_ust, i; weighted, absorbing_node, ust
                     )
-                    L_av = vec[1]
+                    out = vec[1]
+                    L_av = out[1]
+                    n_cls = out[2]
+                    n_rts = out[3]
                     time = vec[2]
                 elseif method == "UST LS"
                     # UST LS weighting
@@ -141,7 +158,10 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q)
                     vec = @timed average_sparsifier(
                         rng, meta_g, lev_ust, q_ust, i; weighted, absorbing_node, ust
                     )
-                    L_av = vec[1]
+                    out = vec[1]
+                    L_av = out[1]
+                    n_cls = out[2]
+                    n_rts = out[3]
                     time = vec[2]
                 end
                 # by default q_system = q
@@ -150,17 +170,23 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q)
                 cnd_tp[j] = cond(pcd_L)
                 percent_edges_tp[j] = nb_of_edges(L_av) / m
                 time_tp[j] = time
+                roots_tp[j] = n_rts
+                cycles_tp[j] = n_cls
             end
 
             cnd[i] = mean(cnd_tp)
             sp_L[i] = mean(sp_L_tp)
             percent_edges[i] = mean(percent_edges_tp)
             timing[i] = mean(time_tp)
+            roots[i] = mean(roots_tp)
+            cycles[i] = mean(cycles_tp)
 
             cnd_std[i] = std(cnd_tp)
             sp_L_std[i] = std(sp_L_tp)
             percent_edges_std[i] = std(percent_edges_tp)
             timing_std[i] = std(time_tp)
+            roots_std[i] = std(roots_tp)
+            cycles_std[i] = std(cycles_tp)
         end
         D = Dict(
             "cnd" => cnd,
@@ -178,6 +204,14 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q)
             "timing" => timing,
             #
             "timing_std" => timing_std,
+            #
+            "roots" => roots,
+            #
+            "roots_std" => roots_std,
+            #
+            "cycles" => cycles_std,
+            #
+            "cycles_std" => cycles_std,
         )
         push!(D_all, method => D)
     end
@@ -351,9 +385,17 @@ function benchmark_syncrank(meta_g, planted_ranking_score, n_batch, n_rep, rng)
         upsets_in_top = zeros(size(rangebatch))
         upsets_in_top_std = zeros(size(rangebatch))
 
+        roots = zeros(size(rangebatch))
+        roots_std = zeros(size(rangebatch))
+
+        cycles = zeros(size(rangebatch))
+        cycles_std = zeros(size(rangebatch))
+
         for i in 1:length(rangebatch)
             err_tp = zeros(n_rep, 1)
             tau_tp = zeros(n_rep, 1)
+            roots_tp = zeros(n_rep, 1)
+            cycles_tp = zeros(n_rep, 1)
             spear_tp = zeros(n_rep, 1)
             upsets_in_top_tp = zeros(n_rep, 1)
 
@@ -363,14 +405,19 @@ function benchmark_syncrank(meta_g, planted_ranking_score, n_batch, n_rep, rng)
 
             for j in 1:n_rep
                 L_av = zeros(n, n)
-
+                n_cles = 0
+                n_rts = 0
                 if method == "DPP unif"
                     # DPP uniform weighting
-                    L_av = average_sparsifier(rng, meta_g, nothing, q, t; weighted)
+                    L_av, n_cles, n_rts = average_sparsifier(
+                        rng, meta_g, nothing, q, t; weighted
+                    )
 
                 elseif method == "DPP LS"
                     # DPP leverage score weighting
-                    L_av = average_sparsifier(rng, meta_g, lev, q, t; weighted)
+                    L_av, n_cles, n_rts = average_sparsifier(
+                        rng, meta_g, lev, q, t; weighted
+                    )
 
                 elseif method == "iid unif"
                     # iid uniform with uniform weighting
@@ -385,7 +432,7 @@ function benchmark_syncrank(meta_g, planted_ranking_score, n_batch, n_rep, rng)
                     absorbing_node = true
                     ust = true
                     q_ust = 0
-                    L_av = average_sparsifier(
+                    L_av, n_cles, n_rts = average_sparsifier(
                         rng, meta_g, nothing, q_ust, t; weighted, absorbing_node, ust
                     )
                 elseif method == "UST LS"
@@ -393,7 +440,7 @@ function benchmark_syncrank(meta_g, planted_ranking_score, n_batch, n_rep, rng)
                     absorbing_node = true
                     ust = true
                     q_ust = 0
-                    L_av = average_sparsifier(
+                    L_av, n_cles, n_rts = average_sparsifier(
                         rng, meta_g, lev_ust, q_ust, t; weighted, absorbing_node, ust
                     )
                 end
@@ -406,6 +453,8 @@ function benchmark_syncrank(meta_g, planted_ranking_score, n_batch, n_rep, rng)
 
                 v_av = least_eigenvector(L_av; singular)
                 err_tp[j] = eigenvec_dist(v, v_av)
+                roots_tp[j] = n_rts
+                cycles_tp[j] = n_cles
 
                 ranking = syncrank(L_av, meta_g; singular)
                 tau_tp[j] = corkendall(planted_ranking, ranking)
@@ -428,6 +477,12 @@ function benchmark_syncrank(meta_g, planted_ranking_score, n_batch, n_rep, rng)
 
             percent_edges[i] = mean(percent_edges_tp)
             percent_edges_std[i] = std(percent_edges_tp)
+
+            roots[i] = mean(roots_tp)
+            roots_std[i] = std(roots_tp)
+
+            cycles[i] = mean(cycles_tp)
+            cycles_std[i] = std(cycles_tp)
         end
 
         D = Dict(
@@ -454,6 +509,14 @@ function benchmark_syncrank(meta_g, planted_ranking_score, n_batch, n_rep, rng)
             "upsets_in_top" => upsets_in_top,
             #
             "upsets_in_top_std" => upsets_in_top_std,
+            #
+            "roots" => roots,
+            #
+            "roots_std" => roots_std,
+            #
+            "cycles" => cycles,
+            #
+            "cycles_std" => cycles_std,
         )
         push!(D_all, method => D)
     end
@@ -461,7 +524,9 @@ function benchmark_syncrank(meta_g, planted_ranking_score, n_batch, n_rep, rng)
     return D_all
 end
 
-function plot_comparison(metric::String, D_all;y_limits,legendposition::Symbol=:bottomright)
+function plot_comparison(
+    metric::String, D_all, y_limits; legendposition::Symbol=:bottomright
+)
     metric_std = metric * "_std"
 
     method = "DPP unif"
