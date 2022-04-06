@@ -46,7 +46,7 @@ function pcond_Lap(avgL, q, Lap)
     return pd_Lap, R
 end
 
-function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q,methods=nothing)
+function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q, methods=nothing)
     m = ne(meta_g)
     n = nv(meta_g)
     batch = n
@@ -62,7 +62,7 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q,methods=nothing)
     B_ust = magnetic_incidence_matrix(meta_g; oriented=true, phases=false)
     lev_ust = leverage_score(Matrix(B_ust), 0)
 
-    if methods===nothing
+    if methods === nothing
         methods = ["DPP unif", "DPP LS", "iid unif", "iid LS", "UST unif", "UST LS"]
     end
 
@@ -226,11 +226,11 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q,methods=nothing)
     return D_all
 end
 
-
-function benchmark_syncrank(meta_g, planted_ranking_score, n_batch, n_rep, rng;methods=nothing)
+function benchmark_syncrank(
+    meta_g, planted_ranking_score, n_batch, n_rep, rng; methods=nothing
+)
     n = nv(meta_g)
     m = ne(meta_g)
-    println("start")
     #
     # compute ground truth
     planted_ranking = ranking_from_score(planted_ranking_score)
@@ -260,8 +260,9 @@ function benchmark_syncrank(meta_g, planted_ranking_score, n_batch, n_rep, rng;m
     end
     L = B * W * B'
 
+    condL = cond(L)
+
     # leverage scores
-    println("computing leverage scores")
     q = 0
     lev = leverage_score(B, q; W)
     lev_ust = leverage_score(Matrix(B_ust), q; W)
@@ -286,13 +287,12 @@ function benchmark_syncrank(meta_g, planted_ranking_score, n_batch, n_rep, rng;m
 
     rangebatch = 1:n_batch
 
-    if methods===nothing
+    if methods === nothing
         methods = ["DPP unif", "DPP LS", "iid unif", "iid LS", "UST unif", "UST LS"]
     end
     D_all = Dict()
 
     for method in methods
-        println(method)
 
         # initialization
         err = zeros(size(rangebatch))
@@ -316,6 +316,12 @@ function benchmark_syncrank(meta_g, planted_ranking_score, n_batch, n_rep, rng;m
         cycles = zeros(size(rangebatch))
         cycles_std = zeros(size(rangebatch))
 
+        weight = zeros(size(rangebatch))
+        weight_std = zeros(size(rangebatch))
+
+        cond_nb = zeros(size(rangebatch))
+        cond_nb_std = zeros(size(rangebatch))
+
         for i in 1:length(rangebatch)
             err_tp = zeros(n_rep, 1)
             tau_tp = zeros(n_rep, 1)
@@ -323,6 +329,9 @@ function benchmark_syncrank(meta_g, planted_ranking_score, n_batch, n_rep, rng;m
             cycles_tp = zeros(n_rep, 1)
             spear_tp = zeros(n_rep, 1)
             upsets_in_top_tp = zeros(n_rep, 1)
+            cond_tp = zeros(n_rep, 1)
+
+            av_weight_tp = zeros(n_rep, 1)
 
             percent_edges_tp = zeros(n_rep, 1)
 
@@ -332,15 +341,16 @@ function benchmark_syncrank(meta_g, planted_ranking_score, n_batch, n_rep, rng;m
                 L_av = zeros(n, n)
                 n_cles = 0
                 n_rts = 0
+                weights = zeros(t, 1)
                 if method == "DPP unif"
                     # DPP uniform weighting
-                    L_av, n_cles, n_rts = average_sparsifier(
+                    L_av, n_cles, n_rts, weights = average_sparsifier(
                         rng, meta_g, nothing, q, t; weighted
                     )
 
                 elseif method == "DPP LS"
                     # DPP leverage score weighting
-                    L_av, n_cles, n_rts = average_sparsifier(
+                    L_av, n_cles, n_rts, weights = average_sparsifier(
                         rng, meta_g, lev, q, t; weighted
                     )
 
@@ -357,7 +367,7 @@ function benchmark_syncrank(meta_g, planted_ranking_score, n_batch, n_rep, rng;m
                     absorbing_node = true
                     ust = true
                     q_ust = 0
-                    L_av, n_cles, n_rts = average_sparsifier(
+                    L_av, n_cles, n_rts, weights = average_sparsifier(
                         rng, meta_g, nothing, q_ust, t; weighted, absorbing_node, ust
                     )
                 elseif method == "UST LS"
@@ -365,7 +375,7 @@ function benchmark_syncrank(meta_g, planted_ranking_score, n_batch, n_rep, rng;m
                     absorbing_node = true
                     ust = true
                     q_ust = 0
-                    L_av, n_cles, n_rts = average_sparsifier(
+                    L_av, n_cles, n_rts, weights = average_sparsifier(
                         rng, meta_g, lev_ust, q_ust, t; weighted, absorbing_node, ust
                     )
                 end
@@ -380,6 +390,8 @@ function benchmark_syncrank(meta_g, planted_ranking_score, n_batch, n_rep, rng;m
                 err_tp[j] = eigenvec_dist(v, v_av)
                 roots_tp[j] = n_rts
                 cycles_tp[j] = n_cles
+                av_weight_tp[j] = mean(weights)
+                cond_tp[j] = cond((L_av + 1e-12 * I) \ L)
 
                 ranking = syncrank(L_av, meta_g; singular)
                 tau_tp[j] = corkendall(planted_ranking, ranking)
@@ -408,6 +420,12 @@ function benchmark_syncrank(meta_g, planted_ranking_score, n_batch, n_rep, rng;m
 
             cycles[i] = mean(cycles_tp)
             cycles_std[i] = std(cycles_tp)
+
+            weight[i] = mean(av_weight_tp)
+            weight_std[i] = std(av_weight_tp)
+
+            cond_nb[i] = mean(cond_tp)
+            cond_nb_std[i] = std(cond_tp)
         end
 
         D = Dict(
@@ -442,6 +460,16 @@ function benchmark_syncrank(meta_g, planted_ranking_score, n_batch, n_rep, rng;m
             "cycles" => cycles,
             #
             "cycles_std" => cycles_std,
+            #
+            "weight" => weight,
+            #
+            "weight_std" => weight_std,
+            #
+            "cond_nb" => cond_nb,
+            #
+            "cond_nb_std" => cond_nb_std,
+            #
+            "condL" => condL,
         )
         push!(D_all, method => D)
     end
@@ -606,6 +634,12 @@ function plot_comparison_sync(
         y = D["spear_full"] * ones(size(x))
         Plots.plot!(x, y; labels="full")
         ylabel!("Spearman")
+    elseif metric === "cond_nb"
+        yaxis!(:log)
+        ylabel!("cond")
+        x = D["percent_edges"]
+        y = D["condL"] * ones(size(x))
+        Plots.plot!(x, y; labels="no precond.")
     end
 end
 
@@ -758,7 +792,7 @@ function plot_comparison_cond(D_all, y_limits; legendposition::Symbol=:bottomrig
         legend=legendposition,
     )
 
-    ylims!(y_limits)
+    return ylims!(y_limits)
     # foldername = "figures/"
     # type = "precond"
     # name = type*"n"*string(n)*"p"*string(p)*"eta"*string(eta)*"q"*string(q)*".pdf"
@@ -793,7 +827,7 @@ function plot_nb_cycles(D_all, method; legendposition=:topleft)
         margins=0.1 * 2cm,
     )
     # baseline
-    plot!(
+    return plot!(
         x,
         1:n_batch;
         linewidth=2,
@@ -831,11 +865,8 @@ function plot_nb_roots(D_all, method; legendposition=:topleft)
         margins=0.1 * 2cm,
     )
     # baseline
-    plot!(
-        x, 1:n_batch;
-        linewidth=2,
-        labels="minimum number of roots",
-        legend=legendposition
+    return plot!(
+        x, 1:n_batch; linewidth=2, labels="minimum number of roots", legend=legendposition
     )
     # end
 end

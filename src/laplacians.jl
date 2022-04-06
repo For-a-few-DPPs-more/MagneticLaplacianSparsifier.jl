@@ -45,6 +45,7 @@ function average_sparsifier(
     L = zeros(n, n)
     nb_cycles = zeros(nb_samples, 1)
     nb_roots = zeros(nb_samples, 1)
+    weights = zeros(nb_samples, 1)
     w_tot = 0
 
     for i_sample in 1:nb_samples
@@ -57,6 +58,8 @@ function average_sparsifier(
 
         D = props(mtsf)
         w = D[:weight]
+        weights[i_sample] = w
+
         w_tot += w
         sparseB = magnetic_incidence(mtsf; oriented=true)
         ind_e = mtsf_edge_indices(mtsf, meta_g)
@@ -78,7 +81,7 @@ function average_sparsifier(
 
     L = L / w_tot
 
-    return L, nb_sampled_cycles, nb_sampled_roots
+    return L, nb_sampled_cycles, nb_sampled_roots, weights
 end
 
 # function average_sparsifier!(

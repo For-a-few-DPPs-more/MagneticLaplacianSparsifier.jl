@@ -66,5 +66,6 @@ export multi_type_spanning_forest,
     plot_comparison_cond,
     plot_nb_cycles,
     plot_nb_roots,
-    gen_graph_cliques
+    gen_graph_cliques,
+    gen_graph_planted_triangles
 end

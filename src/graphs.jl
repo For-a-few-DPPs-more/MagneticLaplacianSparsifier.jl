@@ -206,9 +206,8 @@ function gen_graph_ero_basic(n, p, eta; scaling=1)
     return meta_g
 end
 
-
-function gen_graph_cliques(rng,n,noise;planted_score=nothing)
-    n_v = 2*n
+function gen_graph_cliques(rng, n, noise, η; planted_score=nothing)
+    n_v = 2 * n
     g = Graph(n_v)
     meta_g = MetaGraph(g)
 
@@ -218,45 +217,91 @@ function gen_graph_cliques(rng,n,noise;planted_score=nothing)
     end
 
     # first clique
-    for u=1:n
-        for v=1:n
+    for u in 1:n
+        for v in 1:n
             if u < v
-                e = [u v]
-                edges = consecutive_pairs(e)
-                add_edges_from!(meta_g, edges)
-
                 h_u = planted_score[u]
                 h_v = planted_score[v]
-                θ = (h_u - h_v) * π / (n_v - 1)
-                θ *= 1.0 + noise * 2 * (rand(rng) - 0.5)
+                if (rand(rng) < η)
+                    θ = rand(rng, (-n_v + 1):(n_v - 1)) * π / (n_v - 1)
+                    add_edge!(meta_g, u, v, :angle, θ)
+                else
+                    θ = (h_u - h_v) * π / (n_v - 1)
+                    θ *= 1.0 + noise * 2 * (rand(rng) - 0.5)
+                    add_edge!(meta_g, u, v, :angle, θ)
+                end
             end
         end
     end
     # bottleneck
     u = n
     v = n + 1
-    e = [u v]
-    edges = consecutive_pairs(e)
-    add_edges_from!(meta_g, edges)
+
     h_u = planted_score[u]
     h_v = planted_score[v]
     θ = (h_u - h_v) * π / (n_v - 1)
     θ *= 1.0 + noise * 2 * (rand(rng) - 0.5)
+    add_edge!(meta_g, u, v, :angle, θ)
 
     # second clique
-    for u=(n+1):(2*n)
-        for v=(n+1):(2*n)
+    for u in (n + 1):(2 * n)
+        for v in (n + 1):(2 * n)
             if u < v
-                e = [u v]
-                edges = consecutive_pairs(e)
-                add_edges_from!(meta_g, edges)
-
                 h_u = planted_score[u]
                 h_v = planted_score[v]
-                θ = (h_u - h_v) * π / (n_v - 1)
-                θ *= 1.0 + noise * 2 * (rand(rng) - 0.5)
+                if (rand(rng) < η)
+                    θ = rand(rng, (-n_v + 1):(n_v - 1)) * π / (n_v - 1)
+                    add_edge!(meta_g, u, v, :angle, θ)
+                else
+                    θ = (h_u - h_v) * π / (n_v - 1)
+                    θ *= 1.0 + noise * 2 * (rand(rng) - 0.5)
+                    add_edge!(meta_g, u, v, :angle, θ)
+                end
             end
         end
     end
+    return meta_g
+end
+
+function gen_graph_planted_triangles(
+    rng, n_v, noise, p_edge, p_triangles; planted_score=nothing
+)
+    g = Graph(n_v)
+    meta_g = MetaGraph(g)
+
+    # convention: ranking score of node i is r_i = score[i]
+    if planted_score === nothing
+        planted_score = collect(1:n_v)
+    end
+
+    for u in 1:n_v
+        for v in 1:n_v
+            if u < v
+                h_u = planted_score[u]
+                h_v = planted_score[v]
+                if (rand(rng) < p_edge)
+                    θ = (h_u - h_v) * π / (n_v - 1)
+                    θ *= 1.0 + noise * 2 * (rand(rng) - 0.5)
+                    add_edge!(meta_g, u, v, :angle, θ)
+                end
+            end
+        end
+    end
+    nb_t = 0
+    for u in 1:n_v
+        for v in 1:n_v
+            for w in 1:n_v
+                if u < v < w
+                    if (rand(rng) < p_triangles)
+                        add_edge!(meta_g, u, v, :angle, π / 6)
+                        add_edge!(meta_g, v, w, :angle, π / 6)
+                        add_edge!(meta_g, w, u, :angle, π / 6)
+                        nb_t += 1
+                    end
+                end
+            end
+        end
+    end
+    println(nb_t)
     return meta_g
 end
