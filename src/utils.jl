@@ -53,13 +53,21 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q, methods=nothing)
 
     weighted = false
 
+    # magnetic Laplacian
     B = magnetic_incidence(meta_g)
     Lap = B * B'
+    # magnetic leverage scores
     lev = leverage_score(B, q)
-
+    # magnetic Laplacian eigenvalues
+    exact_eigenvalues = eigvals(Lap)
+    exact_least_eig = exact_eigenvalues[1]
+    exact_top_eig = exact_eigenvalues[n]
+    # magnetic Laplacian condition number
     cdL = cond(Lap + q_system * I)
 
+    # combinatorial Laplacian
     B_ust = magnetic_incidence_matrix(meta_g; oriented=true, phases=false)
+    # combinatorial leverage scores (non-magnetic)
     lev_ust = leverage_score(Matrix(B_ust), 0)
 
     if methods === nothing
@@ -72,6 +80,9 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q, methods=nothing)
         println(method)
         # initialization
         cnd = zeros(n_tot, 1)
+        least_eig = zeros(n_tot, 1)
+        top_eig = zeros(n_tot, 1)
+        #
         sp_L = zeros(n_tot, 1)
         timing = zeros(n_tot, 1)
         percent_edges = zeros(n_tot, 1)
@@ -79,6 +90,9 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q, methods=nothing)
         roots = zeros(n_tot, 1)
 
         cnd_std = zeros(n_tot, 1)
+        least_eig_std = zeros(n_tot, 1)
+        top_eig_std = zeros(n_tot, 1)
+        #
         sp_L_std = zeros(n_tot, 1)
         timing_std = zeros(n_tot, 1)
         percent_edges_std = zeros(n_tot, 1)
@@ -89,6 +103,9 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q, methods=nothing)
 
             # temporary arrays
             cnd_tp = zeros(n_rep, 1)
+            least_eig_tp = zeros(n_tot, 1)
+            top_eig_tp = zeros(n_tot, 1)
+            #
             sp_L_tp = zeros(n_rep, 1)
             time_tp = zeros(n_rep, 1)
             percent_edges_tp = zeros(n_rep, 1)
@@ -102,7 +119,6 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q, methods=nothing)
                 n_rts = 0
                 if method == "DPP unif"
                     # DPP uniform weighting
-                    # L_av = average_sparsifier(rng, meta_g, nothing, q, i; weighted)
                     vec = @timed average_sparsifier(rng, meta_g, nothing, q, i; weighted)
                     out = vec[1]
                     L_av = out[1]
@@ -111,7 +127,6 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q, methods=nothing)
                     time = vec[2]
                 elseif method == "DPP LS"
                     # DPP leverage score weighting
-                    # L_av = average_sparsifier(rng, meta_g, lev, q, i; weighted)
                     vec = @timed average_sparsifier(rng, meta_g, lev, q, i; weighted)
                     out = vec[1]
                     L_av = out[1]
@@ -120,7 +135,6 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q, methods=nothing)
                     time = vec[2]
                 elseif method == "iid unif"
                     # iid uniform with uniform weighting
-                    # L_av = average_sparsifier_iid(rng, meta_g, nothing, batch, i; weighted)
                     vec = @timed average_sparsifier_iid(
                         rng, meta_g, nothing, batch, i; weighted
                     )
@@ -128,9 +142,6 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q, methods=nothing)
                     time = vec[2]
                 elseif method == "iid LS"
                     # iid leverage score with leverage score weighting
-                    # L_av = average_sparsifier_iid(
-                    #     rng, meta_g, lev, batch, i; weighted
-                    # )
                     vec = @timed average_sparsifier_iid(
                         rng, meta_g, lev, batch, i; weighted
                     )
@@ -141,9 +152,6 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q, methods=nothing)
                     absorbing_node = true
                     ust = true
                     q_ust = 0
-                    # L_av = average_sparsifier(
-                    #     rng, meta_g, nothing, q_ust, i; weighted, absorbing_node, ust
-                    # )
                     vec = @timed average_sparsifier(
                         rng, meta_g, nothing, q_ust, i; weighted, absorbing_node, ust
                     )
@@ -157,9 +165,6 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q, methods=nothing)
                     absorbing_node = true
                     ust = true
                     q_ust = 0
-                    # L_av = average_sparsifier(
-                    #     rng, meta_g, lev_ust, q_ust, i; weighted, absorbing_node, ust
-                    # )
                     vec = @timed average_sparsifier(
                         rng, meta_g, lev_ust, q_ust, i; weighted, absorbing_node, ust
                     )
@@ -173,6 +178,11 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q, methods=nothing)
                 pcd_L, R = pcond_Lap(L_av, q_system, Lap)
                 sp_L_tp[j] = nnz(sparse(R))
                 cnd_tp[j] = cond(pcd_L)
+
+                lambda = eigvals(pcd_L)
+                least_eig_tp = real(lambda[1])
+                top_eig_tp = real(lambda[n])
+
                 percent_edges_tp[j] = nb_of_edges(L_av) / m
                 time_tp[j] = time
                 roots_tp[j] = n_rts
@@ -180,6 +190,9 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q, methods=nothing)
             end
 
             cnd[i] = mean(cnd_tp)
+            least_eig[i] = mean(least_eig_tp)
+            top_eig[i] = mean(top_eig_tp)
+            #
             sp_L[i] = mean(sp_L_tp)
             percent_edges[i] = mean(percent_edges_tp)
             timing[i] = mean(time_tp)
@@ -187,6 +200,9 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q, methods=nothing)
             cycles[i] = mean(cycles_tp)
 
             cnd_std[i] = std(cnd_tp)
+            least_eig_std[i] = std(least_eig_tp)
+            top_eig_std[i] = std(top_eig_tp)
+            #
             sp_L_std[i] = std(sp_L_tp)
             percent_edges_std[i] = std(percent_edges_tp)
             timing_std[i] = std(time_tp)
@@ -199,6 +215,18 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q, methods=nothing)
             "cnd" => cnd,
             #
             "cnd_std" => cnd_std,
+            #
+            "least_eig" => least_eig,
+            #
+            "least_eig_std" => least_eig_std,
+            #
+            "exact_least_eig" => exact_least_eig,
+            #
+            "top_eig" => top_eig,
+            #
+            "top_eig_std" => top_eig_std,
+            #
+            "exact_top_eig" => exact_top_eig,
             #
             "sp_L" => sp_L,
             #
@@ -477,6 +505,133 @@ function benchmark_syncrank(
     return D_all
 end
 
+function eigenvalue_approx(meta_g, n_batch, n_rep, rng; methods=nothing)
+    n = nv(meta_g)
+    m = ne(meta_g)
+
+    #  include edge weights in meta_g: w_{uv} = 1/sqrt{d(u)d(v)}
+    normalize_meta_g!(meta_g)
+
+    # technical parameters
+    weighted = true # weighted graph is used
+
+    # incidence matrix
+    B = magnetic_incidence(meta_g)
+
+    #######################################
+    # syncrank with full magnetic Laplacian
+    W = I # weight matrix
+    if weighted
+        e_weights = get_edges_prop(meta_g, :e_weight, true, 1.0)
+        W *= diagm(e_weights)
+    end
+    L = B * W * B'
+
+    # leverage scores
+    q = 0
+    lev = leverage_score(B, q; W)
+
+    # least eigenvalue full Laplacian
+    lambda = eigvals(L)
+    lambda_0 = lambda[1]
+
+    # start benchmarking
+
+    rangebatch = 1:n_batch
+
+    if methods === nothing
+        methods = ["DPP unif", "DPP LS"]
+    end
+    D_all = Dict()
+
+    for method in methods
+
+        # initialization
+        lambda_sp = zeros(size(rangebatch))
+        lambda_sp_std = zeros(size(rangebatch))
+
+        percent_edges = zeros(size(rangebatch))
+        percent_edges_std = zeros(size(rangebatch))
+
+        cycles = zeros(size(rangebatch))
+        cycles_std = zeros(size(rangebatch))
+
+        weight = zeros(size(rangebatch))
+        weight_std = zeros(size(rangebatch))
+
+        for i in 1:length(rangebatch)
+            lambda_sp_tp = zeros(n_rep, 1)
+            cycles_tp = zeros(n_rep, 1)
+
+            av_weight_tp = zeros(n_rep, 1)
+
+            percent_edges_tp = zeros(n_rep, 1)
+
+            t = rangebatch[i]
+
+            for j in 1:n_rep
+                L_av = zeros(n, n)
+                n_cles = 0
+                n_rts = 0
+                weights = zeros(t, 1)
+                if method == "DPP unif"
+                    # DPP uniform weighting
+                    L_av, n_cles, n_rts, weights = average_sparsifier(
+                        rng, meta_g, nothing, q, t; weighted
+                    )
+
+                elseif method == "DPP LS"
+                    # DPP leverage score weighting
+                    L_av, n_cles, n_rts, weights = average_sparsifier(
+                        rng, meta_g, lev, q, t; weighted
+                    )
+                end
+
+                l = eigvals(L_av)
+                lambda_sp_tp[j] = real(l[1])
+                cycles_tp[j] = n_cles
+                av_weight_tp[j] = mean(weights)
+
+                percent_edges_tp[j] = nb_of_edges(L_av) / m
+            end
+            lambda_sp[i] = mean(lambda_sp_tp)
+            lambda_sp_std[i] = std(lambda_sp_tp)
+
+            percent_edges[i] = mean(percent_edges_tp)
+            percent_edges_std[i] = std(percent_edges_tp)
+
+            cycles[i] = mean(cycles_tp)
+            cycles_std[i] = std(cycles_tp)
+
+            weight[i] = mean(av_weight_tp)
+            weight_std[i] = std(av_weight_tp)
+        end
+
+        D = Dict(
+            "lambda_sp" => lambda_sp,
+            #
+            "lambda_sp_std" => lambda_sp_std,
+            #
+            "percent_edges" => percent_edges,
+            #
+            "percent_edges_std" => percent_edges_std,
+            #
+            "cycles" => cycles,
+            #
+            "cycles_std" => cycles_std,
+            #
+            "weight" => weight,
+            #
+            "weight_std" => weight_std,
+            #
+            "lambda" => lambda_0,
+        )
+        push!(D_all, method => D)
+    end
+
+    return D_all
+end
+
 function plot_comparison_sync(
     metric::String, D_all, y_limits; legendposition::Symbol=:bottomright
 )
@@ -640,6 +795,16 @@ function plot_comparison_sync(
         x = D["percent_edges"]
         y = D["condL"] * ones(size(x))
         Plots.plot!(x, y; labels="no precond.")
+    elseif metric === "least_eig"
+        ylabel!("least eigenvalue")
+        x = D["percent_edges"]
+        y = D["exact_least_eig"] * ones(size(x))
+        Plots.plot!(x, y; labels="exact")
+    elseif metric === "top_eig"
+        ylabel!("top eigenvalue")
+        x = D["percent_edges"]
+        y = D["exact_top_eig"] * ones(size(x))
+        Plots.plot!(x, y; labels="exact")
     end
 end
 
