@@ -46,7 +46,7 @@
         ind = optimal_perm(crsf)
 
         B = sp_magnetic_incidence(crsf; oriented=true)
-        L = B * B'
+        L = B' * B
 
         # find cholesky with custom permutation
         lower_factor = cholesky(L; perm=ind).L

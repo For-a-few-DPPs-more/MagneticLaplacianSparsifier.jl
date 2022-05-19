@@ -6,7 +6,7 @@
     rng = getRNG()
     meta_g = gen_graph_mun(rng, n, p, eta)
     B = magnetic_incidence(meta_g; oriented=true)
-    L = B * B'
+    L = B' * B
 
     nb_samples = 100000
     @testset " for q = 0" begin
@@ -85,7 +85,7 @@ end
     W = diagm(e_weights)
     B = magnetic_incidence(meta_g)
 
-    Lap = B * W * B'
+    Lap = B' * W * B
     nb_samples = 1e5
 
     @testset "LS approximation with weights and q = 0.1" begin

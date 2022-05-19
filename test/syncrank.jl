@@ -34,7 +34,7 @@
         meta_g = gen_graph_mun(rng, n, p, eta)
 
         B = magnetic_incidence(meta_g)
-        L = B * B'
+        L = B' * B
 
         q = 2
         H_target = q * inv(L + q * I)
@@ -83,7 +83,7 @@
         end
 
         B_mtsf = magnetic_incidence(mtsf)
-        L_mtsf = B_mtsf * B_mtsf'
+        L_mtsf = B_mtsf' * B_mtsf
 
         F = eigen(L_mtsf)
         val = F.values
@@ -119,7 +119,7 @@
         meta_g = gen_graph_mun(rng, n, p, eta; planted_score)
         # unnormalized Laplacian
         B = magnetic_incidence(meta_g)
-        L = B * B'
+        L = B' * B
         ranking = syncrank(L, meta_g)
         @test corkendall(ranking, planted_ranking) > 0.999
     end
@@ -144,7 +144,7 @@
         end
 
         B = magnetic_incidence(meta_g)
-        L = B * B'
+        L = B' * B
 
         temp = planted_score * π / (n - 1)
         y = exp.(im * temp)

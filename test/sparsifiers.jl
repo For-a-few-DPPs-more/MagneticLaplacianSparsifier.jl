@@ -13,7 +13,7 @@
         sparseB = magnetic_incidence(crsf)
 
         ind_e = mtsf_edge_indices(crsf, compGraph)
-        B_sampled = B[:, ind_e]
+        B_sampled = B[ind_e, :]
         @test norm(sparseB - B_sampled) < 1e-10
     end
 
@@ -26,7 +26,7 @@
         rng = getRNG()
         meta_g = gen_graph_mun(rng, n, p, eta)
         B = magnetic_incidence(meta_g; oriented=true)
-        L = B * B'
+        L = B' * B
         lev = leverage_score(B, q)
         avgL, _, _, _ = average_sparsifier(rng, meta_g, lev, q, 10)
         relative_error = norm(avgL - L) / norm(L)
@@ -42,7 +42,7 @@
         rng = getRNG()
         meta_g = gen_graph_mun(rng, n, p, eta)
         B = magnetic_incidence(meta_g; oriented=true)
-        L = B * B'
+        L = B' * B
         lev = leverage_score(B, q)
         avgL, _, _, _ = average_sparsifier(rng, meta_g, lev, q, 10)
         relative_error = norm(avgL - L) / norm(L)

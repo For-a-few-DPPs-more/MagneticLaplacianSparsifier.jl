@@ -8,7 +8,7 @@
     rng = Random.default_rng()
     meta_g = gen_graph_mun(rng, n, p, eta)
     B = magnetic_incidence(meta_g; oriented=true)
-    L = B * B'
+    L = B' * B
 
     @testset "mtsf mean and variance match DPP's mean and variance" begin
         n_MC = 100000
@@ -19,7 +19,7 @@
         end
 
         m, v = mean_and_var(MC_edges)
-        l = eigvals(B' * ((L + q * I) \ B))
+        l = eigvals(B * ((L + q * I) \ B'))
         m_th = sum(l)
         v_th = sum(l .* (ones(size(l)) .- l))
         print(abs(m_th - m) / m)
@@ -36,7 +36,7 @@ end
     rng = Random.default_rng()
     meta_g = gen_graph_mun(rng, n, p, eta)
     B = magnetic_incidence(meta_g; oriented=true)
-    L = B * B'
+    L = B' * B
 
     @testset "mtsf mean and variance match DPP's mean and variance" begin
         n_MC = 100

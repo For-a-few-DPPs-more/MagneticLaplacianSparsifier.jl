@@ -16,13 +16,14 @@ function magnetic_incidence_matrix(
     J = vcat(1:n_e, 1:n_e)
 
     θ = get_edges_prop(graph, :angle, true, 0.0)
-    w = @. exp(im * 0.5 * θ)
+    w = @. exp(-im * 0.5 * θ)
     if !phases
         w = abs.(w)
     end
-    V = vcat(oriented ? -w : w, conj.(w))
+    V = vcat(w, oriented ? -conj.(w) : conj.(w))
     # here different sign wrt paper but unimportant
-    return sparse(I, J, V, n_v, n_e)
+    B = transpose(sparse(I, J, V, n_v, n_e))
+    return B
 end
 
 # todo naming mtsf, csrf
@@ -84,7 +85,6 @@ function average_sparsifier(
     return L, nb_sampled_cycles, nb_sampled_roots, weights
 end
 
-
 function sample_subgraph_iid(rng, meta_g, ls, batch)
     n = nv(meta_g)
     m = ne(meta_g)
@@ -131,19 +131,18 @@ function average_sparsifier_iid(rng, meta_g, ls, batch, nb_samples; weighted::Bo
             W *= diagm(e_weights[ind_e])
         end
 
-        L = L + w * sparseB * W * sparseB'
+        L = L + w * sparseB' * W * sparseB
     end
     L = L / w_tot
 
     return L
 end
 
-
 function leverage_score(B, q; W=I)
     if q > 1e-13
-        levScores = real(diag(W * B' * ((B * W * B' + q * I) \ B)))
+        levScores = real(diag(W * B * ((B' * W * B + q * I) \ B')))
     else
-        levScores = real(diag(W * B' * pinv(B * W * B' + q * I) * B))
+        levScores = real(diag(W * B * pinv(B' * W * B + q * I) * B'))
     end
 
     return levScores

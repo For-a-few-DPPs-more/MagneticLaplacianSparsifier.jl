@@ -7,6 +7,7 @@
         end
         B = magnetic_incidence_matrix(graph; oriented=oriented)
         B_theo = Graphs.LinAlg.incidence_matrix(graph, eltype(B); oriented=oriented)
+        B_theo = transpose(B_theo)
         @test B == B_theo
     end
 
@@ -29,10 +30,10 @@
         ind_e = mtsf_edge_indices(mtsf, meta_g)
         B_mtsf = magnetic_incidence(mtsf)
 
-        @test norm(abs.(Matrix(B[:, ind_e])) - abs.(Matrix(B_mtsf))) < 1e-12
+        @test norm(abs.(Matrix(B[ind_e, :])) - abs.(Matrix(B_mtsf))) < 1e-12
     end
 
-    @testset "λ_min(L = B B') ≈ 0 when trivial ranking $model" for model in [:mun, :ero]
+    @testset "λ_min(L = B' B) ≈ 0 when trivial ranking $model" for model in [:mun, :ero]
         n = 100
         p = 0.5
         eta = 0.0
@@ -40,7 +41,7 @@
 
         meta_g = MagneticLaplacianSparsifier.erdos_renyi(rng, n, p, eta, model)
         B = magnetic_incidence(meta_g)
-        L = B * B'
+        L = B' * B
         @test abs(minimum(eigvals(L))) < 1e-12
     end
 end
