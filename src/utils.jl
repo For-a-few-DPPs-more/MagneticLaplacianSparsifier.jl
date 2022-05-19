@@ -56,17 +56,21 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q, methods=nothing)
     # magnetic Laplacian
     B = magnetic_incidence(meta_g)
     Lap = B' * B
+
     # magnetic leverage scores
     lev = leverage_score(B, q)
+
     # magnetic Laplacian eigenvalues
     exact_eigenvalues = eigvals(Lap)
     exact_least_eig = exact_eigenvalues[1]
     exact_top_eig = exact_eigenvalues[n]
+
     # magnetic Laplacian condition number
     cdL = cond(Lap + q_system * I)
 
     # combinatorial Laplacian
     B_ust = magnetic_incidence_matrix(meta_g; oriented=true, phases=false)
+
     # combinatorial leverage scores (non-magnetic)
     lev_ust = leverage_score(Matrix(B_ust), 0)
 
@@ -77,7 +81,7 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q, methods=nothing)
     D_all = Dict()
 
     for method in methods
-        println(method)
+
         # initialization
         cnd = zeros(n_tot, 1)
         least_eig = zeros(n_tot, 1)
@@ -271,7 +275,6 @@ function benchmark_syncrank(
 
     # technical parameters
     weighted = true # weighted graph is used
-    extra_normalization = false # normalized Laplacian is used
     singular = true # all eigenpairs are computed for more stability
     k = 10 # number of upsets in top k
 
@@ -294,13 +297,6 @@ function benchmark_syncrank(
     q = 0
     lev = leverage_score(B, q; W)
     lev_ust = leverage_score(Matrix(B_ust), q; W)
-
-    N = 0
-    if extra_normalization
-        normalize_Lap!(L)
-        Deg = Diagonal(L)
-        N = inv(sqrt(Deg))
-    end
 
     # least eigenvector full Laplacian
     v = least_eigenvector(L; singular)
@@ -406,12 +402,6 @@ function benchmark_syncrank(
                     L_av, n_cles, n_rts, weights = average_sparsifier(
                         rng, meta_g, lev_ust, q_ust, t; weighted, absorbing_node, ust
                     )
-                end
-
-                if extra_normalization
-                    # normalization step with N = inv(sqrt(Deg)) and Deg is the full degree matrix
-                    L_av = N * L_av * N
-                    #normalize_Lap!(L_av)
                 end
 
                 v_av = least_eigenvector(L_av; singular)
@@ -638,12 +628,13 @@ function plot_comparison_sync(
     metric_std = metric * "_std"
 
     method = "DPP(K) unif"
+
     D = D_all[method]
     x = D["percent_edges"]
     y = D[metric]
     y_er = D[metric_std]
 
-    Plots.plot(
+    plt = Plots.plot(
         x,
         y;
         yerror=y_er,
@@ -806,6 +797,10 @@ function plot_comparison_sync(
         y = D["exact_top_eig"] * ones(size(x))
         Plots.plot!(x, y; labels="exact")
     end
+
+    display(plt)
+
+    return y_limits
 end
 
 function plot_comparison_cond(D_all, y_limits; legendposition::Symbol=:bottomright)
@@ -818,7 +813,7 @@ function plot_comparison_cond(D_all, y_limits; legendposition::Symbol=:bottomrig
     y = D["cnd"]
     y_er = D["cnd_std"]
 
-    plot(
+    plt = plot(
         x,
         y;
         yerror=y_er,
@@ -956,12 +951,9 @@ function plot_comparison_cond(D_all, y_limits; legendposition::Symbol=:bottomrig
         markerstrokewidth=2,
         legend=legendposition,
     )
-
-    return ylims!(y_limits)
-    # foldername = "figures/"
-    # type = "precond"
-    # name = type*"n"*string(n)*"p"*string(p)*"eta"*string(eta)*"q"*string(q)*".pdf"
-    # savefig(foldername*name)
+    ylims!(y_limits)
+    display(plt)
+    return y_limits
 end
 
 function plot_nb_cycles(D_all, method; legendposition=:topleft)
@@ -973,7 +965,7 @@ function plot_nb_cycles(D_all, method; legendposition=:topleft)
 
     n_batch = length(x)
 
-    plot(
+    plt = plot(
         x,
         y;
         yerr=y_err,
@@ -992,10 +984,8 @@ function plot_nb_cycles(D_all, method; legendposition=:topleft)
         margins=0.1 * 2cm,
     )
     # baseline
-    return plot!(
-        x, 1:n_batch; linewidth=2, labels="minimum number of CRTs", legend=legendposition
-    )
-    # end
+    plot!(x, 1:n_batch; linewidth=2, labels="minimum number of CRTs", legend=legendposition)
+    return display(plt)
 end
 
 function plot_nb_roots(D_all, method; legendposition=:topleft)
@@ -1007,7 +997,7 @@ function plot_nb_roots(D_all, method; legendposition=:topleft)
 
     n_batch = length(x)
 
-    plot(
+    plt = plot(
         x,
         y;
         yerr=y_err,
@@ -1026,8 +1016,8 @@ function plot_nb_roots(D_all, method; legendposition=:topleft)
         margins=0.1 * 2cm,
     )
     # baseline
-    return plot!(
+    plot!(
         x, 1:n_batch; linewidth=2, labels="minimum number of roots", legend=legendposition
     )
-    # end
+    return display(plt)
 end

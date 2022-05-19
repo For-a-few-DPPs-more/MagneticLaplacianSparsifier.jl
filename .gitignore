@@ -5,9 +5,14 @@
 # !/notebooks/preconditioning.ipynb
 # !/notebooks/real_graphs_preconditioning.ipynb
 # !/notebooks/MC_regularized_inverse.ipynb
-/notebooks/figures/
+/notebooks/figures/*
+# exception to the rule
+!/notebooks/figures/.gitkeep 
+
 /notebooks/polblogs.gml
 /notebooks/polbooks.gml
+
+
 
 tmp.jl
 
