@@ -55,7 +55,7 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q, methods=nothing)
 
     # magnetic Laplacian
     B = magnetic_incidence(meta_g)
-    Lap = B * B'
+    Lap = B' * B
     # magnetic leverage scores
     lev = leverage_score(B, q)
     # magnetic Laplacian eigenvalues
@@ -286,7 +286,7 @@ function benchmark_syncrank(
         e_weights = get_edges_prop(meta_g, :e_weight, true, 1.0)
         W *= diagm(e_weights)
     end
-    L = B * W * B'
+    L = B' * W * B
 
     condL = cond(L)
 
@@ -525,7 +525,7 @@ function eigenvalue_approx(meta_g, n_batch, n_rep, rng; methods=nothing)
         e_weights = get_edges_prop(meta_g, :e_weight, true, 1.0)
         W *= diagm(e_weights)
     end
-    L = B * W * B'
+    L = B' * W * B
 
     # leverage scores
     q = 0
