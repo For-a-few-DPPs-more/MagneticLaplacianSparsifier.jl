@@ -139,72 +139,72 @@ function ero_mun_sbm(
     return g
 end
 
-function gen_graph_mun_basic(n, p, eta; scaling=1)
-    # Following M. Cucuringu to build comparison graph
-    # SYNC-RANK: ROBUST RANKING, CONSTRAINED RANKING AND RANK AGGREGATION VIA EIGENVECTOR AND SDP SYNCHRONIZATION
-    # Multiplicative Uniform Noise model
-    g = Graph(n)
-    meta_g = MetaGraph(g, :angle, 0.0)
+# function gen_graph_mun_basic(n, p, eta; scaling=1)
+#     # Following M. Cucuringu to build comparison graph
+#     # SYNC-RANK: ROBUST RANKING, CONSTRAINED RANKING AND RANK AGGREGATION VIA EIGENVECTOR AND SDP SYNCHRONIZATION
+#     # Multiplicative Uniform Noise model
+#     g = Graph(n)
+#     meta_g = MetaGraph(g, :angle, 0.0)
 
-    # ranking
-    r = collect(1:n)
+#     # ranking
+#     r = collect(1:n)
 
-    for i in r
-        for j in r
-            if i < j
-                if rand(1)[1] < p
-                    e = [i j]
-                    edges = consecutive_pairs(e)
-                    add_edges_from!(meta_g, edges)
+#     for i in r
+#         for j in r
+#             if i < j
+#                 if rand(1)[1] < p
+#                     e = [i j]
+#                     edges = consecutive_pairs(e)
+#                     add_edges_from!(meta_g, edges)
 
-                    err = eta * rand(1)[1]
-                    a = scaling * pi * (i - j) * (1 + err) / (n - 1)
+#                     err = eta * rand(1)[1]
+#                     a = scaling * pi * (i - j) * (1 + err) / (n - 1)
 
-                    for e in edges
-                        set_prop!(meta_g, Edge(e), :angle, a)
-                    end
-                end
-            end
-        end
-    end
+#                     for e in edges
+#                         set_prop!(meta_g, Edge(e), :angle, a)
+#                     end
+#                 end
+#             end
+#         end
+#     end
 
-    return meta_g
-end
+#     return meta_g
+# end
 
-function gen_graph_ero_basic(n, p, eta; scaling=1)
-    # Following M. Cucuringu to build comparison graph
-    # SYNC-RANK: ROBUST RANKING, CONSTRAINED RANKING AND RANK AGGREGATION VIA EIGENVECTOR AND SDP SYNCHRONIZATION
-    # Erdos-Renyi Outliers model
-    g = Graph(n)
-    meta_g = MetaGraph(g, :angle, 0.0)
+# function gen_graph_ero_basic(n, p, eta; scaling=1)
+#     # Following M. Cucuringu to build comparison graph
+#     # SYNC-RANK: ROBUST RANKING, CONSTRAINED RANKING AND RANK AGGREGATION VIA EIGENVECTOR AND SDP SYNCHRONIZATION
+#     # Erdos-Renyi Outliers model
+#     g = Graph(n)
+#     meta_g = MetaGraph(g, :angle, 0.0)
 
-    # ranking
-    r = collect(1:n)
+#     # ranking
+#     r = collect(1:n)
 
-    for i in r
-        for j in r
-            if i < j
-                if rand(1)[1] < p
-                    e = [i j]
-                    edges = consecutive_pairs(e)
-                    add_edges_from!(meta_g, edges)
+#     for i in r
+#         for j in r
+#             if i < j
+#                 if rand(1)[1] < p
+#                     e = [i j]
+#                     edges = consecutive_pairs(e)
+#                     add_edges_from!(meta_g, edges)
 
-                    if rand(1)[1] < 1 - eta
-                        err = 0
-                    else
-                        err = (n - 1) * rand(1)[1]
-                    end
-                    a = scaling * pi * (i - j + err) / (n - 1)
-                    for e in edges
-                        set_prop!(meta_g, Edge(e), :angle, a)
-                    end
-                end
-            end
-        end
-    end
+#                     if rand(1)[1] < 1 - eta
+#                         err = 0
+#                     else
+#                         err = (n - 1) * rand(1)[1]
+#                     end
+#                     a = scaling * pi * (i - j + err) / (n - 1)
+#                     for e in edges
+#                         set_prop!(meta_g, Edge(e), :angle, a)
+#                     end
+#                 end
+#             end
+#         end
+#     end
 
-    return meta_g
-end
+#     return meta_g
+# end
 
 function gen_graph_cliques(rng, n, noise, η; planted_score=nothing)
     n_v = 2 * n
@@ -304,4 +304,41 @@ function gen_graph_planted_triangles(
     end
     println(nb_t)
     return meta_g
+end
+
+function ero_located(
+    rng::Random.AbstractRNG, n_v::Integer, p::Real, η::Real; planted_score=nothing
+)
+    g = MetaGraph(n_v)
+
+    m = div(n_v * (n_v - 1), 2)
+    n_e = rand(rng, Binomial(m, p))
+
+    noisy_edges = []
+    err_edges = []
+
+    # convention: ranking score of node i is r_i = score[i]
+    if planted_score === nothing
+        planted_score = collect(1:n_v)
+    end
+    while ne(g) < n_e
+        u = rand(rng, 1:n_v)
+        v = rand(rng, 1:n_v)
+        if u < v
+            h_u = planted_score[u]
+            h_v = planted_score[v]
+            θ = (h_u - h_v) * π / (n_v - 1)
+            if (rand(rng) < η)
+                push!(noisy_edges, [u v])
+
+                erroneous_θ = rand(rng, (-n_v + 1):(n_v - 1)) * π / (n_v - 1)
+                diff = erroneous_θ - θ
+
+                push!(err_edges, diff)
+                θ = rand(rng, (-n_v + 1):(n_v - 1)) * π / (n_v - 1)
+            end
+            add_edge!(g, u, v, :angle, θ)
+        end
+    end
+    return g, noisy_edges, err_edges
 end

@@ -71,7 +71,7 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q, methods=nothing)
     lev_ust = leverage_score(Matrix(B_ust), 0)
 
     if methods === nothing
-        methods = ["DPP unif", "DPP LS", "iid unif", "iid LS", "UST unif", "UST LS"]
+        methods = ["DPP unif", "DPP LS", "iid unif", "iid LS", "ST unif", "ST LS"]
     end
 
     D_all = Dict()
@@ -147,8 +147,8 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q, methods=nothing)
                     )
                     L_av = vec[1]
                     time = vec[2]
-                elseif method == "UST unif"
-                    # UST uniform weighting
+                elseif method == "ST unif"
+                    # ST uniform weighting
                     absorbing_node = true
                     ust = true
                     q_ust = 0
@@ -160,8 +160,8 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q, methods=nothing)
                     n_cls = out[2]
                     n_rts = out[3]
                     time = vec[2]
-                elseif method == "UST LS"
-                    # UST LS weighting
+                elseif method == "ST LS"
+                    # ST LS weighting
                     absorbing_node = true
                     ust = true
                     q_ust = 0
@@ -316,7 +316,7 @@ function benchmark_syncrank(
     rangebatch = 1:n_batch
 
     if methods === nothing
-        methods = ["DPP unif", "DPP LS", "iid unif", "iid LS", "UST unif", "UST LS"]
+        methods = ["DPP unif", "DPP LS", "iid unif", "iid LS", "ST unif", "ST LS"]
     end
     D_all = Dict()
 
@@ -390,16 +390,16 @@ function benchmark_syncrank(
                     # iid leverage score with leverage score weighting
                     L_av = average_sparsifier_iid(rng, meta_g, lev, batch, t; weighted)
 
-                elseif method == "UST unif"
-                    # UST uniform weighting
+                elseif method == "ST unif"
+                    # ST uniform weighting
                     absorbing_node = true
                     ust = true
                     q_ust = 0
                     L_av, n_cles, n_rts, weights = average_sparsifier(
                         rng, meta_g, nothing, q_ust, t; weighted, absorbing_node, ust
                     )
-                elseif method == "UST LS"
-                    # UST LS weighting
+                elseif method == "ST LS"
+                    # ST LS weighting
                     absorbing_node = true
                     ust = true
                     q_ust = 0
@@ -723,7 +723,7 @@ function plot_comparison_sync(
         markerstrokewidth=2,
     )
 
-    method = "UST unif"
+    method = "ST unif"
     D = D_all[method]
 
     x = D["percent_edges"]
@@ -745,7 +745,7 @@ function plot_comparison_sync(
         margins=0.1 * 2Plots.cm,
     )
 
-    method = "UST LS"
+    method = "ST LS"
     D = D_all[method]
 
     x = D["percent_edges"]
@@ -821,8 +821,8 @@ function plot_comparison_cond(D_all, y_limits; legendposition::Symbol=:bottomrig
     plot(
         x,
         y;
-        yerror=y_er,
-        xlabel="fraction of edges",
+        #yerror=y_er,
+        xlabel="percentage of edges",
         yaxis=:log,
         labels=method,
         markerstrokecolor=:auto,
@@ -846,7 +846,7 @@ function plot_comparison_cond(D_all, y_limits; legendposition::Symbol=:bottomrig
     plot!(
         x,
         y;
-        yerror=y_er,
+        #yerror=y_er,
         yaxis=:log,
         labels=method,
         markerstrokecolor=:auto,
@@ -866,7 +866,7 @@ function plot_comparison_cond(D_all, y_limits; legendposition::Symbol=:bottomrig
     plot!(
         x,
         y;
-        yerror=y_er,
+        #yerror=y_er,
         yaxis=:log,
         labels=method,
         markerstrokecolor=:auto,
@@ -887,7 +887,7 @@ function plot_comparison_cond(D_all, y_limits; legendposition::Symbol=:bottomrig
     plot!(
         x,
         y;
-        yerror=y_er,
+        #yerror=y_er,
         yaxis=:log,
         labels=method,
         markerstrokecolor=:auto,
@@ -898,7 +898,7 @@ function plot_comparison_cond(D_all, y_limits; legendposition::Symbol=:bottomrig
         markerstrokewidth=2,
     )
 
-    method = "UST unif"
+    method = "ST unif"
     D = D_all[method]
 
     x = D["percent_edges"]
@@ -908,7 +908,7 @@ function plot_comparison_cond(D_all, y_limits; legendposition::Symbol=:bottomrig
     plot!(
         x,
         y;
-        yerror=y_er,
+        #yerror=y_er,
         yaxis=:log,
         labels=method,
         markerstrokecolor=:auto,
@@ -918,7 +918,7 @@ function plot_comparison_cond(D_all, y_limits; legendposition::Symbol=:bottomrig
         markerstrokewidth=2,
     )
 
-    method = "UST LS"
+    method = "ST LS"
     D = D_all[method]
 
     x = D["percent_edges"]
@@ -928,7 +928,7 @@ function plot_comparison_cond(D_all, y_limits; legendposition::Symbol=:bottomrig
     plot!(
         x,
         y;
-        yerror=y_er,
+        #yerror=y_er,
         yaxis=:log,
         labels=method,
         markerstrokecolor=:auto,
@@ -976,8 +976,8 @@ function plot_nb_cycles(D_all, method; legendposition=:topleft)
     plot(
         x,
         y;
-        ribbon=y_err,
-        labels="average number of unicycles",
+        yerr=y_err,
+        labels="number of CRTs",
         xlabel="percentage of edges",
         markersize=5,
         markershape=:circle,
@@ -996,7 +996,7 @@ function plot_nb_cycles(D_all, method; legendposition=:topleft)
         x,
         1:n_batch;
         linewidth=2,
-        labels="minimum number of unicycles",
+        labels="minimum number of CRTs",
         legend=legendposition,
     )
     # end
@@ -1014,7 +1014,7 @@ function plot_nb_roots(D_all, method; legendposition=:topleft)
     plot(
         x,
         y;
-        ribbon=y_err,
+        yerr=y_err,
         xlabel="percentage of edges",
         labels="average number of roots",
         markersize=5,
