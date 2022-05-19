@@ -17,7 +17,7 @@
         @test norm(sparseB - B_sampled) < 1e-10
     end
 
-    @testset "average sparsifier mtsf is good" begin
+    @testset "average sparsifier crsf is good" begin
         n = 20
         p = 0.5
         eta = 0.3

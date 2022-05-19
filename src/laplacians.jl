@@ -75,7 +75,7 @@ function average_sparsifier(
             W *= diagm(e_weights[ind_e])
         end
 
-        L = L + w * sparseB * W * sparseB'
+        L = L + w * sparseB' * W * sparseB
     end
     nb_sampled_cycles = sum(nb_cycles)
     nb_sampled_roots = sum(nb_roots)
