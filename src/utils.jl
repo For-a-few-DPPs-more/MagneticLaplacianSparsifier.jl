@@ -71,7 +71,7 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q, methods=nothing)
     lev_ust = leverage_score(Matrix(B_ust), 0)
 
     if methods === nothing
-        methods = ["DPP unif", "DPP LS", "iid unif", "iid LS", "ST unif", "ST LS"]
+        methods = ["DPP(K) unif", "DPP(K) LS", "iid unif", "iid LS", "ST unif", "ST LS"]
     end
 
     D_all = Dict()
@@ -117,16 +117,16 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q, methods=nothing)
                 time = 0
                 n_cls = 0
                 n_rts = 0
-                if method == "DPP unif"
-                    # DPP uniform weighting
+                if method == "DPP(K) unif"
+                    # DPP(K) uniform weighting
                     vec = @timed average_sparsifier(rng, meta_g, nothing, q, i; weighted)
                     out = vec[1]
                     L_av = out[1]
                     n_cls = out[2]
                     n_rts = out[3]
                     time = vec[2]
-                elseif method == "DPP LS"
-                    # DPP leverage score weighting
+                elseif method == "DPP(K) LS"
+                    # DPP(K) leverage score weighting
                     vec = @timed average_sparsifier(rng, meta_g, lev, q, i; weighted)
                     out = vec[1]
                     L_av = out[1]
@@ -316,7 +316,7 @@ function benchmark_syncrank(
     rangebatch = 1:n_batch
 
     if methods === nothing
-        methods = ["DPP unif", "DPP LS", "iid unif", "iid LS", "ST unif", "ST LS"]
+        methods = ["DPP(K) unif", "DPP(K) LS", "iid unif", "iid LS", "ST unif", "ST LS"]
     end
     D_all = Dict()
 
@@ -370,14 +370,14 @@ function benchmark_syncrank(
                 n_cles = 0
                 n_rts = 0
                 weights = zeros(t, 1)
-                if method == "DPP unif"
-                    # DPP uniform weighting
+                if method == "DPP(K) unif"
+                    # DPP(K) uniform weighting
                     L_av, n_cles, n_rts, weights = average_sparsifier(
                         rng, meta_g, nothing, q, t; weighted
                     )
 
-                elseif method == "DPP LS"
-                    # DPP leverage score weighting
+                elseif method == "DPP(K) LS"
+                    # DPP(K) leverage score weighting
                     L_av, n_cles, n_rts, weights = average_sparsifier(
                         rng, meta_g, lev, q, t; weighted
                     )
@@ -540,7 +540,7 @@ function eigenvalue_approx(meta_g, n_batch, n_rep, rng; methods=nothing)
     rangebatch = 1:n_batch
 
     if methods === nothing
-        methods = ["DPP unif", "DPP LS"]
+        methods = ["DPP(K) unif", "DPP(K) LS"]
     end
     D_all = Dict()
 
@@ -574,14 +574,14 @@ function eigenvalue_approx(meta_g, n_batch, n_rep, rng; methods=nothing)
                 n_cles = 0
                 n_rts = 0
                 weights = zeros(t, 1)
-                if method == "DPP unif"
-                    # DPP uniform weighting
+                if method == "DPP(K) unif"
+                    # DPP(K) uniform weighting
                     L_av, n_cles, n_rts, weights = average_sparsifier(
                         rng, meta_g, nothing, q, t; weighted
                     )
 
-                elseif method == "DPP LS"
-                    # DPP leverage score weighting
+                elseif method == "DPP(K) LS"
+                    # DPP(K) leverage score weighting
                     L_av, n_cles, n_rts, weights = average_sparsifier(
                         rng, meta_g, lev, q, t; weighted
                     )
@@ -637,7 +637,7 @@ function plot_comparison_sync(
 )
     metric_std = metric * "_std"
 
-    method = "DPP unif"
+    method = "DPP(K) unif"
     D = D_all[method]
     x = D["percent_edges"]
     y = D[metric]
@@ -661,7 +661,7 @@ function plot_comparison_sync(
         margins=0.1 * 2cm,
     )
 
-    method = "DPP LS"
+    method = "DPP(K) LS"
     D = D_all[method]
     x = D["percent_edges"]
     y = D[metric]
@@ -809,7 +809,7 @@ function plot_comparison_sync(
 end
 
 function plot_comparison_cond(D_all, y_limits; legendposition::Symbol=:bottomright)
-    method = "DPP unif"
+    method = "DPP(K) unif"
     D = D_all[method]
 
     cdL = D["cdL"]
@@ -821,7 +821,7 @@ function plot_comparison_cond(D_all, y_limits; legendposition::Symbol=:bottomrig
     plot(
         x,
         y;
-        #yerror=y_er,
+        yerror=y_er,
         xlabel="percentage of edges",
         yaxis=:log,
         labels=method,
@@ -836,7 +836,7 @@ function plot_comparison_cond(D_all, y_limits; legendposition::Symbol=:bottomrig
         markerstrokewidth=2,
     )
 
-    method = "DPP LS"
+    method = "DPP(K) LS"
     D = D_all[method]
 
     x = D["percent_edges"]
@@ -846,7 +846,7 @@ function plot_comparison_cond(D_all, y_limits; legendposition::Symbol=:bottomrig
     plot!(
         x,
         y;
-        #yerror=y_er,
+        yerror=y_er,
         yaxis=:log,
         labels=method,
         markerstrokecolor=:auto,
@@ -866,7 +866,7 @@ function plot_comparison_cond(D_all, y_limits; legendposition::Symbol=:bottomrig
     plot!(
         x,
         y;
-        #yerror=y_er,
+        #yerror=y_er, # too large
         yaxis=:log,
         labels=method,
         markerstrokecolor=:auto,
@@ -887,7 +887,7 @@ function plot_comparison_cond(D_all, y_limits; legendposition::Symbol=:bottomrig
     plot!(
         x,
         y;
-        #yerror=y_er,
+        #yerror=y_er, # too large
         yaxis=:log,
         labels=method,
         markerstrokecolor=:auto,
@@ -908,7 +908,7 @@ function plot_comparison_cond(D_all, y_limits; legendposition::Symbol=:bottomrig
     plot!(
         x,
         y;
-        #yerror=y_er,
+        yerror=y_er,
         yaxis=:log,
         labels=method,
         markerstrokecolor=:auto,
@@ -928,7 +928,7 @@ function plot_comparison_cond(D_all, y_limits; legendposition::Symbol=:bottomrig
     plot!(
         x,
         y;
-        #yerror=y_er,
+        yerror=y_er,
         yaxis=:log,
         labels=method,
         markerstrokecolor=:auto,
@@ -993,11 +993,7 @@ function plot_nb_cycles(D_all, method; legendposition=:topleft)
     )
     # baseline
     return plot!(
-        x,
-        1:n_batch;
-        linewidth=2,
-        labels="minimum number of CRTs",
-        legend=legendposition,
+        x, 1:n_batch; linewidth=2, labels="minimum number of CRTs", legend=legendposition
     )
     # end
 end
