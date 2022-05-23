@@ -46,19 +46,26 @@ function pcond_Lap(avgL, q, Lap)
     return pd_Lap, R
 end
 
-function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q, methods=nothing)
+function cond_numbers(
+    meta_g, q, n_tot, n_rep, rng; q_system=q, methods=nothing, weighted=false
+)
     m = ne(meta_g)
     n = nv(meta_g)
     batch = n
 
-    weighted = false
-
     # magnetic Laplacian
     B = magnetic_incidence(meta_g)
-    Lap = B' * B
+
+    W = I # weight matrix
+    if weighted
+        e_weights = get_edges_prop(meta_g, :e_weight, true, 1.0)
+        W *= diagm(e_weights)
+    end
+
+    Lap = B' * W * B
 
     # magnetic leverage scores
-    lev = leverage_score(B, q)
+    lev = leverage_score(B, q; W)
 
     # magnetic Laplacian eigenvalues
     exact_eigenvalues = eigvals(Lap)
@@ -72,7 +79,7 @@ function cond_numbers(meta_g, q, n_tot, n_rep, rng; q_system=q, methods=nothing)
     B_ust = magnetic_incidence_matrix(meta_g; oriented=true, phases=false)
 
     # combinatorial leverage scores (non-magnetic)
-    lev_ust = leverage_score(Matrix(B_ust), 0)
+    lev_ust = leverage_score(Matrix(B_ust), 0; W)
 
     if methods === nothing
         methods = ["DPP(K) unif", "DPP(K) LS", "iid unif", "iid LS", "ST unif", "ST LS"]
@@ -1022,7 +1029,6 @@ function plot_nb_roots(D_all, method; legendposition=:topleft)
     return display(plt)
 end
 
-
 """
     flat_square_2d_grid(n, a, b)
 
@@ -1039,17 +1045,16 @@ position (i,j) -> row = j + sqrtn (i-1) for i,j = 1, ..., sqrtn
 
 """
 function flat_square_2d_grid(n, a, b)
-
-    sqrtn = Int64(floor(sqrt(n)));
-    X = zeros(sqrtn*sqrtn, 2);
-    counter = 0;
+    sqrtn = Int64(floor(sqrt(n)))
+    X = zeros(sqrtn * sqrtn, 2)
+    counter = 0
     for i in 1:sqrtn
         for j in 1:sqrtn
-            counter += 1;
-            X[counter,1] =  a + (b-a)*(i-1)/(sqrtn-1);
-            X[counter,2] =  a + (b-a)*(j-1)/(sqrtn-1);
+            counter += 1
+            X[counter, 1] = a + (b - a) * (i - 1) / (sqrtn - 1)
+            X[counter, 2] = a + (b - a) * (j - 1) / (sqrtn - 1)
         end
     end
 
-    return X;
+    return X
 end
