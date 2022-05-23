@@ -1021,3 +1021,35 @@ function plot_nb_roots(D_all, method; legendposition=:topleft)
     )
     return display(plt)
 end
+
+
+"""
+    flat_square_2d_grid(n, a, b)
+
+constructs a regular grid in interval [a,b]^2
+
+# Arguments
+- `n:Integer`: total number of points sqrtn^2 with sqrtn = floor(sqrt(n))^2)
+- `a:Float`: start point of interval [a,b].
+- `b:Float`: end point of interval [a,b].
+
+# Output
+- `X::Array{Float64,2}`:  nx2 array with coordinates of n grid nodes with [a,b]
+position (i,j) -> row = j + sqrtn (i-1) for i,j = 1, ..., sqrtn
+
+"""
+function flat_square_2d_grid(n, a, b)
+
+    sqrtn = Int64(floor(sqrt(n)));
+    X = zeros(sqrtn*sqrtn, 2);
+    counter = 0;
+    for i in 1:sqrtn
+        for j in 1:sqrtn
+            counter += 1;
+            X[counter,1] =  a + (b-a)*(i-1)/(sqrtn-1);
+            X[counter,2] =  a + (b-a)*(j-1)/(sqrtn-1);
+        end
+    end
+
+    return X;
+end

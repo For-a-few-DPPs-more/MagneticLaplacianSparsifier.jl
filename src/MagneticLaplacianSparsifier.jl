@@ -69,5 +69,6 @@ export multi_type_spanning_forest,
     plot_nb_roots,
     gen_graph_cliques,
     gen_graph_planted_triangles,
-    eigenvalue_approx
+    eigenvalue_approx,
+    flat_square_2d_grid
 end
