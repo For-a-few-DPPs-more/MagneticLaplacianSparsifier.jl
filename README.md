@@ -27,7 +27,7 @@ You can execute the Jupyter [`notebooks`](https://github.com/For-a-few-DPPs-more
 
 - [`plotting random spanning graphs`](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl/blob/master/notebooks/plots.ipynb) See Figure 1.
 - [`sparsify-and-eigensolve`](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl/blob/master/notebooks/syncrank.ipynb) See Figure 3 and 12.
-- [`sparsify-and-precondition`](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl/blob/master/notebooks/preconditioning.ipynb) See Fiigure 4, 5, 6 and 7.
+- [`sparsify-and-precondition`](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl/blob/master/notebooks/preconditioning.ipynb) See Figure 4, 5, 6 and 7.
 - [`timings`](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl/blob/master/notebooks/timings.ipynb) See Figure 8 and 9.
 - [`leverage score estimation`](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl/blob/master/notebooks/demo_lev_scores.ipynb) See Figure 11.
 
