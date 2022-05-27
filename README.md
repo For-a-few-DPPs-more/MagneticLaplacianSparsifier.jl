@@ -22,20 +22,21 @@ The way to use it is to type
 julia> ]add https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl
 ```
 
+### Jupyter notebooks for reproducing the paper figures
+
+You can execute the Jupyter [`notebooks`](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl/blob/master/notebooks) to play with the code.
+
+- [`sparsify-and-eigensolve`](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl/blob/master/notebooks/syncrank.ipynb)
+- [`sparsify-and-precondition`](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl/blob/master/notebooks/preconditioning.ipynb)
+- [`timings`](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl/blob/master/notebooks/timings.ipynb)
+- [`leverage score estimation`](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl/blob/master/notebooks/demo_lev_scores.ipynb)
+- [`plotting random spanning graphs`](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl/blob/master/notebooks/plots.ipynb)
+
+
 ### Usage
 
-To use this package, simply type
+To use this functions of this package, simply type
 
 ```julia
 julia> using MagneticLaplacianSparsifier
 ```
-
-### Jupyter notebooks for reproducing the paper figures
-
-You can execute the Jupyter [`notebooks`](https://github.com/guilgautier/PartialRejectionSampling.jl/blob/master/notebooks) to play with the code.
-
-- [`sparsify-and-eigensolve`](https://github.com/guilgautier/PartialRejectionSampling.jl/blob/master/notebooks/syncrank.ipynb)
-- [`sparsify-and-precondition`](https://github.com/guilgautier/PartialRejectionSampling.jl/blob/master/notebooks/preconditioning.ipynb)
-- [`timings`](https://github.com/guilgautier/PartialRejectionSampling.jl/blob/master/notebooks/timings.ipynb)
-- [`leverage score estimation`](https://github.com/guilgautier/PartialRejectionSampling.jl/blob/master/notebooks/demo_lev_scores.ipynb)
--[`plotting random spanning graphs`](https://github.com/guilgautier/PartialRejectionSampling.jl/blob/master/notebooks/plots.ipynb)
