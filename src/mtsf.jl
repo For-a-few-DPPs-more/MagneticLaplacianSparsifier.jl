@@ -115,7 +115,7 @@ function multi_type_spanning_forest(
     return mtsf
 end
 
-function restart_walk_from_unvisited_node!(rng, walk, unvisited)
+function restart_walk_from_unvisited_node!(rng::Random.AbstractRNG, walk, unvisited)
     empty!(walk)
     n0 = -1
     if !isempty(unvisited)
@@ -126,7 +126,7 @@ function restart_walk_from_unvisited_node!(rng, walk, unvisited)
     return n0
 end
 
-function keep_cycle(rng, graph::AbstractMetaGraph, cycle_edges)
+function keep_cycle(rng::Random.AbstractRNG, graph::AbstractMetaGraph, cycle_edges)
     alpha = 1.0 - cos(curvature(graph, cycle_edges))
     keep = rand(rng) < min(alpha, 1)
     return keep, alpha
@@ -143,7 +143,7 @@ function curvature(
     return curvature
 end
 
-function rand_step(rng, g, n0, weighted::Bool=false)
+function rand_step(rng::Random.AbstractRNG, g, n0, weighted::Bool=false)
     if weighted
         nb_list = neighbors(g, n0)
         p = Vector{Float64}(undef, length(nb_list))
@@ -165,7 +165,7 @@ function rand_step(rng, g, n0, weighted::Bool=false)
     return n1
 end
 
-function step_to_root(rng, g, n0, q, weighted::Bool=false)
+function step_to_root(rng::Random.AbstractRNG, g, n0, q::Real, weighted::Bool=false)
     if weighted
         nb_list = neighbors(g, n0)
         sum_of_w = 0

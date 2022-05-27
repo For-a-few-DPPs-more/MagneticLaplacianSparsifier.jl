@@ -5,7 +5,7 @@ getRNG(seed::Random.AbstractRNG) = seed
 
 consecutive_pairs(path) = partition(path, 2, 1)
 
-function add_edges_from!(g, edges)
+function add_edges_from!(g::AbstractMetaGraph, edges)
     for e in edges
         edge = isa(e, Edge) ? e : Edge(e)
         add_edge!(g, edge)
@@ -47,7 +47,14 @@ function pcond_Lap(avgL, q, Lap)
 end
 
 function cond_numbers(
-    meta_g, q, n_tot, n_rep, rng; q_system=q, methods=nothing, weighted=false
+    meta_g::AbstractMetaGraph,
+    q::Real,
+    n_tot::Integer,
+    n_rep::Integer,
+    rng::Random.AbstractRNG;
+    q_system::Real=q,
+    methods::String=nothing,
+    weighted::Bool=false,
 )
     m = ne(meta_g)
     n = nv(meta_g)
@@ -266,7 +273,12 @@ function cond_numbers(
 end
 
 function benchmark_syncrank(
-    meta_g, planted_ranking_score, n_batch, n_rep, rng; methods=nothing
+    meta_g::AbstractMetaGraph,
+    planted_ranking_score,
+    n_batch::Integer,
+    n_rep::Integer,
+    rng::Random.AbstractRNG;
+    methods::String=nothing,
 )
     n = nv(meta_g)
     m = ne(meta_g)
@@ -502,7 +514,13 @@ function benchmark_syncrank(
     return D_all
 end
 
-function eigenvalue_approx(meta_g, n_batch, n_rep, rng; methods=nothing)
+function eigenvalue_approx(
+    meta_g::Integer,
+    n_batch::Integer,
+    n_rep::Integer,
+    rng::Random.AbstractRNG;
+    methods::String=nothing,
+)
     n = nv(meta_g)
     m = ne(meta_g)
 
@@ -630,7 +648,7 @@ function eigenvalue_approx(meta_g, n_batch, n_rep, rng; methods=nothing)
 end
 
 function plot_comparison_sync(
-    metric::String, D_all, y_limits; legendposition::Symbol=:bottomright
+    metric::String, D_all::AbstractDict, y_limits; legendposition::Symbol=:bottomright
 )
     metric_std = metric * "_std"
 
@@ -810,7 +828,9 @@ function plot_comparison_sync(
     return y_limits
 end
 
-function plot_comparison_cond(D_all, y_limits; legendposition::Symbol=:bottomright)
+function plot_comparison_cond(
+    D_all::AbstractDict, y_limits; legendposition::Symbol=:bottomright
+)
     method = "DPP(K) unif"
     D = D_all[method]
 
@@ -963,7 +983,7 @@ function plot_comparison_cond(D_all, y_limits; legendposition::Symbol=:bottomrig
     return y_limits
 end
 
-function plot_nb_cycles(D_all, method; legendposition=:topleft)
+function plot_nb_cycles(D_all::AbstractDict, method::String; legendposition=:topleft)
     D = D_all[method]
 
     x = D["percent_edges"]
@@ -995,7 +1015,7 @@ function plot_nb_cycles(D_all, method; legendposition=:topleft)
     return display(plt)
 end
 
-function plot_nb_roots(D_all, method; legendposition=:topleft)
+function plot_nb_roots(D_all::AbstractDict, method::String; legendposition=:topleft)
     D = D_all[method]
 
     x = D["percent_edges"]
@@ -1044,7 +1064,7 @@ constructs a regular grid in interval [a,b]^2
 position (i,j) -> row = j + sqrtn (i-1) for i,j = 1, ..., sqrtn
 
 """
-function flat_square_2d_grid(n, a, b)
+function flat_square_2d_grid(n::Integer, a::Real, b::Real)
     sqrtn = Int64(floor(sqrt(n)))
     X = zeros(sqrtn * sqrtn, 2)
     counter = 0

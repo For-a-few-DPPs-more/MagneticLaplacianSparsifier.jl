@@ -139,7 +139,7 @@ function ero_mun_sbm(
     return g
 end
 
-function gen_graph_cliques(rng, n, noise, η; planted_score=nothing)
+function gen_graph_cliques(rng::Random.AbstractRNG, n::Integer, noise::Real, η::Real; planted_score=nothing)
     n_v = 2 * n
     g = Graph(n_v)
     meta_g = MetaGraph(g)
@@ -197,7 +197,7 @@ function gen_graph_cliques(rng, n, noise, η; planted_score=nothing)
 end
 
 function gen_graph_planted_triangles(
-    rng, n_v, noise, p_edge, p_triangles; planted_score=nothing
+    rng::Random.AbstractRNG, n_v::Integer, noise::Real, p_edge::Real, p_triangles::Real; planted_score=nothing
 )
     g = Graph(n_v)
     meta_g = MetaGraph(g)

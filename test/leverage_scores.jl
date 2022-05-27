@@ -86,7 +86,7 @@ end
     B = magnetic_incidence(meta_g)
 
     Lap = B' * W * B
-    nb_samples = 1e5
+    nb_samples = Int(1e5)
 
     @testset "LS approximation with weights and q = 0.1" begin
         q = 0.1

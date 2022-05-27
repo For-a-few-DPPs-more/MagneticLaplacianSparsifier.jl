@@ -32,11 +32,11 @@ function mtsf_edge_indices(mtsf, graph)
 end
 
 function average_sparsifier(
-    rng,
-    meta_g,
+    rng::Random.AbstractRNG,
+    meta_g::AbstractMetaGraph,
     ls,
-    q,
-    nb_samples;
+    q::Real,
+    nb_samples::Integer;
     weighted::Bool=false,
     absorbing_node::Bool=false,
     ust::Bool=false,
@@ -85,7 +85,9 @@ function average_sparsifier(
     return L, nb_sampled_cycles, nb_sampled_roots, weights
 end
 
-function sample_subgraph_iid(rng, meta_g, ls, batch)
+function sample_subgraph_iid(
+    rng::Random.AbstractRNG, meta_g::AbstractMetaGraph, ls, batch::Integer
+)
     n = nv(meta_g)
     m = ne(meta_g)
     subgraph = MetaGraph(n)
@@ -107,14 +109,21 @@ function sample_subgraph_iid(rng, meta_g, ls, batch)
     return subgraph
 end
 
-function average_sparsifier_iid(rng, meta_g, ls, batch, nb_samples; weighted::Bool=false)
+function average_sparsifier_iid(
+    rng::Random.AbstractRNG,
+    meta_g::AbstractMetaGraph,
+    ls,
+    batch::Integer,
+    nb_samples::Integer;
+    weighted::Bool=false,
+)
     n = nv(meta_g)
     m = ne(meta_g)
     L = zeros(n, n)
     w_tot = 0
 
     for _ in 1:nb_samples
-        subgraph = sample_subgraph_iid(rng, meta_g, ls, batch)
+        subgraph = sample_subgraph_iid(rng::Random.AbstractRNG, meta_g, ls, batch)
         w = 1
         w_tot += w
         sparseB = magnetic_incidence(subgraph; oriented=true)
@@ -138,7 +147,7 @@ function average_sparsifier_iid(rng, meta_g, ls, batch, nb_samples; weighted::Bo
     return L
 end
 
-function leverage_score(B, q; W=I)
+function leverage_score(B, q::Real; W=I)
     if q > 1e-13
         levScores = real(diag(W * B * ((B' * W * B + q * I) \ B')))
     else
@@ -149,7 +158,13 @@ function leverage_score(B, q; W=I)
 end
 
 function emp_leverage_score(
-    rng, meta_g, q, t; weighted::Bool=false, absorbing_node::Bool=false, ust::Bool=false
+    rng::Random.AbstractRNG,
+    meta_g::AbstractMetaGraph,
+    q::Real,
+    t::Integer;
+    weighted::Bool=false,
+    absorbing_node::Bool=false,
+    ust::Bool=false,
 )
     m = ne(meta_g)
     emp_lev = zeros(m, 1)
@@ -170,7 +185,7 @@ end
 
 nb_of_edges(L::AbstractMatrix) = (nnz(sparse(L)) - size(L, 1)) / 2
 
-function optimal_perm(mtsf)
+function optimal_perm(mtsf::AbstractMetaGraph)
     n_v = nv(mtsf)
     #get the roots
     roots = get_prop(mtsf, :roots)
