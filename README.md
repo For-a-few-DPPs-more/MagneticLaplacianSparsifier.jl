@@ -23,7 +23,7 @@ julia> ]add https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.j
 
 ### Jupyter notebooks for reproducing the paper figures
 
-You can execute the Jupyter [`notebooks`](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl/blob/master/notebooks) to play with the code.
+You can execute the Jupyter [`notebooks`](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl/blob/master/notebooks) to generate the paper figures.
 
 - [`plotting random spanning graphs`](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl/blob/master/notebooks/plots.ipynb) See Figure 1.
 - [`sparsify-and-eigensolve`](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl/blob/master/notebooks/syncrank.ipynb) See Figure 3 and 12.
