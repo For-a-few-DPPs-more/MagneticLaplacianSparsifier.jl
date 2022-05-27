@@ -18,7 +18,7 @@ function erdos_renyi(
     p::Real,
     η::Real,
     model::Symbol;
-    planted_score::Array=nothing,
+    planted_score::Union{Array,Nothing}=nothing,
     scaling::Real=1.0,
 )
     m = div(nv * (nv - 1), 2)
@@ -32,7 +32,7 @@ function erdos_renyi(
     n_e::Integer,
     η::Real,
     model::Symbol;
-    planted_score::Array=nothing,
+    planted_score::Union{Array,Nothing}=nothing,
     scaling::Real=1.0,
 )::AbstractMetaGraph
     g = MetaGraph(n_v)
@@ -65,7 +65,7 @@ function ero_mun(
     p::Real,
     η::Real,
     noise::Real;
-    planted_score::Array=nothing,
+    planted_score::Union{Array,Nothing}=nothing,
     scaling::Real=1.0,
 )::AbstractMetaGraph
     g = MetaGraph(n_v)
@@ -102,7 +102,7 @@ function ero_mun_sbm(
     p_out::Real,
     η::Real,
     noise::Real;
-    planted_score::Array=nothing,
+    planted_score::Union{Array,Nothing}=nothing,
     scaling::Real=1.0,
 )::AbstractMetaGraph
     g = MetaGraph(n_v)
@@ -139,7 +139,13 @@ function ero_mun_sbm(
     return g
 end
 
-function gen_graph_cliques(rng::Random.AbstractRNG, n::Integer, noise::Real, η::Real; planted_score::Array=nothing)
+function gen_graph_cliques(
+    rng::Random.AbstractRNG,
+    n::Integer,
+    noise::Real,
+    η::Real;
+    planted_score::Union{Array,Nothing}=nothing,
+)
     n_v = 2 * n
     g = Graph(n_v)
     meta_g = MetaGraph(g)
@@ -197,7 +203,12 @@ function gen_graph_cliques(rng::Random.AbstractRNG, n::Integer, noise::Real, η:
 end
 
 function gen_graph_planted_triangles(
-    rng::Random.AbstractRNG, n_v::Integer, noise::Real, p_edge::Real, p_triangles::Real; planted_score::Array=nothing
+    rng::Random.AbstractRNG,
+    n_v::Integer,
+    noise::Real,
+    p_edge::Real,
+    p_triangles::Real;
+    planted_score::Union{Array,Nothing}=nothing,
 )
     g = Graph(n_v)
     meta_g = MetaGraph(g)
@@ -240,7 +251,11 @@ function gen_graph_planted_triangles(
 end
 
 function ero_located(
-    rng::Random.AbstractRNG, n_v::Integer, p::Real, η::Real; planted_score::Array=nothing
+    rng::Random.AbstractRNG,
+    n_v::Integer,
+    p::Real,
+    η::Real;
+    planted_score::Union{Array,Nothing}=nothing,
 )
     g = MetaGraph(n_v)
 

@@ -150,7 +150,7 @@ function average_sparsifier_iid(
     return L
 end
 
-function leverage_score(B::Array, q::Real; W=I::Array)
+function leverage_score(B::Array, q::Real; W=I)
     if q > 1e-13
         levScores = real(diag(W * B * ((B' * W * B + q * I) \ B')))
     else
