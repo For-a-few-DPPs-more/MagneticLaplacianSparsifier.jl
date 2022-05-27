@@ -40,8 +40,8 @@ function get_edges_prop(
 end
 
 function pcond_Lap(
-    avgL::Array{Float64,2}, q::Real, Lap::Array{Float64,2}
-)::Tuple{Array{Float64,2},Array{Float64,2}}
+    avgL::Array{Complex{Float64},2}, q::Real, Lap::Array{Complex{Float64},2}
+)::Tuple{Array{Complex{Float64},2},Array{Complex{Float64},2}}
     avgL = (avgL + avgL') / 2
     R = cholesky(avgL + q * I).L
     pd_Lap = R \ ((Lap + q * I) / R')
