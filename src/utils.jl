@@ -39,7 +39,9 @@ function get_edges_prop(
     return [get_edge_prop(g, e, prop, oriented, default) for e in edges(g)]
 end
 
-function pcond_Lap(avgL, q, Lap)
+function pcond_Lap(
+    avgL::Array{Float64,2}, q::Real, Lap::Array{Float64,2}
+)::Tuple{Array{Float64,2},Array{Float64,2}}
     avgL = (avgL + avgL') / 2
     R = cholesky(avgL + q * I).L
     pd_Lap = R \ ((Lap + q * I) / R')
@@ -53,9 +55,9 @@ function cond_numbers(
     n_rep::Integer,
     rng::Random.AbstractRNG;
     q_system::Real=q,
-    methods::String=nothing,
+    methods::Union{String,Nothing}=nothing,
     weighted::Bool=false,
-)
+)::AbstractDict
     m = ne(meta_g)
     n = nv(meta_g)
     batch = n
@@ -274,12 +276,12 @@ end
 
 function benchmark_syncrank(
     meta_g::AbstractMetaGraph,
-    planted_ranking_score,
+    planted_ranking_score::Array,
     n_batch::Integer,
     n_rep::Integer,
     rng::Random.AbstractRNG;
-    methods::String=nothing,
-)
+    methods::Union{String,Nothing}=nothing,
+)::AbstractDict
     n = nv(meta_g)
     m = ne(meta_g)
     #
@@ -519,8 +521,8 @@ function eigenvalue_approx(
     n_batch::Integer,
     n_rep::Integer,
     rng::Random.AbstractRNG;
-    methods::String=nothing,
-)
+    methods::Union{String,Nothing}=nothing,
+)::AbstractDict
     n = nv(meta_g)
     m = ne(meta_g)
 
@@ -825,7 +827,7 @@ function plot_comparison_sync(
 
     display(plt)
 
-    return y_limits
+    return nothing
 end
 
 function plot_comparison_cond(
@@ -980,10 +982,12 @@ function plot_comparison_cond(
     )
     ylims!(y_limits)
     display(plt)
-    return y_limits
+    return nothing
 end
 
-function plot_nb_cycles(D_all::AbstractDict, method::String; legendposition=:topleft)
+function plot_nb_cycles(
+    D_all::AbstractDict, method::String; legendposition::Symbol=:topleft
+)
     D = D_all[method]
 
     x = D["percent_edges"]
@@ -1012,10 +1016,12 @@ function plot_nb_cycles(D_all::AbstractDict, method::String; legendposition=:top
     )
     # baseline
     plot!(x, 1:n_batch; linewidth=2, labels="minimum number of CRTs", legend=legendposition)
-    return display(plt)
+    display(plt)
+
+    return nothing
 end
 
-function plot_nb_roots(D_all::AbstractDict, method::String; legendposition=:topleft)
+function plot_nb_roots(D_all::AbstractDict, method::String; legendposition::Symbol=:topleft)
     D = D_all[method]
 
     x = D["percent_edges"]
@@ -1046,7 +1052,8 @@ function plot_nb_roots(D_all::AbstractDict, method::String; legendposition=:topl
     plot!(
         x, 1:n_batch; linewidth=2, labels="minimum number of roots", legend=legendposition
     )
-    return display(plt)
+    display(plt)
+    return nothing
 end
 
 """
@@ -1064,7 +1071,7 @@ constructs a regular grid in interval [a,b]^2
 position (i,j) -> row = j + sqrtn (i-1) for i,j = 1, ..., sqrtn
 
 """
-function flat_square_2d_grid(n::Integer, a::Real, b::Real)
+function flat_square_2d_grid(n::Integer, a::Real, b::Real)::Array{Float64,2}
     sqrtn = Int64(floor(sqrt(n)))
     X = zeros(sqrtn * sqrtn, 2)
     counter = 0

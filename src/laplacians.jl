@@ -34,7 +34,7 @@ end
 function average_sparsifier(
     rng::Random.AbstractRNG,
     meta_g::AbstractMetaGraph,
-    ls,
+    ls::Union{Array,Nothing},
     q::Real,
     nb_samples::Integer;
     weighted::Bool=false,
@@ -86,7 +86,10 @@ function average_sparsifier(
 end
 
 function sample_subgraph_iid(
-    rng::Random.AbstractRNG, meta_g::AbstractMetaGraph, ls, batch::Integer
+    rng::Random.AbstractRNG,
+    meta_g::AbstractMetaGraph,
+    ls::Union{Array,Nothing},
+    batch::Integer,
 )
     n = nv(meta_g)
     m = ne(meta_g)
@@ -112,7 +115,7 @@ end
 function average_sparsifier_iid(
     rng::Random.AbstractRNG,
     meta_g::AbstractMetaGraph,
-    ls,
+    ls::Union{Array,Nothing},
     batch::Integer,
     nb_samples::Integer;
     weighted::Bool=false,
@@ -147,7 +150,7 @@ function average_sparsifier_iid(
     return L
 end
 
-function leverage_score(B, q::Real; W=I)
+function leverage_score(B::Array, q::Real; W=I::Array)
     if q > 1e-13
         levScores = real(diag(W * B * ((B' * W * B + q * I) \ B')))
     else
