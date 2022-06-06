@@ -15,16 +15,15 @@ function multi_type_spanning_forest(g::MetaGraph{T,U}, q::Real)::MetaGraph{T,U} 
 end
 
 """
-    multi_type_spanning_forest(
-        rng,
-        g,
-        q;
-        weighted,
-        absorbing_node,
-        ust,
-    )
+    multi_type_spanning_forest(rng,g,q;weighted,absorbing_node,ust)
 
-samples an mtsf with a given random number generator, and possibly weighted links, an absorbing node. For sampling a spanning tree, put absorbing_node = true and ust = true. This algorithm uses cycle-popping with capped cycle weights
+samples an mtsf with a given random number generator, and possibly weighted links, an absorbing node. For sampling a spanning tree, put absorbing_node = true and ust = true. This algorithm uses cycle-popping with capped cycle weights.
+
+The output meta graph has the following properties:
+- :weight self-normalized sampling weight of the mtsf.
+- :roots array containing the mtsf roots.
+- :cycle_nodes array containing the nodes in each of the cycles.
+- :branches array containing the branches rooted at the cycles or roots.
 
 # Arguments
 - `rng::Random.AbstractRNG` random number generator.
@@ -148,6 +147,19 @@ function multi_type_spanning_forest(
     return mtsf
 end
 
+"""
+    restart_walk_from_unvisited_node!(rng, walk, unvisited)
+
+returns an unvisited node.
+
+# Arguments
+- `rng::Random.AbstractRNG` random number generator.
+- `walk` array containing the current path of the walk.
+- `unvisited` array indicating which node is visited/unvisited/in the path.
+# Output
+- `n0` an unvisited node.
+
+"""
 function restart_walk_from_unvisited_node!(rng::Random.AbstractRNG, walk, unvisited)
     empty!(walk)
     n0 = -1
@@ -159,12 +171,41 @@ function restart_walk_from_unvisited_node!(rng::Random.AbstractRNG, walk, unvisi
     return n0
 end
 
+"""
+    keep_cycle(rng, graph, cycle_edges)
+
+keeps or pops a cycle.
+
+# Arguments
+- `rng::Random.AbstractRNG` random number generator.
+- `graph` connection graph.
+- `cycle_edges` array of nodes in the cycle.
+
+# Output
+- `keep` boolean determining if the cycle is kept (true) or not (false).
+- `alpha` cycle weight.
+
+"""
 function keep_cycle(rng::Random.AbstractRNG, graph::AbstractMetaGraph, cycle_edges)
     alpha = 1.0 - cos(curvature(graph, cycle_edges))
     keep = rand(rng) < min(alpha, 1)
     return keep, alpha
 end
 
+"""
+    curvature(g, edges, oriented, default_angle)
+
+sum of the angles along a cycle.
+# Arguments
+- `g::AbstractMetaGraph` connection graph.
+- `edges` cycle edges.
+- `oriented` boolean indicating if edges are oriented.
+- `default_angle::Real=0.0` angle by default.
+
+# Output
+- `curvature` sum of angles along cycle edges.
+
+"""
 function curvature(
     g::AbstractMetaGraph, edges, oriented::Bool=true, default_angle::Real=0.0
 )
