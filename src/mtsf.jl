@@ -1,9 +1,42 @@
-# todo write the docstrings
+"""
+    multi_type_spanning_forest(g, q)
 
+samples an mtsf with default random number generator.
+
+# Arguments
+- `g::MetaGraph{T,U}` connection graph.
+- `q::Real` positive parameter playing the role of regularizer.
+# Output
+- `mtsf::MetaGraph{T,U}` connection graph associated with mtsf.
+
+"""
 function multi_type_spanning_forest(g::MetaGraph{T,U}, q::Real)::MetaGraph{T,U} where {T,U}
     return multi_type_spanning_forest(getRNG(), g, q)
 end
 
+"""
+    multi_type_spanning_forest(
+        rng,
+        g,
+        q;
+        weighted,
+        absorbing_node,
+        ust,
+    )
+
+samples an mtsf with a given random number generator, and possibly weighted links, an absorbing node. For sampling a spanning tree, put absorbing_node = true and ust = true. This algorithm uses cycle-popping with capped cycle weights
+
+# Arguments
+- `rng::Random.AbstractRNG` random number generator.
+- `g::MetaGraph{T,U}` connection graph.
+- `q::Real` positive parameter playing the role of regularizer.
+- `weighted::Bool=false` (optional) uses the edge weights in the random walk.
+- `absorbing_node::Bool=false` (optional) absorbing node sampled uniformly.
+- `ust::Bool=false` (optional) allows to a sample spanning tree.
+# Output
+- `mtsf::MetaGraph{T,U}` connection graph associated with mtsf.
+
+"""
 function multi_type_spanning_forest(
     rng::Random.AbstractRNG,
     g::MetaGraph{T,U},
