@@ -4,6 +4,7 @@
 !/notebooks/syncrank.ipynb
 !/notebooks/preconditioning.ipynb
 !/notebooks/plots.ipynb
+!/notebooks/ERO_locate_error_edges.ipynb
 
 # !/notebooks/real_graphs_preconditioning.ipynb
 # !/notebooks/MC_regularized_inverse.ipynb
