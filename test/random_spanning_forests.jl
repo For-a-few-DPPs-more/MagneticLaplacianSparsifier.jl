@@ -114,7 +114,7 @@
             err = norm(empirical_p - p)
             println("error: ", err)
 
-            @test err < 1e-3
+            @test err < 2 * 1e-3
         end
         @testset "with absording node" begin
             count = zeros(length(nb_list) + 1, 1)
@@ -150,7 +150,7 @@
             err = norm(empirical_p - p)
             println("error: ", err)
 
-            @test err < 1e-3
+            @test err < 2 * 1e-3
         end
     end
 end
