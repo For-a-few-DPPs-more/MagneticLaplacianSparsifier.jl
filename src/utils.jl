@@ -797,7 +797,7 @@ function plot_comparison_sync(
         x = D["percent_edges"]
         y = D["tau_full"] * ones(size(x))
         Plots.plot!(x, y; labels="full")
-        ylabel!("Kendall's tau distance ")
+        ylabel!("Kendall's tau ")
 
     elseif metric === "upsets_in_top"
         ylabel!("number of upsets in top 10 ")
