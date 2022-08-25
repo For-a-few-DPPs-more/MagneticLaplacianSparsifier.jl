@@ -55,6 +55,7 @@ function multi_type_spanning_forest(
     # Initialize the random walk
     walk = T[]
     unvisited = Set{T}(vertices(g))
+    nb_steps = 0
 
     #fix a root if necessary
     if absorbing_node
@@ -91,6 +92,7 @@ function multi_type_spanning_forest(
 
         #n1 = rand(rng, neighbors(g, n0))
         n1 = rand_step(rng, g, n0, weighted)
+        nb_steps += 1
 
         push!(walk, n1)
 
@@ -143,6 +145,7 @@ function multi_type_spanning_forest(
     set_prop!(mtsf, :roots, roots)
     set_prop!(mtsf, :cycle_nodes, nodes_in_cycles)
     set_prop!(mtsf, :branches, reverse(reverse_order_branches))
+    set_prop!(mtsf, :nb_steps, nb_steps)
 
     return mtsf
 end
