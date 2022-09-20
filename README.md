@@ -7,7 +7,7 @@
 
 ### Documentation
 This is the code associated with the manuscript 
-[Sparsification of the regularized magnetic Laplacian  thanks to multi-type spanning forests](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl)
+[Sparsification of the regularized magnetic Laplacian  thanks to multi-type spanning forests](https://arxiv.org/pdf/2208.14797.pdf)
 by [Michaël Fanuel](https://mrfanuel.github.io/) and [Rémi Bardenet](https://rbardenet.github.io/).
 ### Install Julia
 
