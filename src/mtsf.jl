@@ -51,6 +51,7 @@ function multi_type_spanning_forest(
     roots = T[]
     nodes_in_cycles = Vector{T}[]
     reverse_order_branches = Vector{T}[]
+    popped_cycles = Vector{T}[]
 
     # Initialize the random walk
     walk = T[]
@@ -80,6 +81,7 @@ function multi_type_spanning_forest(
         if n0_is_root
             push!(roots, n0)
             add_edges_from!(mtsf, consecutive_pairs(walk))
+            nb_steps += 1
             nv_mtsf += length(walk)
             setdiff!(unvisited, walk)
 
@@ -131,7 +133,9 @@ function multi_type_spanning_forest(
 
                 n0 = restart_walk_from_unvisited_node!(rng, walk, unvisited)
 
-            else  # pop cycle but keep loopy node
+            else
+                push!(popped_cycles, cycle_nodes[2:end])
+
                 union!(unvisited, cycle_nodes)
                 setdiff!(unvisited, n1)  # remove n1 which was part of cycle_nodes
                 resize!(walk, idx_n1)
@@ -144,6 +148,8 @@ function multi_type_spanning_forest(
     set_prop!(mtsf, :weight, weight)
     set_prop!(mtsf, :roots, roots)
     set_prop!(mtsf, :cycle_nodes, nodes_in_cycles)
+    set_prop!(mtsf, :popped_cycles, popped_cycles)
+
     set_prop!(mtsf, :branches, reverse(reverse_order_branches))
     set_prop!(mtsf, :nb_steps, nb_steps)
 
