@@ -1,9 +1,3 @@
-<script
-  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
-  type="text/javascript">
-</script>
-
-
 # Number of steps to complete Cycle-Popping
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://For-a-few-DPPs-more.github.io/MagneticLaplacianSparsifier.jl/stable)
@@ -13,7 +7,7 @@
 
 ### Documentation
 This is the code associated with the manuscript 
-[Cycle-Popping Random Walk  in Weakly Inconsistent $\Uone$-Connection Graphs and the Law of the Number of Steps](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl)
+[Cycle-Popping Random Walk  in Weakly Inconsistent U(1)-Connection Graphs and the Law of the Number of Steps](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl)
 by [Michaël Fanuel](https://mrfanuel.github.io/) and [Rémi Bardenet](https://rbardenet.github.io/).
 ### Install Julia
 
