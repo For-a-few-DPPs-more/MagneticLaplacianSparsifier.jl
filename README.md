@@ -25,7 +25,7 @@ julia> ]add https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.j
 
 You can execute the Jupyter [`notebooks`](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl/blob/counting_steps/notebooks) to reproduce paper simulations.
 
-- [`plotting random spanning graphs`](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl/blob/counting_steps/notebooks/nb_steps.ipynb) See Figure 3.
+- [`Counting steps to complete CyclePopping`](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl/blob/counting_steps/notebooks/nb_steps.ipynb) See Figure 3.
 
 
 
