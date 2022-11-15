@@ -66,57 +66,71 @@ function multi_type_spanning_forest(
 
     # Start the random walk
     n0 = rand(rng, unvisited)
+    # add n0 to walk
     push!(walk, n0)
+    # mark n0 as visited
     setdiff!(unvisited, n0)
 
     while nv_mtsf < nv(g)
+
         n0_is_root = false
+        # check if n0 is a root
         if q > 1e-10
-            #n0_is_root = rand(rng) < q / (q + degree(g, n0))
+            # if q not too small
             n0_is_root = step_to_root(rng, g, n0, q, weighted)
+            # explicitly n0_is_root = rand(rng) < q / (q + degree(g, n0))
         end
 
         if n0_is_root
+            # if n0 is indeed a root record the rooted branch in mtsf
             push!(roots, n0)
             add_edges_from!(mtsf, consecutive_pairs(walk))
             nv_mtsf += length(walk)
+            # mark nodes in walk as visited
             setdiff!(unvisited, walk)
 
             # record branch w/o  root
             push!(reverse_order_branches, walk[1:(end - 1)])
-
+            # restart with a new n0 uniformly among the unvisited nodes
             n0 = restart_walk_from_unvisited_node!(rng, walk, unvisited)
             continue
         end
 
-        #n1 = rand(rng, neighbors(g, n0))
+        # walk to a nb with proba propto edge weight
         n1 = rand_step(rng, g, n0, weighted)
-
+        # add this nb to walk
         push!(walk, n1)
 
         if n1 in unvisited
+            # if n1 unvisited, mark it as visited
             setdiff!(unvisited, n1)
-            n0 = n1  # continue the walk
+            n0 = n1  # and continue the walk
 
         elseif (degree(mtsf, n1) > 0 || n1 in roots) || (n1 in roots && ust)
+            # otherwise if n1 is already visited and is in the mtsf or is a root
+            # record the walk as a branch
             add_edges_from!(mtsf, consecutive_pairs(walk))
             nv_mtsf += length(walk) - 1
             setdiff!(unvisited, walk)
+            # mark nodes in walk as visited
 
             push!(reverse_order_branches, walk[1:(end - 1)])
-
+            # restart with a new n0 uniformly among the unvisited nodes
             n0 = restart_walk_from_unvisited_node!(rng, walk, unvisited)
 
-        else  # if n1 in walk: identify unique cycle/loop in walk with knot n1
+        else  # else n1 is in walk.
+            # We identify unique cycle in walk with knot n1
             idx_n1 = findfirst(x -> x == n1, walk)
             cycle_nodes = @view walk[idx_n1:end]
-            keep = false
+
+            keep = false # by default, cycle is popped
             alpha = 0
-            if !ust
+            if !ust # if not spanning tree, toss a coin to pop or not
                 keep, alpha = keep_cycle(rng, g, consecutive_pairs(cycle_nodes))
             end
 
-            if keep # cycle
+            if keep # cycle is kept
+                # compute cycle weight in view of reweighted MC
                 weight *= max(alpha, 1)
                 add_edges_from!(mtsf, consecutive_pairs(walk))
                 nv_mtsf += length(walk) - 1 # since walk contains twice the knot
@@ -126,18 +140,21 @@ function multi_type_spanning_forest(
                 push!(nodes_in_cycles, cycle_nodes[2:end])
                 # record branch without the knot
                 push!(reverse_order_branches, walk[1:(idx_n1 - 1)])
-
+                # restart with a new n0 uniformly among the unvisited nodes
                 n0 = restart_walk_from_unvisited_node!(rng, walk, unvisited)
 
             else  # pop cycle but keep loopy node
                 union!(unvisited, cycle_nodes)
-                setdiff!(unvisited, n1)  # remove n1 which was part of cycle_nodes
+                # mark cycle nodes as unvisited
+                setdiff!(unvisited, n1)
+                # remove n1 which was part of cycle_nodes
                 resize!(walk, idx_n1)
-
+                # remove cycle nodes from the walk
                 n0 = n1
             end
         end
     end
+    # store outputs
     set_edges_prop_from!(mtsf, :angle, g, true)
     set_prop!(mtsf, :weight, weight)
     set_prop!(mtsf, :roots, roots)
