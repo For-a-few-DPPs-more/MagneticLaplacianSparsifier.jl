@@ -23,6 +23,7 @@ include("sync-rank.jl")
 # todo cleamtidy up exports
 export multi_type_spanning_forest,
     add_edges_from!,
+    rem_edges_from!,
     consecutive_pairs,
     get_edge_prop,
     erdos_renyi,
@@ -70,5 +71,7 @@ export multi_type_spanning_forest,
     gen_graph_cliques,
     gen_graph_planted_triangles,
     eigenvalue_approx,
-    flat_square_2d_grid
+    flat_square_2d_grid,
+    keep_cycle,
+    restart_walk_from_unvisited_node!
 end
