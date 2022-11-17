@@ -10,11 +10,12 @@ This is the code associated with the manuscript
 [Sparsification of the regularized magnetic Laplacian  thanks to multi-type spanning forests](https://arxiv.org/pdf/2208.14797.pdf)
 by [Michaël Fanuel](https://mrfanuel.github.io/) and [Rémi Bardenet](https://rbardenet.github.io/).
 
-This code uses multiple samples of Multi-Type Spanning Forests to sparsify the (regularized) magnetic Laplacian.
+This code uses multiple samples of Multi-Type Spanning Forests (MTSF) to sparsify the regularized magnetic Laplacian.
 
-Here is an illustration of Cycle Rooted Spanning Forest sampling with Wilson's algorithm
-![](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl/blob/main/notebooks/figures/output.gif)
-  
+Here is an illustration of MTSF sampling with Wilson's algorithm
+![](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl/blob/main/notebooks/figures/MTSF.gif)
+The output is an MTSF with one cycle-rooted tree and several rooted tree (roots are in red).
+
 ## Use of the code  
 ### Install Julia
 
