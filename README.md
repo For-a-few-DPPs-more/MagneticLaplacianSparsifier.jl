@@ -15,10 +15,10 @@ This code uses multiple samples of Multi-Type Spanning Forests (MTSF) to sparsif
 Here is an illustration of MTSF sampling with Wilson's algorithm
 
 ![](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl/blob/main/notebooks/figures/MTSF_grid.gif)
+![](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl/blob/main/notebooks/figures/MTSF_137.png)
 
 The output is an MTSF with one cycle-rooted tree and four rooted tree (roots are in red).
 
-![](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl/blob/main/notebooks/figures/MTSF_137.png)
 
 
 ## Use of the code  
