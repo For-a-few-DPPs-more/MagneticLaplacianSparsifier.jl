@@ -17,7 +17,7 @@ Here are an illustration of a run MTSF sampling with Wilson's algorithm (left) a
 ![](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl/blob/main/notebooks/figures/MTSF_grid.gif)
 ![](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl/blob/main/notebooks/figures/MTSF_137.png)
 
-The output is an MTSF with one cycle-rooted tree and four rooted tree (roots are in red).
+The output is an MTSF with one cycle-rooted tree (top left) and four rooted tree (roots are in red).
 
 
 
