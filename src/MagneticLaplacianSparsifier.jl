@@ -73,5 +73,6 @@ export multi_type_spanning_forest,
     eigenvalue_approx,
     flat_square_2d_grid,
     keep_cycle,
-    restart_walk_from_unvisited_node!
+    restart_walk_from_unvisited_node!,
+    erdos_renyi_ordinal
 end

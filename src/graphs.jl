@@ -59,6 +59,38 @@ function erdos_renyi(
     return g
 end
 
+function erdos_renyi_ordinal(
+    rng::Random.AbstractRNG,
+    p::Real,
+    n_v::Integer,
+    η::Real,
+    planted_score::Union{Array,Nothing}=nothing,
+)::AbstractMetaGraph
+
+    m = div(nv * (nv - 1), 2)
+    ne = rand(rng, Binomial(m, p)) # nb of edges is a sum of m Bernoulli's of parameter p.
+    g = MetaGraph(n_v)
+    # convention: ranking score of node i is r_i = score[i]
+    if planted_score === nothing
+        planted_score = collect(1:n_v)
+    end
+    while ne(g) < n_e
+        u = rand(rng, 1:n_v) # discrete uniform distribution
+        v = rand(rng, 1:n_v)
+        if u < v
+            h_u = planted_score[u]
+            h_v = planted_score[v]
+            θ = (1/4) * sign(h_u - h_v) * π / n_v
+            # B: the 1/4 is to avoid too inconsistent cycles since the largest cycle has n_v nodes
+            if (rand(rng) < η) # Erdos-Renyi Outliers
+                θ = (1/4) * rand(rng, (-1):(1)) * π / n_v
+            end
+            add_edge!(g, u, v, :angle, θ)
+        end
+    end
+    return g
+end
+
 function ero_mun(
     rng::Random.AbstractRNG,
     n_v::Integer,
