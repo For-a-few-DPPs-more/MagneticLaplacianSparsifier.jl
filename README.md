@@ -11,10 +11,12 @@ This is the code associated with the manuscript
 by [Michaël Fanuel](https://mrfanuel.github.io/) and [Rémi Bardenet](https://rbardenet.github.io/).
 
 This code uses multiple samples of Multi-Type Spanning Forests to sparsify the (regularized) magnetic Laplacian.
+
 Here is an illustration of Cycle Rooted Spanning Forest sampling with Wilson's algorithm
-
+<p align="center">
 ![](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl/blob/main/notebooks/figures/output.gif)
-
+<\p>
+  
 ### Install Julia
 
 If you do not have Julia installed, please visit [julialang.org](https://julialang.org/learning/getting-started/)
