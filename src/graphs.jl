@@ -63,12 +63,11 @@ function erdos_renyi_ordinal(
     rng::Random.AbstractRNG,
     p::Real,
     n_v::Integer,
-    η::Real,
+    η::Real;
     planted_score::Union{Array,Nothing}=nothing,
 )::AbstractMetaGraph
-
-    m = div(nv * (nv - 1), 2)
-    ne = rand(rng, Binomial(m, p)) # nb of edges is a sum of m Bernoulli's of parameter p.
+    m = div(n_v * (n_v - 1), 2)
+    n_e = rand(rng, Binomial(m, p)) # nb of edges is a sum of m Bernoulli's of parameter p.
     g = MetaGraph(n_v)
     # convention: ranking score of node i is r_i = score[i]
     if planted_score === nothing
@@ -80,10 +79,10 @@ function erdos_renyi_ordinal(
         if u < v
             h_u = planted_score[u]
             h_v = planted_score[v]
-            θ = (1/4) * sign(h_u - h_v) * π / n_v
+            θ = (1 / 4) * sign(h_u - h_v) * π / n_v
             # B: the 1/4 is to avoid too inconsistent cycles since the largest cycle has n_v nodes
             if (rand(rng) < η) # Erdos-Renyi Outliers
-                θ = (1/4) * rand(rng, (-1):(1)) * π / n_v
+                θ = (1 / 4) * sign(rand(rng, (-1):(1))) * π / n_v
             end
             add_edge!(g, u, v, :angle, θ)
         end
