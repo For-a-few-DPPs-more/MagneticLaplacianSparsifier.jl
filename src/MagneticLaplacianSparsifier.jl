@@ -74,5 +74,6 @@ export multi_type_spanning_forest,
     flat_square_2d_grid,
     keep_cycle,
     restart_walk_from_unvisited_node!,
-    erdos_renyi_ordinal
+    erdos_renyi_ordinal,
+    erdos_renyi_few_edges
 end

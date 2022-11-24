@@ -59,6 +59,31 @@ function erdos_renyi(
     return g
 end
 
+function erdos_renyi_few_edges(
+    rng::Random.AbstractRNG, p::Real, n_v::Integer, η::Real, nb_noisy_edges::Integer
+)::AbstractMetaGraph
+    m = div(n_v * (n_v - 1), 2)
+    n_e = rand(rng, Binomial(m, p)) # nb of edges is a sum of m Bernoulli's of parameter p.
+    g = MetaGraph(n_v)
+    # convention: ranking score of node i is r_i = score[i]
+
+    counter = 0
+    while ne(g) < n_e
+        u = rand(rng, 1:n_v) # discrete uniform distribution
+        v = rand(rng, 1:n_v)
+        if u < v
+            if counter < nb_noisy_edges
+                θ = η * π / (2 * nb_noisy_edges)
+            else
+                θ = 0
+            end
+            add_edge!(g, u, v, :angle, θ)
+            counter += 1
+        end
+    end
+    return g
+end
+
 function erdos_renyi_ordinal(
     rng::Random.AbstractRNG,
     p::Real,
