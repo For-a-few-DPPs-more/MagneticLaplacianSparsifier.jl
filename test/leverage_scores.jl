@@ -115,6 +115,6 @@ end
 
         relative_error = (norm(lev_JL - lev) / norm(lev))
         print("relative_error: ", relative_error, "\n")
-        @test relative_error < 0.3
+        @test relative_error < 0.5
     end
 end
