@@ -77,6 +77,7 @@ function best_shift(p, meta_g)
     return ranking
 end
 
+# least eigenvector thanks to std julia eigensolver (not sparse)
 function least_eigenvector(L; singular=true)
     # least eigenvector
     if singular
@@ -91,6 +92,7 @@ function least_eigenvector(L; singular=true)
     return v[:, 1]
 end
 
+# least eigenvector thanks to pow meth with sp matrices
 function power_method_least_eigenvalue(sparseL; iters=20)
     n = size(sparseL)[1]
     est_eigenvec = rand(Complex{Float64}, n)
@@ -103,6 +105,26 @@ function power_method_least_eigenvalue(sparseL; iters=20)
     end
     est_eigenval = est_eigenvec' * sparseL * est_eigenvec
     return est_eigenvec, est_eigenval
+end
+
+function power_method_top_eigenvalue(sparseL; iters=50)
+    n = size(sparseL)[1]
+    est_eigenvec = rand(Complex{Float64}, n)
+    est_eigenvec /= sqrt(est_eigenvec' * est_eigenvec)
+    #Power iteration
+    for _ in 1:iters
+        est_eigenvec = sparseL * est_eigenvec
+        est_eigenvec /= sqrt(est_eigenvec' * est_eigenvec)
+    end
+    est_eigenval = est_eigenvec' * sparseL * est_eigenvec
+    return est_eigenvec, est_eigenval
+end
+
+function cond_nb_pp(spL)
+
+    _, est_least_eigenval = power_method_least_eigenvalue(spL)
+    _, est_top_eigenval = power_method_top_eigenvalue(spL)
+    return est_top_eigenval / est_least_eigenval
 end
 
 function eigenvec_dist(u, v)

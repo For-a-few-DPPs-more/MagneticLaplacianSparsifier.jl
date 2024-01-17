@@ -43,7 +43,7 @@ function average_sparsifier(
 )
     n = nv(meta_g)
     m = ne(meta_g)
-    L = zeros(n, n)
+    L = spzeros(n, n)
     nb_cycles = zeros(nb_samples, 1)
     nb_roots = zeros(nb_samples, 1)
     weights = zeros(nb_samples, 1)
@@ -62,17 +62,17 @@ function average_sparsifier(
         weights[i_sample] = w
 
         w_tot += w
-        sparseB = magnetic_incidence(mtsf; oriented=true)
+        sparseB = sp_magnetic_incidence(mtsf; oriented=true)
         ind_e = mtsf_edge_indices(mtsf, meta_g)
         if ls === nothing
             nb_e = length(ind_e)
             W = I / (nb_e / m)
         else
-            W = diagm(1 ./ ls[ind_e])
+            W = spdiagm(1 ./ ls[ind_e])
         end
         if weighted
             e_weights = get_edges_prop(meta_g, :e_weight, true, 1.0)
-            W *= diagm(e_weights[ind_e])
+            W *= spdiagm(e_weights[ind_e])
         end
 
         L = L + w * sparseB' * W * sparseB
@@ -129,18 +129,18 @@ function average_sparsifier_iid(
         subgraph = sample_subgraph_iid(rng::Random.AbstractRNG, meta_g, ls, batch)
         w = 1
         w_tot += w
-        sparseB = magnetic_incidence(subgraph; oriented=true)
+        sparseB = sp_magnetic_incidence(subgraph; oriented=true)
         ind_e = mtsf_edge_indices(subgraph, meta_g)
         if ls === nothing
             nb_e = length(ind_e)
             W = I / (nb_e / m)
         else
-            W = diagm(1 ./ ls[ind_e])
+            W = spdiagm(1 ./ ls[ind_e])
         end
 
         if weighted
             e_weights = edge_weights(meta_g)
-            W *= diagm(e_weights[ind_e])
+            W *= spdiagm(e_weights[ind_e])
         end
 
         L = L + w * sparseB' * W * sparseB
@@ -150,14 +150,30 @@ function average_sparsifier_iid(
     return L
 end
 
-function leverage_score(B::Array, q::Real; W=I)
-    if q > 1e-13
-        levScores = real(diag(W * B * ((B' * W * B + q * I) \ B')))
-    else
-        levScores = real(diag(W * B * pinv(B' * W * B + q * I) * B'))
-    end
+function leverage_score(
+    spB::SparseMatrixCSC{ComplexF64,Int64}, q::Real; e_weights=ones(size(spB)[1])
+)
+    W = spdiagm(e_weights)
+    spL_reg = spB' * W * spB + q * I
 
-    return levScores
+    # nb: linear systems with sparse rhs not yet available in julia
+    lev_scores = real(diag(W * spB * (spL_reg \ Matrix(spB'))))
+
+    return lev_scores
+end
+
+function JL_lev_score_estimates(spB, q; e_weights=ones(size(spB)[1]))
+    # Johnson-Lindenstrauss estimate of leverage scores
+    # by courtesy of an anonymous reviewer of ACHA
+    n = size(spB)[2]
+    m = size(spB)[1]
+    k = Int(ceil(40 * log(m) + 1)) # number of samples
+    Q = (2 * bitrand((m, k)) .- 1) # sketching with Rademacher random variables
+    spL = spB' * diagm(e_weights) * spB + q * sparse(I, n, n)
+    M = sqrt.(e_weights) .* (spB * (spL \ (spB' * (sqrt.(e_weights) .* Q))))
+    lev_score_estimates = (abs.(M) .^ 2) * ones(k)
+    lev_score_estimates /= k # normalization of sketching matrix
+    return lev_score_estimates
 end
 
 function emp_leverage_score(

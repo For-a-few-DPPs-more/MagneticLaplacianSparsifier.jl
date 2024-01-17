@@ -77,5 +77,8 @@ export multi_type_spanning_forest,
     keep_cycle,
     curvature,
     step_to_root,
-    power_method_least_eigenvalue
+    power_method_least_eigenvalue,
+    power_method_top_eigenvalue,
+    cond_nb_pp,
+    JL_lev_score_estimates
 end

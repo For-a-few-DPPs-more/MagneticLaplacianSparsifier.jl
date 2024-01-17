@@ -1,4 +1,59 @@
 @testset verbose = true "syncrank" begin
+    @testset "least eigenvalue on toy graph" begin
+        n = 15
+        p = 0.9
+        eta = 0.1
+        rng = Random.default_rng()
+        meta_g = gen_graph_mun(rng, n, p, eta)
+
+        B = sp_magnetic_incidence(meta_g)
+        spL = B' * B
+
+        true_eigenvec = least_eigenvector(Matrix(spL); singular=true)
+        true_eigenvec /= sqrt(true_eigenvec' * true_eigenvec)
+        est_eigenvec, est_eigenval = power_method_least_eigenvalue(spL)
+
+        dist_eigvecs = eigenvec_dist(true_eigenvec, est_eigenvec)
+        print("error between exact and pow meth: ", dist_eigvecs, "\n")
+        @test dist_eigvecs < 1e-9
+    end
+
+    @testset "top eigenvalue on toy graph" begin
+        n = 15
+        p = 0.9
+        eta = 0.1
+        rng = Random.default_rng()
+        meta_g = gen_graph_mun(rng, n, p, eta)
+
+        B = sp_magnetic_incidence(meta_g)
+        spL = B' * B
+
+        exact_eigenvalues = eigvals(Matrix(spL))
+        exact_top_eig = exact_eigenvalues[n]
+        _, est_eigenval = power_method_top_eigenvalue(spL)
+
+        err_top_eigval = abs(est_eigenval - exact_top_eig) / exact_top_eig
+        print("relative error on approx top eigenvalue: ", err_top_eigval, "\n")
+        @test err_top_eigval < 1e-1
+    end
+
+    @testset "cond nb on toy graph" begin
+        n = 15
+        p = 0.9
+        eta = 0.1
+        rng = Random.default_rng()
+        meta_g = gen_graph_mun(rng, n, p, eta)
+
+        B = sp_magnetic_incidence(meta_g)
+        spL = B' * B
+
+        exact_cond = cond(Matrix(spL))
+        approx_cond = cond_nb_pp(spL)
+
+        rel_err_cond = abs(exact_cond - approx_cond) / exact_cond
+        print("relative error on cond nb: ", rel_err_cond, "\n")
+        @test rel_err_cond < 1e-01
+    end
     @testset "cumulate angles along tree" begin
         n = 8
         mtsf = MetaGraph(Graph(n))
@@ -150,24 +205,5 @@
         y = exp.(im * temp)
 
         @test abs(norm(L * y)) < 1e-10
-    end
-
-    @testset "least eigenvalue on toy graph" begin
-        n = 15
-        p = 0.9
-        eta = 0.1
-        rng = Random.default_rng()
-        meta_g = gen_graph_mun(rng, n, p, eta)
-
-        B = sp_magnetic_incidence(meta_g)
-        spL = B' * B
-
-        true_eigenvec = least_eigenvector(Matrix(spL); singular=true)
-        true_eigenvec /= sqrt(true_eigenvec' * true_eigenvec)
-        est_eigenvec, est_eigenval = power_method_least_eigenvalue(spL)
-
-        dist_eigvecs = eigenvec_dist(true_eigenvec, est_eigenvec)
-        print("error between exact and pow meth: ", dist_eigvecs, "\n")
-        @test dist_eigvecs < 1e-9
     end
 end

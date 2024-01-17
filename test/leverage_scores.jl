@@ -5,7 +5,7 @@
 
     rng = getRNG()
     meta_g = gen_graph_mun(rng, n, p, eta)
-    B = magnetic_incidence(meta_g; oriented=true)
+    B = sp_magnetic_incidence(meta_g; oriented=true)
     L = B' * B
 
     nb_samples = 100000
@@ -38,7 +38,7 @@ end
 
     rng = getRNG()
     meta_g = gen_graph_mun(rng, n, p, eta)
-    B_ust = Matrix(magnetic_incidence_matrix(meta_g; oriented=true, phases=false))
+    B_ust = magnetic_incidence_matrix(meta_g; oriented=true, phases=false)
 
     nb_samples = 100000
     @testset " ust " begin
@@ -83,14 +83,14 @@ end
     e_weights = edge_weights(meta_g)
 
     W = diagm(e_weights)
-    B = magnetic_incidence(meta_g)
+    B = sp_magnetic_incidence(meta_g)
 
     Lap = B' * W * B
     nb_samples = Int(1e5)
 
     @testset "LS approximation with weights and q = 0.1" begin
         q = 0.1
-        lev = leverage_score(B, q; W)
+        lev = leverage_score(B, q; e_weights)
         emp_lev = emp_leverage_score(rng, meta_g, q, nb_samples; weighted)
 
         relative_error = (norm(emp_lev - lev) / norm(lev))
@@ -100,11 +100,21 @@ end
 
     @testset "LS approximation with weights and q = 1." begin
         q = 1.0
-        lev = leverage_score(B, q; W)
+        lev = leverage_score(B, q; e_weights)
         emp_lev = emp_leverage_score(rng, meta_g, q, nb_samples; weighted)
 
         relative_error = (norm(emp_lev - lev) / norm(lev))
         print("relative_error: ", relative_error, "\n")
         @test relative_error < 0.07
+    end
+
+    @testset "JL approximation of LS with weights and q = 1." begin
+        q = 1.0
+        lev = leverage_score(B, q; e_weights)
+        lev_JL = JL_lev_score_estimates(B, q; e_weights)
+
+        relative_error = (norm(lev_JL - lev) / norm(lev))
+        print("relative_error: ", relative_error, "\n")
+        @test relative_error < 0.3
     end
 end

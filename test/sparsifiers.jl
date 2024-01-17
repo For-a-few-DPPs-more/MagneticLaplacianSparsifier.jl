@@ -6,11 +6,11 @@
         p = 0.5
         eta = 0.3
         compGraph = gen_graph_mun(rng, n, p, eta)
-        B = magnetic_incidence(compGraph)
+        B = sp_magnetic_incidence(compGraph)
 
         q = 0.0
         crsf = multi_type_spanning_forest(rng, compGraph, q)
-        sparseB = magnetic_incidence(crsf)
+        sparseB = sp_magnetic_incidence(crsf)
 
         ind_e = mtsf_edge_indices(crsf, compGraph)
         B_sampled = B[ind_e, :]
@@ -25,7 +25,7 @@
 
         rng = getRNG()
         meta_g = gen_graph_mun(rng, n, p, eta)
-        B = magnetic_incidence(meta_g; oriented=true)
+        B = sp_magnetic_incidence(meta_g; oriented=true)
         L = B' * B
         lev = leverage_score(B, q)
         avgL, _, _, _ = average_sparsifier(rng, meta_g, lev, q, 10)
@@ -41,7 +41,7 @@
 
         rng = getRNG()
         meta_g = gen_graph_mun(rng, n, p, eta)
-        B = magnetic_incidence(meta_g; oriented=true)
+        B = sp_magnetic_incidence(meta_g; oriented=true)
         L = B' * B
         lev = leverage_score(B, q)
         avgL, _, _, _ = average_sparsifier(rng, meta_g, lev, q, 10)

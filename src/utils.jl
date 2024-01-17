@@ -46,9 +46,7 @@ function get_edges_prop(
     return [get_edge_prop(g, e, prop, oriented, default) for e in edges(g)]
 end
 
-function pcond_Lap(
-    avgL::Array{Complex{Float64},2}, q::Real, Lap::Array{Complex{Float64},2}
-)::Tuple{Array{Complex{Float64},2},Array{Complex{Float64},2}}
+function pcond_Lap(avgL, q::Real, Lap)
     avgL = (avgL + avgL') / 2
     R = cholesky(avgL + q * I).L
     pd_Lap = R \ ((Lap + q * I) / R')
@@ -70,12 +68,12 @@ function cond_numbers(
     batch = n
 
     # magnetic Laplacian
-    B = magnetic_incidence(meta_g)
+    B = sp_magnetic_incidence(meta_g)
 
     W = I # weight matrix
     if weighted
         e_weights = get_edges_prop(meta_g, :e_weight, true, 1.0)
-        W *= diagm(e_weights)
+        W *= spdiagm(e_weights)
     end
 
     Lap = B' * W * B
@@ -84,12 +82,11 @@ function cond_numbers(
     lev = leverage_score(B, q; W)
 
     # magnetic Laplacian eigenvalues
-    exact_eigenvalues = eigvals(Lap)
-    exact_least_eig = exact_eigenvalues[1]
-    exact_top_eig = exact_eigenvalues[n]
+    _, exact_least_eig = power_method_least_eigenvalue(Lap)
+    _, exact_top_eig = power_method_least_eigenvalue(Lap)
 
     # magnetic Laplacian condition number
-    cdL = cond(Lap + q_system * I)
+    cdL = cond_nb_pp(Lap + q_system * I)
 
     # combinatorial Laplacian
     B_ust = magnetic_incidence_matrix(meta_g; oriented=true, phases=false)
@@ -110,7 +107,7 @@ function cond_numbers(
         least_eig = zeros(n_tot, 1)
         top_eig = zeros(n_tot, 1)
         #
-        sp_L = zeros(n_tot, 1)
+        sparsity_L = zeros(n_tot, 1)
         timing = zeros(n_tot, 1)
         percent_edges = zeros(n_tot, 1)
         cycles = zeros(n_tot, 1)
@@ -120,7 +117,7 @@ function cond_numbers(
         least_eig_std = zeros(n_tot, 1)
         top_eig_std = zeros(n_tot, 1)
         #
-        sp_L_std = zeros(n_tot, 1)
+        sparsity_L_std = zeros(n_tot, 1)
         timing_std = zeros(n_tot, 1)
         percent_edges_std = zeros(n_tot, 1)
         roots_std = zeros(n_tot, 1)
@@ -133,14 +130,14 @@ function cond_numbers(
             least_eig_tp = zeros(n_tot, 1)
             top_eig_tp = zeros(n_tot, 1)
             #
-            sp_L_tp = zeros(n_rep, 1)
+            sparsity_L_tp = zeros(n_rep, 1)
             time_tp = zeros(n_rep, 1)
             percent_edges_tp = zeros(n_rep, 1)
             roots_tp = zeros(n_rep, 1)
             cycles_tp = zeros(n_rep, 1)
 
             for j in 1:n_rep
-                L_av = zeros(n, n)
+                L_av = spzeros(n, n)
                 time = 0
                 n_cls = 0
                 n_rts = 0
@@ -203,8 +200,8 @@ function cond_numbers(
                 end
                 # by default q_system = q
                 pcd_L, R = pcond_Lap(L_av, q_system, Lap)
-                sp_L_tp[j] = nnz(sparse(R))
-                cnd_tp[j] = cond(pcd_L)
+                sparsity_L_tp[j] = nnz(sparse(R))
+                cnd_tp[j] = cond_nb_pp(pcd_L)
 
                 lambda = eigvals(pcd_L)
                 least_eig_tp = real(lambda[1])
@@ -220,7 +217,7 @@ function cond_numbers(
             least_eig[i] = mean(least_eig_tp)
             top_eig[i] = mean(top_eig_tp)
             #
-            sp_L[i] = mean(sp_L_tp)
+            sparsity_L[i] = mean(sparsity_L_tp)
             percent_edges[i] = mean(percent_edges_tp)
             timing[i] = mean(time_tp)
             roots[i] = mean(roots_tp)
@@ -230,7 +227,7 @@ function cond_numbers(
             least_eig_std[i] = std(least_eig_tp)
             top_eig_std[i] = std(top_eig_tp)
             #
-            sp_L_std[i] = std(sp_L_tp)
+            sparsity_L_std[i] = std(sparsity_L_tp)
             percent_edges_std[i] = std(percent_edges_tp)
             timing_std[i] = std(time_tp)
             roots_std[i] = std(roots_tp)
@@ -255,9 +252,9 @@ function cond_numbers(
             #
             "exact_top_eig" => exact_top_eig,
             #
-            "sp_L" => sp_L,
+            "sparsity_L" => sparsity_L,
             #
-            "sp_L_std" => sp_L_std,
+            "sparsity_L_std" => sparsity_L_std,
             #
             "percent_edges" => percent_edges,
             #
