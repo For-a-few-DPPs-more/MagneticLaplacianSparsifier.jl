@@ -103,7 +103,7 @@ function power_method_least_eigenvalue(sparseL; iters=20)
         est_eigenvec = solve(prob, KrylovJL_CG)
         est_eigenvec /= sqrt(est_eigenvec' * est_eigenvec)
     end
-    est_eigenval = est_eigenvec' * sparseL * est_eigenvec
+    est_eigenval = real(est_eigenvec' * sparseL * est_eigenvec)
     return est_eigenvec, est_eigenval
 end
 
@@ -116,12 +116,11 @@ function power_method_top_eigenvalue(sparseL; iters=50)
         est_eigenvec = sparseL * est_eigenvec
         est_eigenvec /= sqrt(est_eigenvec' * est_eigenvec)
     end
-    est_eigenval = est_eigenvec' * sparseL * est_eigenvec
+    est_eigenval = real(est_eigenvec' * sparseL * est_eigenvec)
     return est_eigenvec, est_eigenval
 end
 
 function cond_nb_pp(spL)
-
     _, est_least_eigenval = power_method_least_eigenvalue(spL)
     _, est_top_eigenval = power_method_top_eigenvalue(spL)
     return est_top_eigenval / est_least_eigenval

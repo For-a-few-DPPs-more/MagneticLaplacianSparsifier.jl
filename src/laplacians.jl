@@ -164,10 +164,12 @@ end
 
 function JL_lev_score_estimates(spB, q; e_weights=ones(size(spB)[1]))
     # Johnson-Lindenstrauss estimate of leverage scores
+    # with Rademacher sketching
     # by courtesy of an anonymous reviewer of ACHA
     n = size(spB)[2]
     m = size(spB)[1]
-    k = Int(ceil(40 * log(m) + 1)) # number of samples
+    cst = 40
+    k = Int(ceil(cst * log(m) + 1)) # number of samples
     Q = (2 * bitrand((m, k)) .- 1) # sketching with Rademacher random variables
     spL = spB' * diagm(e_weights) * spB + q * sparse(I, n, n)
     M = sqrt.(e_weights) .* (spB * (spL \ (spB' * (sqrt.(e_weights) .* Q))))

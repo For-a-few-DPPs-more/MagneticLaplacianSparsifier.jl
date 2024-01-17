@@ -47,9 +47,10 @@ function get_edges_prop(
 end
 
 function pcond_Lap(avgL, q::Real, Lap)
-    avgL = (avgL + avgL') / 2
+    avgL = Matrix((avgL + avgL') / 2)
     R = cholesky(avgL + q * I).L
-    pd_Lap = R \ ((Lap + q * I) / R')
+    temp = Matrix(Lap + q * I) / R'
+    pd_Lap = R \ temp
     return pd_Lap, R
 end
 
@@ -70,6 +71,7 @@ function cond_numbers(
     # magnetic Laplacian
     B = sp_magnetic_incidence(meta_g)
 
+    e_weights = ones(m)
     W = I # weight matrix
     if weighted
         e_weights = get_edges_prop(meta_g, :e_weight, true, 1.0)
@@ -79,7 +81,7 @@ function cond_numbers(
     Lap = B' * W * B
 
     # magnetic leverage scores
-    lev = leverage_score(B, q; W)
+    lev = leverage_score(B, q; e_weights)
 
     # magnetic Laplacian eigenvalues
     _, exact_least_eig = power_method_least_eigenvalue(Lap)
@@ -92,7 +94,7 @@ function cond_numbers(
     B_ust = magnetic_incidence_matrix(meta_g; oriented=true, phases=false)
 
     # combinatorial leverage scores (non-magnetic)
-    lev_ust = leverage_score(Matrix(B_ust), 0; W)
+    lev_ust = leverage_score(B_ust, 0; e_weights)
 
     if methods === nothing
         methods = ["DPP(K) unif", "DPP(K) LS", "iid unif", "iid LS", "ST unif", "ST LS"]
@@ -127,8 +129,8 @@ function cond_numbers(
 
             # temporary arrays
             cnd_tp = zeros(n_rep, 1)
-            least_eig_tp = zeros(n_tot, 1)
-            top_eig_tp = zeros(n_tot, 1)
+            least_eig_tp = zeros(n_rep, 1)
+            top_eig_tp = zeros(n_rep, 1)
             #
             sparsity_L_tp = zeros(n_rep, 1)
             time_tp = zeros(n_rep, 1)
@@ -203,9 +205,10 @@ function cond_numbers(
                 sparsity_L_tp[j] = nnz(sparse(R))
                 cnd_tp[j] = cond_nb_pp(pcd_L)
 
-                lambda = eigvals(pcd_L)
-                least_eig_tp = real(lambda[1])
-                top_eig_tp = real(lambda[n])
+                _, least_eigval = power_method_least_eigenvalue(pcd_L)
+                _, top_eigval = power_method_least_eigenvalue(pcd_L)
+                least_eig_tp[j] = real(least_eigval)
+                top_eig_tp[j] = real(top_eigval)
 
                 percent_edges_tp[j] = nb_of_edges(L_av) / m
                 time_tp[j] = time
@@ -304,27 +307,28 @@ function benchmark_syncrank(
     k = 10 # number of upsets in top k
 
     # incidence matrix
-    B = magnetic_incidence(meta_g)
+    B = sp_magnetic_incidence(meta_g)
     B_ust = magnetic_incidence_matrix(meta_g; oriented=true, phases=false)
 
     #######################################
     # syncrank with full magnetic Laplacian
     W = I # weight matrix
+    e_weights = ones(m)
     if weighted
         e_weights = get_edges_prop(meta_g, :e_weight, true, 1.0)
-        W *= diagm(e_weights)
+        W *= spdiagm(e_weights)
     end
     L = B' * W * B
 
-    condL = cond(L)
+    condL = cond_nb_pp(L)
 
     # leverage scores
     q = 0
-    lev = leverage_score(B, q; W)
-    lev_ust = leverage_score(Matrix(B_ust), q; W)
+    lev = leverage_score(B, q; e_weights)
+    lev_ust = leverage_score(B_ust, q; e_weights)
 
     # least eigenvector full Laplacian
-    v = least_eigenvector(L; singular)
+    v, _ = power_method_least_eigenvalue(L)
 
     # recovered ranking full Laplacian
     ranking_full = syncrank(L, meta_g; singular)
@@ -429,7 +433,7 @@ function benchmark_syncrank(
                     )
                 end
 
-                v_av = least_eigenvector(L_av; singular)
+                v_av, _ = power_method_least_eigenvalue(L_av)
                 err_tp[j] = eigenvec_dist(v, v_av)
                 roots_tp[j] = n_rts
                 cycles_tp[j] = n_cles
@@ -537,11 +541,12 @@ function eigenvalue_approx(
     weighted = true # weighted graph is used
 
     # incidence matrix
-    B = magnetic_incidence(meta_g)
+    B = sp_magnetic_incidence(meta_g)
 
     #######################################
     # syncrank with full magnetic Laplacian
     W = I # weight matrix
+    e_weights = ones(m)
     if weighted
         e_weights = get_edges_prop(meta_g, :e_weight, true, 1.0)
         W *= diagm(e_weights)
@@ -550,11 +555,10 @@ function eigenvalue_approx(
 
     # leverage scores
     q = 0
-    lev = leverage_score(B, q; W)
+    lev = leverage_score(B, q; e_weights)
 
     # least eigenvalue full Laplacian
-    lambda = eigvals(L)
-    lambda_0 = lambda[1]
+    _,lambda_0 = power_method_least_eigenvalue(L)
 
     # start benchmarking
 
@@ -581,6 +585,7 @@ function eigenvalue_approx(
         weight_std = zeros(size(rangebatch))
 
         for i in 1:length(rangebatch)
+
             lambda_sp_tp = zeros(n_rep, 1)
             cycles_tp = zeros(n_rep, 1)
 
