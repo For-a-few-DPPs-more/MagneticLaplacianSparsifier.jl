@@ -143,12 +143,31 @@
             meta_g = gen_graph_ero(rng, n, p, eta; planted_score)
         end
 
-        B = magnetic_incidence(meta_g)
+        B = sp_magnetic_incidence(meta_g)
         L = B' * B
 
         temp = planted_score * π / (n - 1)
         y = exp.(im * temp)
 
         @test abs(norm(L * y)) < 1e-10
+    end
+
+    @testset "least eigenvalue on toy graph" begin
+        n = 15
+        p = 0.9
+        eta = 0.1
+        rng = Random.default_rng()
+        meta_g = gen_graph_mun(rng, n, p, eta)
+
+        B = sp_magnetic_incidence(meta_g)
+        spL = B' * B
+
+        true_eigenvec = least_eigenvector(Matrix(spL); singular=true)
+        true_eigenvec /= sqrt(true_eigenvec' * true_eigenvec)
+        est_eigenvec, est_eigenval = power_method_least_eigenvalue(spL)
+
+        dist_eigvecs = eigenvec_dist(true_eigenvec, est_eigenvec)
+        print("error between exact and pow meth: ", dist_eigvecs, "\n")
+        @test dist_eigvecs < 1e-9
     end
 end

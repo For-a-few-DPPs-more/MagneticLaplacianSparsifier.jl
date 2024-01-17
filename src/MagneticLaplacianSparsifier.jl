@@ -6,6 +6,7 @@ using MetaGraphs
 using Random
 using SparseArrays
 using LinearAlgebra
+using LinearSolve
 using Arpack
 using Statistics
 using Measures
@@ -75,5 +76,6 @@ export multi_type_spanning_forest,
     restart_walk_from_unvisited_node!,
     keep_cycle,
     curvature,
-    step_to_root
+    step_to_root,
+    power_method_least_eigenvalue
 end

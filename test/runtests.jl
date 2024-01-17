@@ -12,12 +12,12 @@ using MagneticLaplacianSparsifier: getRNG
 const testdir = dirname(@__FILE__)
 
 const name_test_file = [
+    "syncrank",
     "random_spanning_forests",
     "magnetic_incidence_matrix",
     "leverage_scores",
     "sparsifiers",
     "edge_statistics",
-    "syncrank",
 ]
 
 @testset verbose = true "MagneticLaplacianSparsifier.jl" begin

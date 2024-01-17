@@ -91,6 +91,20 @@ function least_eigenvector(L; singular=true)
     return v[:, 1]
 end
 
+function power_method_least_eigenvalue(sparseL; iters=20)
+    n = size(sparseL)[1]
+    est_eigenvec = rand(Complex{Float64}, n)
+    est_eigenvec /= sqrt(est_eigenvec' * est_eigenvec)
+    #Power iteration
+    for _ in 1:iters
+        prob = LinearProblem(sparseL, est_eigenvec)
+        est_eigenvec = solve(prob, KrylovJL_CG)
+        est_eigenvec /= sqrt(est_eigenvec' * est_eigenvec)
+    end
+    est_eigenval = est_eigenvec' * sparseL * est_eigenvec
+    return est_eigenvec, est_eigenval
+end
+
 function eigenvec_dist(u, v)
     # for normalized vectors
     scalar = v' * u
