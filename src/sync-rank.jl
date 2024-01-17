@@ -33,9 +33,9 @@ function nb_upsets_in_top(meta_g, ranking, k)
     return upsets
 end
 
-function syncrank(L, meta_g; singular=true)
+function syncrank(spL, meta_g; singular=true)
     # least eigenvector
-    v = least_eigenvector(L; singular)
+    v, _ = power_method_least_eigenvalue(spL)# v = least_eigenvector(L; singular)
     # entry uv of L is -exp(i * theta(u,v))
     # with theta(u,v) approx h(u) - h(v) where h(u) is the score of node u
     score = angular_score(v)
