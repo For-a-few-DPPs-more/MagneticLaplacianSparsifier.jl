@@ -238,7 +238,7 @@ function cond_numbers(
                 end
                 # by default q_system = q
                 #pcd_L, R = pcond_Lap(L_av, q_system, Lap)
-                L_av = 0.5 * (L_av + L_av')
+                L_av = Hermitian(L_av)
                 pcd_L, R = sp_pcond_Lap(L_av, q_system, Lap)
 
                 sparsity_L_tp[j] = nnz(R)
@@ -515,8 +515,9 @@ function benchmark_syncrank(
                 cycles_tp[j] = n_cles
                 av_weight_tp[j] = mean(weights)
 
-                L_av = 0.5 * (L_av + L_av')
-                cond_tp[j] = cond_nb_pp(sp_pcond_Lap(L_av, q, L))
+                L_av = Hermitian(L_av)
+                pcLap,_ = sp_pcond_Lap(L_av, q, L)
+                cond_tp[j] = cond_nb_pp(pcLap)
 
                 ranking = syncrank(L_av, meta_g; singular)
                 tau_tp[j] = corkendall(planted_ranking, ranking)
