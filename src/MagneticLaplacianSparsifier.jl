@@ -80,5 +80,6 @@ export multi_type_spanning_forest,
     power_method_least_eigenvalue,
     power_method_top_eigenvalue,
     cond_nb_pp,
-    JL_lev_score_estimates
+    JL_lev_score_estimates,
+    linear_solve_matrix_system
 end

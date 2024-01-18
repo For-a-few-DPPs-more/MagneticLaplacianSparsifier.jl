@@ -48,4 +48,25 @@
         relative_error = norm(avgL - L) / norm(L)
         @test relative_error < 0.4
     end
+
+    @testset "solver AX = B col by col" begin
+        rng = getRNG()
+
+        n = 10
+        p = 0.5
+        eta = 0.3
+        compGraph = gen_graph_mun(rng, n, p, eta)
+        B = sp_magnetic_incidence(compGraph)
+
+        L = B' * B
+        C = sparse((1.0 + 0im) .* (bitrand(n, 3)))
+
+        X = linear_solve_matrix_system(L, C)
+
+        X0 = Matrix(L) \ Matrix(C)
+
+        accuracy = norm(Matrix(X) - X0)
+        print("accuracy = ", accuracy)
+        @test accuracy < 1e-10
+    end
 end

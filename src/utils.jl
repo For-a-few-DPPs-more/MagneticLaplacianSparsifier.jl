@@ -54,6 +54,34 @@ function pcond_Lap(avgL, q::Real, Lap)
     return pd_Lap, R
 end
 
+function linear_solve_matrix_system(A,B)
+
+    if size(A)[1] != size(A)[2]
+        error("A is not square in AX = B")
+    end
+    if size(A)[1] != size(B)[1]
+        error("nb of rows of A and B should be equal in AX = B")
+    end
+    if size(B)[2] == 1
+        error("RHS is a col vector. Please use LinearSolve.jl directly")
+    end
+    if ishermitian(A) == false
+        error("A should be Hermitian")
+    end
+
+    n = size(A)[1]
+    k = size(B)[2]
+    X = spzeros(Complex{Float64},n,k)
+
+    for i=1:k
+        prob = LinearProblem(A, B[:,i])
+        x = solve(prob, KrylovJL_CG())
+        X[:,i] = x
+    end
+    return X
+
+end
+
 function cond_numbers(
     meta_g::AbstractMetaGraph,
     q::Real,
