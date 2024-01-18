@@ -46,7 +46,6 @@ function get_edges_prop(
     return [get_edge_prop(g, e, prop, oriented, default) for e in edges(g)]
 end
 
-
 function cond_numbers(
     meta_g::AbstractMetaGraph,
     q::Real,
@@ -238,12 +237,16 @@ function cond_numbers(
                     time = vec[2]
                 end
                 # by default q_system = q
-                pcd_L, R = pcond_Lap(L_av, q_system, Lap)
-                sparsity_L_tp[j] = nnz(sparse(R))
-                cnd_tp[j] = cond_nb_pp(pcd_L)
+                #pcd_L, R = pcond_Lap(L_av, q_system, Lap)
+                L_av = 0.5 * (L_av + L_av')
+                pcd_L, R = sp_pcond_Lap(L_av, q_system, Lap)
+
+                sparsity_L_tp[j] = nnz(R)
 
                 _, least_eigval = power_method_least_eigenvalue(pcd_L)
                 _, top_eigval = power_method_least_eigenvalue(pcd_L)
+                cnd_tp[j] = cond_nb_pp(pcd_L)
+
                 least_eig_tp[j] = real(least_eigval)
                 top_eig_tp[j] = real(top_eigval)
 
@@ -512,8 +515,8 @@ function benchmark_syncrank(
                 cycles_tp[j] = n_cles
                 av_weight_tp[j] = mean(weights)
 
-                # TODO Here need sparse solver (with cholesky)
-                cond_tp[j] = cond(Matrix(L_av + 1e-12 * I) \ Matrix(L))
+                L_av = 0.5 * (L_av + L_av')
+                cond_tp[j] = cond_nb_pp(sp_pcond_Lap(L_av, q, L))
 
                 ranking = syncrank(L_av, meta_g; singular)
                 tau_tp[j] = corkendall(planted_ranking, ranking)

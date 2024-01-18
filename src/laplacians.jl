@@ -51,6 +51,7 @@ function average_sparsifier(
 
     for i_sample in 1:nb_samples
         mtsf = multi_type_spanning_forest(rng, meta_g, q; weighted, absorbing_node, ust)
+        # todo simply refactor to retain edges and weights (avoiding averaging Laplacians)
         # check nb roots and cycles
         cycles = get_prop(mtsf, :cycle_nodes)
         nb_cycles[i_sample] = length(cycles)
@@ -122,7 +123,7 @@ function average_sparsifier_iid(
 )
     n = nv(meta_g)
     m = ne(meta_g)
-    L = zeros(n, n)
+    L = spzeros(n, n)
     w_tot = 0
 
     for _ in 1:nb_samples
@@ -220,12 +221,22 @@ function optimal_perm(mtsf::AbstractMetaGraph)
     return ind_perm
 end
 
-function pcond_Lap(avgL, q::Real, Lap)
+function pcond_Lap(avgL, q, Lap)
     avgL = Matrix((avgL + avgL') / 2)
     R = cholesky(avgL + q * I).L
     temp = Matrix(Lap + q * I) / R'
     pd_Lap = R \ temp
     return pd_Lap, R
+end
+
+function sp_pcond_Lap(avgL, q, Lap)
+    C = cholesky(avgL + q * I)
+    R = sparse(C.L)[invperm(C.p), :] # since sparse cholesky is pivoted
+
+    T = linear_solve_matrix_system(R, Lap + q * I) # sparse matrix AX=B
+    pL = linear_solve_matrix_system(R, T') # sparse matrix AX=B
+
+    return pL, R
 end
 
 function linear_solve_matrix_system(A, B)
