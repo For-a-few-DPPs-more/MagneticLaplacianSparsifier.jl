@@ -94,13 +94,15 @@ end
 
 # least eigenvector thanks to pow meth with sp matrices
 function power_method_least_eigenvalue(sparseL; iters=20)
+    sparseL = 0.5 * (sparseL + sparseL') # + 1e-10*I # regularization to use KrylovJL_CG
     n = size(sparseL)[1]
     est_eigenvec = rand(Complex{Float64}, n)
     est_eigenvec /= sqrt(est_eigenvec' * est_eigenvec)
     #Power iteration
     for _ in 1:iters
         prob = LinearProblem(sparseL, est_eigenvec)
-        est_eigenvec = solve(prob, KrylovJL_CG)
+        #est_eigenvec = solve(prob, KrylovJL_CG())# KrylovJL_CG (error when ill cond)
+        est_eigenvec = solve(prob, KrylovJL_MINRES())
         est_eigenvec /= sqrt(est_eigenvec' * est_eigenvec)
     end
     est_eigenval = real(est_eigenvec' * sparseL * est_eigenvec)

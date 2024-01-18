@@ -61,7 +61,7 @@ function cond_numbers(
     n_rep::Integer,
     rng::Random.AbstractRNG;
     q_system::Real=q,
-    methods::Union{String,Nothing}=nothing,
+    methods::Vector{String}=nothing,
     weighted::Bool=false,
 )::AbstractDict
     m = ne(meta_g)
@@ -83,6 +83,9 @@ function cond_numbers(
     # magnetic leverage scores
     lev = leverage_score(B, q; e_weights)
 
+    # JL-estimates of magnetic leverage scores
+    lev_JL = JL_lev_score_estimates(B, q; e_weights)
+
     # magnetic Laplacian eigenvalues
     _, exact_least_eig = power_method_least_eigenvalue(Lap)
     _, exact_top_eig = power_method_least_eigenvalue(Lap)
@@ -93,11 +96,24 @@ function cond_numbers(
     # combinatorial Laplacian
     B_ust = magnetic_incidence_matrix(meta_g; oriented=true, phases=false)
 
+    # JL-estimates of magnetic leverage scores
+    lev_ust_JL = JL_lev_score_estimates(B_ust, q; e_weights)
+
     # combinatorial leverage scores (non-magnetic)
     lev_ust = leverage_score(B_ust, 0; e_weights)
 
     if methods === nothing
-        methods = ["DPP(K) unif", "DPP(K) LS", "iid unif", "iid LS", "ST unif", "ST LS"]
+        methods = [
+            "DPP(K) unif",
+            "DPP(K) JL-LS",
+            "DPP(K) LS",
+            "iid unif",
+            "iid JL-LS",
+            "iid LS",
+            "ST unif",
+            "ST JL-LS",
+            "ST LS",
+        ]
     end
 
     D_all = Dict()
@@ -159,6 +175,14 @@ function cond_numbers(
                     n_cls = out[2]
                     n_rts = out[3]
                     time = vec[2]
+                elseif method == "DPP(K) JL-LS"
+                    # DPP(K) leverage score weighting computed with JL sketching
+                    vec = @timed average_sparsifier(rng, meta_g, lev_JL, q, i; weighted)
+                    out = vec[1]
+                    L_av = out[1]
+                    n_cls = out[2]
+                    n_rts = out[3]
+                    time = vec[2]
                 elseif method == "iid unif"
                     # iid uniform with uniform weighting
                     vec = @timed average_sparsifier_iid(
@@ -170,6 +194,13 @@ function cond_numbers(
                     # iid leverage score with leverage score weighting
                     vec = @timed average_sparsifier_iid(
                         rng, meta_g, lev, batch, i; weighted
+                    )
+                    L_av = vec[1]
+                    time = vec[2]
+                elseif method == "iid JL-LS"
+                    # iid leverage score with leverage score weighting
+                    vec = @timed average_sparsifier_iid(
+                        rng, meta_g, lev_JL, batch, i; weighted
                     )
                     L_av = vec[1]
                     time = vec[2]
@@ -193,6 +224,19 @@ function cond_numbers(
                     q_ust = 0
                     vec = @timed average_sparsifier(
                         rng, meta_g, lev_ust, q_ust, i; weighted, absorbing_node, ust
+                    )
+                    out = vec[1]
+                    L_av = out[1]
+                    n_cls = out[2]
+                    n_rts = out[3]
+                    time = vec[2]
+                elseif method == "ST JL-LS"
+                    # ST LS weighting with JL estimate
+                    absorbing_node = true
+                    ust = true
+                    q_ust = 0
+                    vec = @timed average_sparsifier(
+                        rng, meta_g, lev_ust_JL, q_ust, i; weighted, absorbing_node, ust
                     )
                     out = vec[1]
                     L_av = out[1]
@@ -271,7 +315,7 @@ function cond_numbers(
             #
             "roots_std" => roots_std,
             #
-            "cycles" => cycles_std,
+            "cycles" => cycles,
             #
             "cycles_std" => cycles_std,
         )
@@ -287,7 +331,7 @@ function benchmark_syncrank(
     n_batch::Integer,
     n_rep::Integer,
     rng::Random.AbstractRNG;
-    methods::Union{String,Nothing}=nothing,
+    methods::Vector{String}=nothing,
 )::AbstractDict
     n = nv(meta_g)
     m = ne(meta_g)
@@ -322,10 +366,18 @@ function benchmark_syncrank(
 
     condL = cond_nb_pp(L)
 
-    # leverage scores
+    # magnetic leverage scores
     q = 0
     lev = leverage_score(B, q; e_weights)
+
+    # JL-estimates of magnetic leverage scores
+    lev_JL = JL_lev_score_estimates(B, q; e_weights)
+
+    # leverage scores
     lev_ust = leverage_score(B_ust, q; e_weights)
+
+    # JL-estimates of magnetic leverage scores
+    lev_ust_JL = JL_lev_score_estimates(B_ust, q; e_weights)
 
     # least eigenvector full Laplacian
     v, _ = power_method_least_eigenvalue(L)
@@ -341,7 +393,17 @@ function benchmark_syncrank(
     rangebatch = 1:n_batch
 
     if methods === nothing
-        methods = ["DPP(K) unif", "DPP(K) LS", "iid unif", "iid LS", "ST unif", "ST LS"]
+        methods = [
+            "DPP(K) unif",
+            "DPP(K) JL-LS",
+            "DPP(K) LS",
+            "iid unif",
+            "iid JL-LS",
+            "iid LS",
+            "ST unif",
+            "ST JL-LS",
+            "ST LS",
+        ]
     end
     D_all = Dict()
 
@@ -401,6 +463,12 @@ function benchmark_syncrank(
                         rng, meta_g, nothing, q, t; weighted
                     )
 
+                elseif method == "DPP(K) JL-LS"
+                    # DPP(K) leverage score weighting
+                    L_av, n_cles, n_rts, weights = average_sparsifier(
+                        rng, meta_g, lev_JL, q, t; weighted
+                    )
+
                 elseif method == "DPP(K) LS"
                     # DPP(K) leverage score weighting
                     L_av, n_cles, n_rts, weights = average_sparsifier(
@@ -410,6 +478,10 @@ function benchmark_syncrank(
                 elseif method == "iid unif"
                     # iid uniform with uniform weighting
                     L_av = average_sparsifier_iid(rng, meta_g, nothing, batch, t; weighted)
+
+                elseif method == "iid JL-LS"
+                    # iid leverage score with leverage score weighting
+                    L_av = average_sparsifier_iid(rng, meta_g, lev_JL, batch, t; weighted)
 
                 elseif method == "iid LS"
                     # iid leverage score with leverage score weighting
@@ -429,6 +501,14 @@ function benchmark_syncrank(
                     ust = true
                     q_ust = 0
                     L_av, n_cles, n_rts, weights = average_sparsifier(
+                        rng, meta_g, lev_ust_JL, q_ust, t; weighted, absorbing_node, ust
+                    )
+                elseif method == "ST LS"
+                    # ST LS weighting
+                    absorbing_node = true
+                    ust = true
+                    q_ust = 0
+                    L_av, n_cles, n_rts, weights = average_sparsifier(
                         rng, meta_g, lev_ust, q_ust, t; weighted, absorbing_node, ust
                     )
                 end
@@ -438,7 +518,9 @@ function benchmark_syncrank(
                 roots_tp[j] = n_rts
                 cycles_tp[j] = n_cles
                 av_weight_tp[j] = mean(weights)
-                cond_tp[j] = cond((L_av + 1e-12 * I) \ L)
+
+                # TODO Here need sparse solver (with cholesky)
+                cond_tp[j] = cond(Matrix(L_av + 1e-12 * I) \ Matrix(L))
 
                 ranking = syncrank(L_av, meta_g; singular)
                 tau_tp[j] = corkendall(planted_ranking, ranking)
@@ -529,7 +611,7 @@ function eigenvalue_approx(
     n_batch::Integer,
     n_rep::Integer,
     rng::Random.AbstractRNG;
-    methods::Union{String,Nothing}=nothing,
+    methods::Vector{String}=nothing,
 )::AbstractDict
     n = nv(meta_g)
     m = ne(meta_g)
@@ -558,7 +640,7 @@ function eigenvalue_approx(
     lev = leverage_score(B, q; e_weights)
 
     # least eigenvalue full Laplacian
-    _,lambda_0 = power_method_least_eigenvalue(L)
+    _, lambda_0 = power_method_least_eigenvalue(L)
 
     # start benchmarking
 
@@ -585,7 +667,6 @@ function eigenvalue_approx(
         weight_std = zeros(size(rangebatch))
 
         for i in 1:length(rangebatch)
-
             lambda_sp_tp = zeros(n_rep, 1)
             cycles_tp = zeros(n_rep, 1)
 
@@ -659,142 +740,226 @@ function eigenvalue_approx(
 end
 
 function plot_comparison_sync(
-    metric::String, D_all::AbstractDict, y_limits; legendposition::Symbol=:bottomright
+    metric::String,
+    D_all::AbstractDict,
+    y_limits;
+    legendposition::Symbol=:bottomright,
+    methods::Vector{String}=nothing,
 )
+    if methods === nothing
+        methods = [
+            "DPP(K) unif",
+            "DPP(K) JL-LS",
+            "DPP(K) LS",
+            "iid unif",
+            "iid JL-LS",
+            "iid LS",
+            "ST unif",
+            "ST JL-LS",
+            "ST LS",
+        ]
+    end
     metric_std = metric * "_std"
+    D = Dict()
 
-    method = "DPP(K) unif"
+    plt = Plots.plot()
 
-    D = D_all[method]
-    x = D["percent_edges"]
-    y = D[metric]
-    y_er = D[metric_std]
+    for method in methods
+        if method == "DPP(K) unif"
+            D = D_all[method]
+            x = D["percent_edges"]
+            y = D[metric]
+            y_er = D[metric_std]
 
-    plt = Plots.plot(
-        x,
-        y;
-        yerror=y_er,
-        labels=method,
-        markerstrokecolor=:auto,
-        markershape=:xcross,
-        markersize=5,
-        linewidth=2,
-        markerstrokewidth=2,
-        xtickfont=font(13),
-        ytickfont=font(13),
-        guidefont=font(13),
-        legendfont=font(13),
-        framestyle=:box,
-        margins=0.1 * 2cm,
-    )
+            Plots.plot!(
+                x,
+                y;
+                yerror=y_er,
+                labels=method,
+                markerstrokecolor=:auto,
+                markershape=:xcross,
+                markersize=5,
+                linewidth=2,
+                markerstrokewidth=2,
+                xtickfont=font(13),
+                ytickfont=font(13),
+                guidefont=font(13),
+                legendfont=font(13),
+                framestyle=:box,
+                margins=0.1 * 2cm,
+            )
 
-    method = "DPP(K) LS"
-    D = D_all[method]
-    x = D["percent_edges"]
-    y = D[metric]
-    y_er = D[metric_std]
+        elseif method == "DPP(K) JL-LS"
+            D = D_all[method]
+            x = D["percent_edges"]
+            y = D[metric]
+            y_er = D[metric_std]
 
-    Plots.plot!(
-        x,
-        y;
-        yerror=y_er,
-        labels=method,
-        markerstrokecolor=:auto,
-        markershape=:circle,
-        markersize=5,
-        linewidth=2,
-        markerstrokewidth=2,
-    )
+            Plots.plot!(
+                x,
+                y;
+                yerror=y_er,
+                labels=method,
+                markerstrokecolor=:auto,
+                markershape=:circle,
+                markersize=5,
+                linewidth=2,
+                markerstrokewidth=2,
+            )
 
-    method = "iid unif"
-    D = D_all[method]
-    x = D["percent_edges"]
-    x_er = D["percent_edges_std"]
+        elseif method == "DPP(K) LS"
+            D = D_all[method]
+            x = D["percent_edges"]
+            y = D[metric]
+            y_er = D[metric_std]
 
-    y = D[metric]
-    y_er = D[metric_std]
+            Plots.plot!(
+                x,
+                y;
+                yerror=y_er,
+                labels=method,
+                markerstrokecolor=:auto,
+                markershape=:circle,
+                markersize=5,
+                linewidth=2,
+                markerstrokewidth=2,
+            )
 
-    Plots.plot!(
-        x,
-        y;
-        xerror=x_er,
-        yerror=y_er,
-        labels=method,
-        markerstrokecolor=:auto,
-        markersize=5,
-        linestyle=:dash,
-        markershape=:rtriangle,
-        linewidth=2,
-        markerstrokewidth=2,
-    )
+        elseif method == "iid unif"
+            D = D_all[method]
+            x = D["percent_edges"]
+            x_er = D["percent_edges_std"]
 
-    method = "iid LS"
-    D = D_all[method]
-    x = D["percent_edges"]
-    x_er = D["percent_edges_std"]
+            y = D[metric]
+            y_er = D[metric_std]
 
-    y = D[metric]
-    y_er = D[metric_std]
+            Plots.plot!(
+                x,
+                y;
+                xerror=x_er,
+                yerror=y_er,
+                labels=method,
+                markerstrokecolor=:auto,
+                markersize=5,
+                linestyle=:dash,
+                markershape=:rtriangle,
+                linewidth=2,
+                markerstrokewidth=2,
+            )
 
-    Plots.plot!(
-        x,
-        y;
-        xerror=x_er,
-        yerror=y_er,
-        labels=method,
-        markerstrokecolor=:auto,
-        markersize=5,
-        linestyle=:dash,
-        markershape=:utriangle,
-        linewidth=2,
-        markerstrokewidth=2,
-    )
+        elseif method == "iid JL-LS"
+            D = D_all[method]
+            x = D["percent_edges"]
+            x_er = D["percent_edges_std"]
 
-    method = "ST unif"
-    D = D_all[method]
+            y = D[metric]
+            y_er = D[metric_std]
 
-    x = D["percent_edges"]
-    y = D[metric]
-    y_er = D[metric_std]
+            Plots.plot!(
+                x,
+                y;
+                xerror=x_er,
+                yerror=y_er,
+                labels=method,
+                markerstrokecolor=:auto,
+                markersize=5,
+                linestyle=:dash,
+                markershape=:rtriangle,
+                linewidth=2,
+                markerstrokewidth=2,
+            )
 
-    Plots.plot!(
-        x,
-        y;
-        xerror=x_er,
-        yerror=y_er,
-        labels=method,
-        markerstrokecolor=:auto,
-        markersize=5,
-        markershape=:dtriangle,
-        linewidth=2,
-        markerstrokewidth=2,
-        framestyle=:box,
-        margins=0.1 * 2Plots.cm,
-    )
+        elseif method == "iid LS"
+            D = D_all[method]
+            x = D["percent_edges"]
+            x_er = D["percent_edges_std"]
 
-    method = "ST LS"
-    D = D_all[method]
+            y = D[metric]
+            y_er = D[metric_std]
 
-    x = D["percent_edges"]
-    y = D[metric]
-    y_er = D[metric_std]
+            Plots.plot!(
+                x,
+                y;
+                xerror=x_er,
+                yerror=y_er,
+                labels=method,
+                markerstrokecolor=:auto,
+                markersize=5,
+                linestyle=:dash,
+                markershape=:utriangle,
+                linewidth=2,
+                markerstrokewidth=2,
+            )
 
-    Plots.plot!(
-        x,
-        y;
-        xerror=x_er,
-        yerror=y_er,
-        labels=method,
-        markerstrokecolor=:auto,
-        markersize=5,
-        markershape=:octagon,
-        linewidth=2,
-        markerstrokewidth=2,
-        framestyle=:box,
-        margins=0.1 * 2Plots.cm,
-        legend=legendposition,
-    )
+        elseif method == "ST unif"
+            D = D_all[method]
 
+            x = D["percent_edges"]
+            y = D[metric]
+            y_er = D[metric_std]
+
+            Plots.plot!(
+                x,
+                y;
+                xerror=x_er,
+                yerror=y_er,
+                labels=method,
+                markerstrokecolor=:auto,
+                markersize=5,
+                markershape=:dtriangle,
+                linewidth=2,
+                markerstrokewidth=2,
+                framestyle=:box,
+                margins=0.1 * 2Plots.cm,
+            )
+
+        elseif method == "ST JL-LS"
+            D = D_all[method]
+
+            x = D["percent_edges"]
+            y = D[metric]
+            y_er = D[metric_std]
+
+            Plots.plot!(
+                x,
+                y;
+                xerror=x_er,
+                yerror=y_er,
+                labels=method,
+                markerstrokecolor=:auto,
+                markersize=5,
+                markershape=:octagon,
+                linewidth=2,
+                markerstrokewidth=2,
+                framestyle=:box,
+                margins=0.1 * 2Plots.cm,
+                legend=legendposition,
+            )
+
+        elseif method == "ST LS"
+            D = D_all[method]
+
+            x = D["percent_edges"]
+            y = D[metric]
+            y_er = D[metric_std]
+
+            Plots.plot!(
+                x,
+                y;
+                xerror=x_er,
+                yerror=y_er,
+                labels=method,
+                markerstrokecolor=:auto,
+                markersize=5,
+                markershape=:octagon,
+                linewidth=2,
+                markerstrokewidth=2,
+                framestyle=:box,
+                margins=0.1 * 2Plots.cm,
+                legend=legendposition,
+            )
+        end
+    end
     xlabel!("percentage of edges")
     ylims!(y_limits)
 
@@ -840,138 +1005,217 @@ function plot_comparison_sync(
 end
 
 function plot_comparison_cond(
-    D_all::AbstractDict, y_limits; legendposition::Symbol=:bottomright
+    D_all::AbstractDict, y_limits; legendposition::Symbol=:bottomright, methods=nothing
 )
-    method = "DPP(K) unif"
-    D = D_all[method]
+    if methods === nothing
+        methods = [
+            "DPP(K) unif",
+            "DPP(K) JL-LS",
+            "DPP(K) LS",
+            "iid unif",
+            "iid JL-LS",
+            "iid LS",
+            "ST unif",
+            "ST JL-LS",
+            "ST LS",
+        ]
+    end
 
+    D = Dict()
+
+    plt = Plots.plot()
+    for method in methods
+        if method == "DPP(K) unif"
+            D = D_all[method]
+
+            x = D["percent_edges"]
+            y = D["cnd"]
+            y_er = D["cnd_std"]
+
+            plt = plot(
+                x,
+                y;
+                yerror=y_er,
+                xlabel="percentage of edges",
+                yaxis=:log,
+                labels=method,
+                markerstrokecolor=:auto,
+                markershape=:xcross,
+                markersize=5,
+                xtickfont=font(13),
+                ytickfont=font(13),
+                guidefont=font(13),
+                legendfont=font(13),
+                linewidth=2,
+                markerstrokewidth=2,
+            )
+
+        elseif method == "DPP(K) JL-LS"
+            D = D_all[method]
+
+            x = D["percent_edges"]
+            y = D["cnd"]
+            y_er = D["cnd_std"]
+
+            plot!(
+                x,
+                y;
+                yerror=y_er,
+                yaxis=:log,
+                labels=method,
+                markerstrokecolor=:auto,
+                markershape=:circle,
+                markersize=5,
+                linewidth=2,
+                markerstrokewidth=2,
+            )
+
+        elseif method == "DPP(K) LS"
+            D = D_all[method]
+
+            x = D["percent_edges"]
+            y = D["cnd"]
+            y_er = D["cnd_std"]
+
+            plot!(
+                x,
+                y;
+                yerror=y_er,
+                yaxis=:log,
+                labels=method,
+                markerstrokecolor=:auto,
+                markershape=:circle,
+                markersize=5,
+                linewidth=2,
+                markerstrokewidth=2,
+            )
+
+        elseif method == "iid unif"
+            D = D_all[method]
+
+            x = D["percent_edges"]
+            y = D["cnd"]
+            y_er = D["cnd_std"]
+
+            plot!(
+                x,
+                y;
+                #yerror=y_er, # too large
+                yaxis=:log,
+                labels=method,
+                markerstrokecolor=:auto,
+                markershape=:rtriangle,
+                markersize=5,
+                linestyle=:dash,
+                linewidth=2,
+                markerstrokewidth=2,
+            )
+
+        elseif method == "iid JL-LS"
+            D = D_all[method]
+
+            x = D["percent_edges"]
+            y = D["cnd"]
+            y_er = D["cnd_std"]
+
+            plot!(
+                x,
+                y;
+                #yerror=y_er, # too large
+                yaxis=:log,
+                labels=method,
+                markerstrokecolor=:auto,
+                markershape=:utriangle,
+                markersize=5,
+                linestyle=:dash,
+                linewidth=2,
+                markerstrokewidth=2,
+            )
+
+        elseif method == "iid LS"
+            D = D_all[method]
+
+            x = D["percent_edges"]
+            y = D["cnd"]
+            y_er = D["cnd_std"]
+
+            plot!(
+                x,
+                y;
+                #yerror=y_er, # too large
+                yaxis=:log,
+                labels=method,
+                markerstrokecolor=:auto,
+                markershape=:utriangle,
+                markersize=5,
+                linestyle=:dash,
+                linewidth=2,
+                markerstrokewidth=2,
+            )
+
+        elseif method == "ST unif"
+            D = D_all[method]
+
+            x = D["percent_edges"]
+            y = D["cnd"]
+            y_er = D["cnd_std"]
+
+            plot!(
+                x,
+                y;
+                yerror=y_er,
+                yaxis=:log,
+                labels=method,
+                markerstrokecolor=:auto,
+                markershape=:dtriangle,
+                markersize=5,
+                linewidth=2,
+                markerstrokewidth=2,
+            )
+
+        elseif method == "ST JL-LS"
+            D = D_all[method]
+
+            x = D["percent_edges"]
+            y = D["cnd"]
+            y_er = D["cnd_std"]
+
+            plot!(
+                x,
+                y;
+                yerror=y_er,
+                yaxis=:log,
+                labels=method,
+                markerstrokecolor=:auto,
+                markershape=:octagon,
+                markersize=5,
+                linewidth=2,
+                markerstrokewidth=2,
+            )
+
+        elseif method == "ST LS"
+            D = D_all[method]
+
+            x = D["percent_edges"]
+            y = D["cnd"]
+            y_er = D["cnd_std"]
+
+            plot!(
+                x,
+                y;
+                yerror=y_er,
+                yaxis=:log,
+                labels=method,
+                markerstrokecolor=:auto,
+                markershape=:octagon,
+                markersize=5,
+                linewidth=2,
+                markerstrokewidth=2,
+            )
+        end
+    end
+    x = D["percent_edges"]
     cdL = D["cdL"]
-
-    x = D["percent_edges"]
-    y = D["cnd"]
-    y_er = D["cnd_std"]
-
-    plt = plot(
-        x,
-        y;
-        yerror=y_er,
-        xlabel="percentage of edges",
-        yaxis=:log,
-        labels=method,
-        markerstrokecolor=:auto,
-        markershape=:xcross,
-        markersize=5,
-        xtickfont=font(13),
-        ytickfont=font(13),
-        guidefont=font(13),
-        legendfont=font(13),
-        linewidth=2,
-        markerstrokewidth=2,
-    )
-
-    method = "DPP(K) LS"
-    D = D_all[method]
-
-    x = D["percent_edges"]
-    y = D["cnd"]
-    y_er = D["cnd_std"]
-
-    plot!(
-        x,
-        y;
-        yerror=y_er,
-        yaxis=:log,
-        labels=method,
-        markerstrokecolor=:auto,
-        markershape=:circle,
-        markersize=5,
-        linewidth=2,
-        markerstrokewidth=2,
-    )
-
-    method = "iid unif"
-    D = D_all[method]
-
-    x = D["percent_edges"]
-    y = D["cnd"]
-    y_er = D["cnd_std"]
-
-    plot!(
-        x,
-        y;
-        #yerror=y_er, # too large
-        yaxis=:log,
-        labels=method,
-        markerstrokecolor=:auto,
-        markershape=:rtriangle,
-        markersize=5,
-        linestyle=:dash,
-        linewidth=2,
-        markerstrokewidth=2,
-    )
-
-    method = "iid LS"
-    D = D_all[method]
-
-    x = D["percent_edges"]
-    y = D["cnd"]
-    y_er = D["cnd_std"]
-
-    plot!(
-        x,
-        y;
-        #yerror=y_er, # too large
-        yaxis=:log,
-        labels=method,
-        markerstrokecolor=:auto,
-        markershape=:utriangle,
-        markersize=5,
-        linestyle=:dash,
-        linewidth=2,
-        markerstrokewidth=2,
-    )
-
-    method = "ST unif"
-    D = D_all[method]
-
-    x = D["percent_edges"]
-    y = D["cnd"]
-    y_er = D["cnd_std"]
-
-    plot!(
-        x,
-        y;
-        yerror=y_er,
-        yaxis=:log,
-        labels=method,
-        markerstrokecolor=:auto,
-        markershape=:dtriangle,
-        markersize=5,
-        linewidth=2,
-        markerstrokewidth=2,
-    )
-
-    method = "ST LS"
-    D = D_all[method]
-
-    x = D["percent_edges"]
-    y = D["cnd"]
-    y_er = D["cnd_std"]
-
-    plot!(
-        x,
-        y;
-        yerror=y_er,
-        yaxis=:log,
-        labels=method,
-        markerstrokecolor=:auto,
-        markershape=:octagon,
-        markersize=5,
-        linewidth=2,
-        markerstrokewidth=2,
-    )
-
-    x = D["percent_edges"]
     y = cdL * ones(size(x))
     plot!(
         x,
