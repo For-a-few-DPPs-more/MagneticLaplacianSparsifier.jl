@@ -219,3 +219,34 @@ function optimal_perm(mtsf::AbstractMetaGraph)
     ind_perm = [non_cycle_nodes; setdiff(1:n_v, non_cycle_nodes)]
     return ind_perm
 end
+
+function pcond_Lap(avgL, q::Real, Lap)
+    avgL = Matrix((avgL + avgL') / 2)
+    R = cholesky(avgL + q * I).L
+    temp = Matrix(Lap + q * I) / R'
+    pd_Lap = R \ temp
+    return pd_Lap, R
+end
+
+function linear_solve_matrix_system(A, B)
+    if size(A)[1] != size(A)[2]
+        error("A is not square in AX = B")
+    end
+    if size(A)[1] != size(B)[1]
+        error("nb of rows of A and B should be equal in AX = B")
+    end
+    if size(B)[2] == 1
+        error("RHS is a col vector. Please use LinearSolve.jl directly")
+    end
+
+    n = size(A)[1]
+    k = size(B)[2]
+    X = spzeros(Complex{Float64}, n, k)
+
+    for i in 1:k
+        prob = LinearProblem(A, B[:, i])
+        x = solve(prob, KrylovJL_GMRES())
+        X[:, i] = x
+    end
+    return X
+end
