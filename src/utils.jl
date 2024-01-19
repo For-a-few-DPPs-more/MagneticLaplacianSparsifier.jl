@@ -147,7 +147,7 @@ function cond_numbers(
             cycles_tp = zeros(n_rep, 1)
 
             for j in 1:n_rep
-                L_av = spzeros(n, n)
+                sp_L = spzeros(n, n)
                 time = 0
                 n_cls = 0
                 n_rts = 0
@@ -155,7 +155,7 @@ function cond_numbers(
                     # DPP(K) uniform weighting
                     vec = @timed average_sparsifier(rng, meta_g, nothing, q, i; weighted)
                     out = vec[1]
-                    L_av = out[1]
+                    sp_L = out[1]
                     n_cls = out[2]
                     n_rts = out[3]
                     time = vec[2]
@@ -163,7 +163,7 @@ function cond_numbers(
                     # DPP(K) leverage score weighting
                     vec = @timed average_sparsifier(rng, meta_g, lev, q, i; weighted)
                     out = vec[1]
-                    L_av = out[1]
+                    sp_L = out[1]
                     n_cls = out[2]
                     n_rts = out[3]
                     time = vec[2]
@@ -171,7 +171,7 @@ function cond_numbers(
                     # DPP(K) leverage score weighting computed with JL sketching
                     vec = @timed average_sparsifier(rng, meta_g, lev_JL, q, i; weighted)
                     out = vec[1]
-                    L_av = out[1]
+                    sp_L = out[1]
                     n_cls = out[2]
                     n_rts = out[3]
                     time = vec[2]
@@ -180,21 +180,21 @@ function cond_numbers(
                     vec = @timed average_sparsifier_iid(
                         rng, meta_g, nothing, batch, i; weighted
                     )
-                    L_av = vec[1]
+                    sp_L = vec[1]
                     time = vec[2]
                 elseif method == "iid LS"
                     # iid leverage score with leverage score weighting
                     vec = @timed average_sparsifier_iid(
                         rng, meta_g, lev, batch, i; weighted
                     )
-                    L_av = vec[1]
+                    sp_L = vec[1]
                     time = vec[2]
                 elseif method == "iid JL-LS"
                     # iid leverage score with leverage score weighting
                     vec = @timed average_sparsifier_iid(
                         rng, meta_g, lev_JL, batch, i; weighted
                     )
-                    L_av = vec[1]
+                    sp_L = vec[1]
                     time = vec[2]
                 elseif method == "ST unif"
                     # ST uniform weighting
@@ -205,7 +205,7 @@ function cond_numbers(
                         rng, meta_g, nothing, q_ust, i; weighted, absorbing_node, ust
                     )
                     out = vec[1]
-                    L_av = out[1]
+                    sp_L = out[1]
                     n_cls = out[2]
                     n_rts = out[3]
                     time = vec[2]
@@ -218,7 +218,7 @@ function cond_numbers(
                         rng, meta_g, lev_ust, q_ust, i; weighted, absorbing_node, ust
                     )
                     out = vec[1]
-                    L_av = out[1]
+                    sp_L = out[1]
                     n_cls = out[2]
                     n_rts = out[3]
                     time = vec[2]
@@ -231,14 +231,14 @@ function cond_numbers(
                         rng, meta_g, lev_ust_JL, q_ust, i; weighted, absorbing_node, ust
                     )
                     out = vec[1]
-                    L_av = out[1]
+                    sp_L = out[1]
                     n_cls = out[2]
                     n_rts = out[3]
                     time = vec[2]
                 end
-                L_av = Hermitian(L_av)
+                sp_L = Hermitian(sp_L)
                 # by default q_system = q
-                pcd_L, R = sp_pcond_Lap(L_av, q_system, Lap)
+                pcd_L, R = sp_pcond_Lap(sp_L, q_system, Lap)
 
                 sparsity_L_tp[j] = nnz(R)
 
@@ -249,7 +249,7 @@ function cond_numbers(
                 least_eig_tp[j] = real(least_eigval)
                 top_eig_tp[j] = real(top_eigval)
 
-                percent_edges_tp[j] = nb_of_edges(L_av) / m
+                percent_edges_tp[j] = nb_of_edges(sp_L) / m
                 time_tp[j] = time
                 roots_tp[j] = n_rts
                 cycles_tp[j] = n_cls
@@ -409,97 +409,85 @@ function benchmark_syncrank(
     for method in methods
 
         # initialization
-        err = zeros(size(rangebatch))
-        err_std = zeros(size(rangebatch))
 
-        tau = zeros(size(rangebatch))
-        tau_std = zeros(size(rangebatch))
+        # metrics mean and stds
+        err, err_std = [zeros(n_batch) for _ in 1:2]
+        tau, tau_std = [zeros(n_batch) for _ in 1:2]
+        spear, spear_std = [zeros(n_batch) for _ in 1:2]
+        upsets_in_top, upsets_in_top_std = [zeros(n_batch) for _ in 1:2]
 
-        spear = zeros(size(rangebatch))
-        spear_std = zeros(size(rangebatch))
+        # graph properties mean and stds
+        percent_edges, percent_edges_std = [zeros(n_batch) for _ in 1:2]
+        roots, roots_std = [zeros(n_batch) for _ in 1:2]
+        cycles, cycles_std = [zeros(n_batch) for _ in 1:2]
+        weight, weight_std = [zeros(n_batch) for _ in 1:2]
 
-        percent_edges = zeros(size(rangebatch))
-        percent_edges_std = zeros(size(rangebatch))
+        # cond number mean and std
+        cond_nb, cond_nb_std = [zeros(n_batch) for _ in 1:2]
 
-        upsets_in_top = zeros(size(rangebatch))
-        upsets_in_top_std = zeros(size(rangebatch))
+        for i in 1:n_batch
 
-        roots = zeros(size(rangebatch))
-        roots_std = zeros(size(rangebatch))
+            # metrics
+            err_tp, tau_tp, spear_tp, upsets_in_top_tp = [zeros(n_rep) for _ in 1:4]
+            # graph properties
+            percent_edges_tp, roots_tp, cycles_tp, weight_tp = [zeros(n_rep) for _ in 1:4]
+            # cond number
+            cond_tp = zeros(n_rep)
 
-        cycles = zeros(size(rangebatch))
-        cycles_std = zeros(size(rangebatch))
-
-        weight = zeros(size(rangebatch))
-        weight_std = zeros(size(rangebatch))
-
-        cond_nb = zeros(size(rangebatch))
-        cond_nb_std = zeros(size(rangebatch))
-
-        for i in 1:length(rangebatch)
-            err_tp = zeros(n_rep, 1)
-            tau_tp = zeros(n_rep, 1)
-            roots_tp = zeros(n_rep, 1)
-            cycles_tp = zeros(n_rep, 1)
-            spear_tp = zeros(n_rep, 1)
-            upsets_in_top_tp = zeros(n_rep, 1)
-            cond_tp = zeros(n_rep, 1)
-
-            av_weight_tp = zeros(n_rep, 1)
-
-            percent_edges_tp = zeros(n_rep, 1)
-
+            # batch size (nb of spanning subgraphs)
             t = rangebatch[i]
 
             for j in 1:n_rep
-                L_av = zeros(n, n)
+                sp_L = spzeros(n, n)
+                weights = zeros(t)
+
                 n_cles = 0
                 n_rts = 0
-                weights = zeros(t, 1)
+
                 if method == "DPP(K) unif"
                     # DPP(K) uniform weighting
-                    L_av, n_cles, n_rts, weights = average_sparsifier(
+                    sp_L, n_cles, n_rts, weights = average_sparsifier(
                         rng, meta_g, nothing, q, t; weighted
                     )
 
                 elseif method == "DPP(K) JL-LS"
-                    # DPP(K) leverage score weighting
-                    L_av, n_cles, n_rts, weights = average_sparsifier(
+                    # DPP(K) leverage score weighting (JL approx)
+                    sp_L, n_cles, n_rts, weights = average_sparsifier(
                         rng, meta_g, lev_JL, q, t; weighted
                     )
 
                 elseif method == "DPP(K) LS"
                     # DPP(K) leverage score weighting
-                    L_av, n_cles, n_rts, weights = average_sparsifier(
+                    sp_L, n_cles, n_rts, weights = average_sparsifier(
                         rng, meta_g, lev, q, t; weighted
                     )
 
                 elseif method == "iid unif"
                     # iid uniform with uniform weighting
-                    L_av = average_sparsifier_iid(rng, meta_g, nothing, batch, t; weighted)
+                    sp_L = average_sparsifier_iid(rng, meta_g, nothing, batch, t; weighted)
 
                 elseif method == "iid JL-LS"
-                    # iid leverage score with leverage score weighting
-                    L_av = average_sparsifier_iid(rng, meta_g, lev_JL, batch, t; weighted)
+                    # iid leverage score with leverage score weighting (JL approx)
+                    sp_L = average_sparsifier_iid(rng, meta_g, lev_JL, batch, t; weighted)
 
                 elseif method == "iid LS"
                     # iid leverage score with leverage score weighting
-                    L_av = average_sparsifier_iid(rng, meta_g, lev, batch, t; weighted)
+                    sp_L = average_sparsifier_iid(rng, meta_g, lev, batch, t; weighted)
 
                 elseif method == "ST unif"
                     # ST uniform weighting
                     absorbing_node = true
                     ust = true
                     q_ust = 0
-                    L_av, n_cles, n_rts, weights = average_sparsifier(
+                    sp_L, n_cles, n_rts, weights = average_sparsifier(
                         rng, meta_g, nothing, q_ust, t; weighted, absorbing_node, ust
                     )
-                elseif method == "ST LS"
-                    # ST LS weighting
+                elseif method == "ST JL-LS"
+                    # ST LS weighting (JL approx)
                     absorbing_node = true
                     ust = true
                     q_ust = 0
-                    L_av, n_cles, n_rts, weights = average_sparsifier(
+                    sp_L, n_cles, n_rts, weights = average_sparsifier(
                         rng, meta_g, lev_ust_JL, q_ust, t; weighted, absorbing_node, ust
                     )
                 elseif method == "ST LS"
@@ -507,54 +495,50 @@ function benchmark_syncrank(
                     absorbing_node = true
                     ust = true
                     q_ust = 0
-                    L_av, n_cles, n_rts, weights = average_sparsifier(
+                    sp_L, n_cles, n_rts, weights = average_sparsifier(
                         rng, meta_g, lev_ust, q_ust, t; weighted, absorbing_node, ust
                     )
                 end
 
-                v_av, _ = power_method_least_eigenvalue(L_av)
+                # least eigenvector
+                v_av, _ = power_method_least_eigenvalue(sp_L)
+
+                sp_L = Hermitian(sp_L)
+
+                ranking = syncrank(sp_L, meta_g; singular)
+
+                # metrics
                 err_tp[j] = eigenvec_dist(v, v_av)
-                roots_tp[j] = n_rts
-                cycles_tp[j] = n_cles
-                av_weight_tp[j] = mean(weights)
-
-                L_av = Hermitian(L_av)
-                pcLap, _ = sp_pcond_Lap(L_av, q, L)
-                cond_tp[j] = cond_nb_pp(pcLap)
-
-                ranking = syncrank(L_av, meta_g; singular)
                 tau_tp[j] = corkendall(planted_ranking, ranking)
                 spear_tp[j] = corspearman(planted_ranking, ranking)
                 upsets_in_top_tp[j] = nb_upsets_in_top(meta_g, ranking, k)
 
-                percent_edges_tp[j] = nb_of_edges(L_av) / m
+                # graph properties
+                percent_edges_tp[j] = nb_of_edges(sp_L) / m
+                roots_tp[j] = n_rts
+                cycles_tp[j] = n_cles
+                weight_tp[j] = mean(weights)
+
+                # cond number
+                pcLap, _ = sp_pcond_Lap(sp_L, q, L)
+                cond_tp[j] = cond_nb_pp(pcLap)
             end
-            err[i] = mean(err_tp)
-            err_std[i] = std(err_tp)
+            # metrics
+            err[i], err_std[i] = mean(err_tp), std(err_tp)
+            tau[i], tau_std[i] = mean(tau_tp), std(tau_tp)
+            spear[i], spear_std[i] = mean(spear_tp), std(spear_tp)
+            upsets_in_top[i], upsets_in_top_std[i] = mean(upsets_in_top_tp),
+            std(upsets_in_top_tp)
 
-            tau[i] = mean(tau_tp)
-            tau_std[i] = std(tau_tp)
+            # graph properties
+            percent_edges[i], percent_edges_std[i] = mean(percent_edges_tp),
+            std(percent_edges_tp)
+            roots[i], roots_std[i] = mean(roots_tp), std(roots_tp)
+            cycles[i], cycles_std[i] = mean(cycles_tp), std(cycles_tp)
+            weight[i], weight_std[i] = mean(weight_tp), std(weight_tp)
 
-            spear[i] = mean(spear_tp)
-            spear_std[i] = std(spear_tp)
-
-            upsets_in_top[i] = mean(upsets_in_top_tp)
-            upsets_in_top_std[i] = std(upsets_in_top_tp)
-
-            percent_edges[i] = mean(percent_edges_tp)
-            percent_edges_std[i] = std(percent_edges_tp)
-
-            roots[i] = mean(roots_tp)
-            roots_std[i] = std(roots_tp)
-
-            cycles[i] = mean(cycles_tp)
-            cycles_std[i] = std(cycles_tp)
-
-            weight[i] = mean(av_weight_tp)
-            weight_std[i] = std(av_weight_tp)
-
-            cond_nb[i] = mean(cond_tp)
-            cond_nb_std[i] = std(cond_tp)
+            # cond number
+            cond_nb[i], cond_nb_std[i] = mean(cond_tp), std(cond_tp)
         end
 
         D = Dict(
@@ -674,36 +658,36 @@ function eigenvalue_approx(
             lambda_sp_tp = zeros(n_rep, 1)
             cycles_tp = zeros(n_rep, 1)
 
-            av_weight_tp = zeros(n_rep, 1)
+            weight_tp = zeros(n_rep, 1)
 
             percent_edges_tp = zeros(n_rep, 1)
 
             t = rangebatch[i]
 
             for j in 1:n_rep
-                L_av = zeros(n, n)
+                sp_L = spzeros(n, n)
                 n_cles = 0
                 n_rts = 0
                 weights = zeros(t, 1)
                 if method == "DPP(K) unif"
                     # DPP(K) uniform weighting
-                    L_av, n_cles, n_rts, weights = average_sparsifier(
+                    sp_L, n_cles, n_rts, weights = average_sparsifier(
                         rng, meta_g, nothing, q, t; weighted
                     )
 
                 elseif method == "DPP(K) LS"
                     # DPP(K) leverage score weighting
-                    L_av, n_cles, n_rts, weights = average_sparsifier(
+                    sp_L, n_cles, n_rts, weights = average_sparsifier(
                         rng, meta_g, lev, q, t; weighted
                     )
                 end
 
-                l = eigvals(L_av)
+                l = eigvals(sp_L)
                 lambda_sp_tp[j] = real(l[1])
                 cycles_tp[j] = n_cles
-                av_weight_tp[j] = mean(weights)
+                weight_tp[j] = mean(weights)
 
-                percent_edges_tp[j] = nb_of_edges(L_av) / m
+                percent_edges_tp[j] = nb_of_edges(sp_L) / m
             end
             lambda_sp[i] = mean(lambda_sp_tp)
             lambda_sp_std[i] = std(lambda_sp_tp)
@@ -714,8 +698,8 @@ function eigenvalue_approx(
             cycles[i] = mean(cycles_tp)
             cycles_std[i] = std(cycles_tp)
 
-            weight[i] = mean(av_weight_tp)
-            weight_std[i] = std(av_weight_tp)
+            weight[i] = mean(weight_tp)
+            weight_std[i] = std(weight_tp)
         end
 
         D = Dict(
