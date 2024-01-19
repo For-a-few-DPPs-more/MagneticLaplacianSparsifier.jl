@@ -93,4 +93,67 @@
 
         @test rel_abs_diff < 1e-2
     end
+
+    @testset "sparsifier works by using vector of edge weights" begin
+        rng = Random.default_rng()
+
+        n = 100
+        p = 0.5
+        eta = 0.05
+        q = 0
+        meta_g = gen_graph_mun(rng, n, p, eta)
+        B = sp_magnetic_incidence(meta_g)
+        ls = leverage_score(B, q)
+
+        weighted = false
+
+        n = nv(meta_g)
+        m = ne(meta_g)
+
+        temp = spzeros(m)
+
+        L = spzeros(n, n)
+
+        weights = zeros(nb_samples, 1)
+        w_tot = 0
+
+        for i_sample in 1:nb_samples
+            mtsf = multi_type_spanning_forest(rng, meta_g, q)
+
+            D = props(mtsf)
+            w = D[:weight]
+            weights[i_sample] = w
+
+            w_tot += w
+            sparseB = sp_magnetic_incidence(mtsf; oriented=true)
+            ind_e = mtsf_edge_indices(mtsf, meta_g)
+
+            diag_elements = ones(length(ind_e))
+
+            if ls === nothing
+                nb_e = length(ind_e)
+                W = I / (nb_e / m)
+                diag_elements = diag_elements / (nb_e / m)
+            else
+                W = spdiagm(1 ./ ls[ind_e])
+                diag_elements = diag_elements ./ ls[ind_e]
+            end
+
+            if weighted
+                e_weights = get_edges_prop(meta_g, :e_weight, true, 1.0)
+                W *= spdiagm(e_weights[ind_e])
+                diag_elements = diag_elements .* e_weights[ind_e]
+            end
+
+            temp[ind_e] = temp[ind_e] + w * diag_elements
+
+            L = L + w * sparseB' * W * sparseB
+        end
+
+        L = L / w_tot
+
+        L_av = (1 / w_tot) * B' * spdiagm(temp) * B
+
+        @test norm(L - L_av) < 1e-10
+    end
 end
