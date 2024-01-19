@@ -113,38 +113,24 @@ function cond_numbers(
     for method in methods
 
         # initialization
-        cnd = zeros(n_tot, 1)
-        least_eig = zeros(n_tot, 1)
-        top_eig = zeros(n_tot, 1)
-        #
-        sparsity_L = zeros(n_tot, 1)
-        timing = zeros(n_tot, 1)
-        percent_edges = zeros(n_tot, 1)
-        cycles = zeros(n_tot, 1)
-        roots = zeros(n_tot, 1)
 
-        cnd_std = zeros(n_tot, 1)
-        least_eig_std = zeros(n_tot, 1)
-        top_eig_std = zeros(n_tot, 1)
-        #
-        sparsity_L_std = zeros(n_tot, 1)
-        timing_std = zeros(n_tot, 1)
-        percent_edges_std = zeros(n_tot, 1)
-        roots_std = zeros(n_tot, 1)
-        cycles_std = zeros(n_tot, 1)
+        # metrics
+        cnd, cnd_std = [zeros(n_tot) for _ in 1:2]
+        least_eig, least_eig_std = [zeros(n_tot) for _ in 1:2]
+        top_eig, top_eig_std = [zeros(n_tot) for _ in 1:2]
+        # properties
+        sparsity_L, sparsity_L_std = [zeros(n_tot) for _ in 1:2]
+        timing, timing_std = [zeros(n_tot) for _ in 1:2]
+        pc_edges, pc_edges_std = [zeros(n_tot) for _ in 1:2]
+        cycles, cycles_std = [zeros(n_tot) for _ in 1:2]
+        roots, roots_std = [zeros(n_tot) for _ in 1:2]
 
         for i in 1:n_tot
 
             # temporary arrays
-            cnd_tp = zeros(n_rep, 1)
-            least_eig_tp = zeros(n_rep, 1)
-            top_eig_tp = zeros(n_rep, 1)
+            cnd_tp, least_eig_tp, top_eig_tp = [zeros(n_rep) for _ in 1:3]
             #
-            sparsity_L_tp = zeros(n_rep, 1)
-            time_tp = zeros(n_rep, 1)
-            percent_edges_tp = zeros(n_rep, 1)
-            roots_tp = zeros(n_rep, 1)
-            cycles_tp = zeros(n_rep, 1)
+            sparsity_L_tp, time_tp, pc_edges_tp, roots_tp, cycles_tp = [zeros(n_rep) for _ in 1:5]
 
             for j in 1:n_rep
                 sp_L = spzeros(n, n)
@@ -249,31 +235,22 @@ function cond_numbers(
                 least_eig_tp[j] = real(least_eigval)
                 top_eig_tp[j] = real(top_eigval)
 
-                percent_edges_tp[j] = nb_of_edges(sp_L) / m
+                pc_edges_tp[j] = nb_of_edges(sp_L) / m
                 time_tp[j] = time
                 roots_tp[j] = n_rts
                 cycles_tp[j] = n_cls
             end
 
-            cnd[i] = mean(cnd_tp)
-            least_eig[i] = mean(least_eig_tp)
-            top_eig[i] = mean(top_eig_tp)
+            cnd[i], cnd_std[i] = mean(cnd_tp), std(cnd_tp)
+            least_eig[i], least_eig_std[i] = mean(least_eig_tp), std(least_eig_tp)
+            top_eig[i], top_eig_std[i] = mean(top_eig_tp), std(top_eig_tp)
             #
-            sparsity_L[i] = mean(sparsity_L_tp)
-            percent_edges[i] = mean(percent_edges_tp)
-            timing[i] = mean(time_tp)
-            roots[i] = mean(roots_tp)
-            cycles[i] = mean(cycles_tp)
+            sparsity_L[i], sparsity_L_std[i] = mean(sparsity_L_tp), std(sparsity_L_tp)
+            pc_edges[i], pc_edges_std[i] = mean(pc_edges_tp), std(pc_edges_tp)
+            timing[i], timing_std[i] = mean(time_tp), std(time_tp)
+            roots[i], roots_std[i] = mean(roots_tp), std(roots_tp)
+            cycles[i], cycles_std[i] = mean(cycles_tp), std(cycles_tp)
 
-            cnd_std[i] = std(cnd_tp)
-            least_eig_std[i] = std(least_eig_tp)
-            top_eig_std[i] = std(top_eig_tp)
-            #
-            sparsity_L_std[i] = std(sparsity_L_tp)
-            percent_edges_std[i] = std(percent_edges_tp)
-            timing_std[i] = std(time_tp)
-            roots_std[i] = std(roots_tp)
-            cycles_std[i] = std(cycles_tp)
         end
         D = Dict(
             "cdL" => cdL,
@@ -298,9 +275,9 @@ function cond_numbers(
             #
             "sparsity_L_std" => sparsity_L_std,
             #
-            "percent_edges" => percent_edges,
+            "pc_edges" => pc_edges,
             #
-            "percent_edges_std" => percent_edges_std,
+            "pc_edges_std" => pc_edges_std,
             #
             "timing" => timing,
             #
@@ -417,7 +394,7 @@ function benchmark_syncrank(
         upsets_in_top, upsets_in_top_std = [zeros(n_batch) for _ in 1:2]
 
         # graph properties mean and stds
-        percent_edges, percent_edges_std = [zeros(n_batch) for _ in 1:2]
+        pc_edges, pc_edges_std = [zeros(n_batch) for _ in 1:2]
         roots, roots_std = [zeros(n_batch) for _ in 1:2]
         cycles, cycles_std = [zeros(n_batch) for _ in 1:2]
         weight, weight_std = [zeros(n_batch) for _ in 1:2]
@@ -430,7 +407,7 @@ function benchmark_syncrank(
             # metrics
             err_tp, tau_tp, spear_tp, upsets_in_top_tp = [zeros(n_rep) for _ in 1:4]
             # graph properties
-            percent_edges_tp, roots_tp, cycles_tp, weight_tp = [zeros(n_rep) for _ in 1:4]
+            pc_edges_tp, roots_tp, cycles_tp, weight_tp = [zeros(n_rep) for _ in 1:4]
             # cond number
             cond_tp = zeros(n_rep)
 
@@ -514,7 +491,7 @@ function benchmark_syncrank(
                 upsets_in_top_tp[j] = nb_upsets_in_top(meta_g, ranking, k)
 
                 # graph properties
-                percent_edges_tp[j] = nb_of_edges(sp_L) / m
+                pc_edges_tp[j] = nb_of_edges(sp_L) / m
                 roots_tp[j] = n_rts
                 cycles_tp[j] = n_cles
                 weight_tp[j] = mean(weights)
@@ -531,8 +508,7 @@ function benchmark_syncrank(
             std(upsets_in_top_tp)
 
             # graph properties
-            percent_edges[i], percent_edges_std[i] = mean(percent_edges_tp),
-            std(percent_edges_tp)
+            pc_edges[i], pc_edges_std[i] = mean(pc_edges_tp), std(pc_edges_tp)
             roots[i], roots_std[i] = mean(roots_tp), std(roots_tp)
             cycles[i], cycles_std[i] = mean(cycles_tp), std(cycles_tp)
             weight[i], weight_std[i] = mean(weight_tp), std(weight_tp)
@@ -554,9 +530,9 @@ function benchmark_syncrank(
             #
             "spear_std" => spear_std,
             #
-            "percent_edges" => percent_edges,
+            "pc_edges" => pc_edges,
             #
-            "percent_edges_std" => percent_edges_std,
+            "pc_edges_std" => pc_edges_std,
             #
             "tau_full" => tau_full,
             #
@@ -642,25 +618,15 @@ function eigenvalue_approx(
     for method in methods
 
         # initialization
-        lambda_sp = zeros(size(rangebatch))
-        lambda_sp_std = zeros(size(rangebatch))
+        lambda_sp, lambda_sp_std = zeros(n_batch), zeros(n_batch)
+        pc_edges, pc_edges_std = zeros(n_batch), zeros(n_batch)
+        cycles, cycles_std = zeros(n_batch), zeros(n_batch)
+        weight, weight_std = zeros(n_batch), zeros(n_batch)
 
-        percent_edges = zeros(size(rangebatch))
-        percent_edges_std = zeros(size(rangebatch))
+        for i in 1:n_batch
 
-        cycles = zeros(size(rangebatch))
-        cycles_std = zeros(size(rangebatch))
-
-        weight = zeros(size(rangebatch))
-        weight_std = zeros(size(rangebatch))
-
-        for i in 1:length(rangebatch)
-            lambda_sp_tp = zeros(n_rep, 1)
-            cycles_tp = zeros(n_rep, 1)
-
-            weight_tp = zeros(n_rep, 1)
-
-            percent_edges_tp = zeros(n_rep, 1)
+            # initialization
+            lambda_sp_tp, cycles_tp, weight_tp, pc_edges_tp = [zeros(n_rep) for _ in 1:4]
 
             t = rangebatch[i]
 
@@ -668,7 +634,7 @@ function eigenvalue_approx(
                 sp_L = spzeros(n, n)
                 n_cles = 0
                 n_rts = 0
-                weights = zeros(t, 1)
+                weights = zeros(t)
                 if method == "DPP(K) unif"
                     # DPP(K) uniform weighting
                     sp_L, n_cles, n_rts, weights = average_sparsifier(
@@ -687,19 +653,12 @@ function eigenvalue_approx(
                 cycles_tp[j] = n_cles
                 weight_tp[j] = mean(weights)
 
-                percent_edges_tp[j] = nb_of_edges(sp_L) / m
+                pc_edges_tp[j] = nb_of_edges(sp_L) / m
             end
-            lambda_sp[i] = mean(lambda_sp_tp)
-            lambda_sp_std[i] = std(lambda_sp_tp)
-
-            percent_edges[i] = mean(percent_edges_tp)
-            percent_edges_std[i] = std(percent_edges_tp)
-
-            cycles[i] = mean(cycles_tp)
-            cycles_std[i] = std(cycles_tp)
-
-            weight[i] = mean(weight_tp)
-            weight_std[i] = std(weight_tp)
+            lambda_sp[i], lambda_sp_std[i] = mean(lambda_sp_tp), std(lambda_sp_tp)
+            pc_edges[i], pc_edges_std[i] = mean(pc_edges_tp), std(pc_edges_tp)
+            cycles[i], cycles_std[i] = mean(cycles_tp), std(cycles_tp)
+            weight[i], weight_std[i] = mean(weight_tp), std(weight_tp)
         end
 
         D = Dict(
@@ -707,9 +666,9 @@ function eigenvalue_approx(
             #
             "lambda_sp_std" => lambda_sp_std,
             #
-            "percent_edges" => percent_edges,
+            "pc_edges" => pc_edges,
             #
-            "percent_edges_std" => percent_edges_std,
+            "pc_edges_std" => pc_edges_std,
             #
             "cycles" => cycles,
             #
@@ -759,7 +718,7 @@ function plot_comparison_sync(
     for method in methods
         if method == "DPP(K) unif"
             D = D_all[method]
-            x = D["percent_edges"] * m / n
+            x = D["pc_edges"] * m / n
             y = D[metric]
             y_er = D[metric_std]
             n = D["n"]
@@ -785,7 +744,7 @@ function plot_comparison_sync(
 
         elseif method == "DPP(K) JL-LS"
             D = D_all[method]
-            x = D["percent_edges"] * m / n
+            x = D["pc_edges"] * m / n
             y = D[metric]
             y_er = D[metric_std]
             n = D["n"]
@@ -805,7 +764,7 @@ function plot_comparison_sync(
 
         elseif method == "DPP(K) LS"
             D = D_all[method]
-            x = D["percent_edges"] * m / n
+            x = D["pc_edges"] * m / n
             y = D[metric]
             y_er = D[metric_std]
             n = D["n"]
@@ -825,8 +784,8 @@ function plot_comparison_sync(
 
         elseif method == "iid unif"
             D = D_all[method]
-            x = D["percent_edges"] * m / n
-            x_er = D["percent_edges_std"]
+            x = D["pc_edges"] * m / n
+            x_er = D["pc_edges_std"]
             n = D["n"]
             m = D["m"]
 
@@ -849,8 +808,8 @@ function plot_comparison_sync(
 
         elseif method == "iid JL-LS"
             D = D_all[method]
-            x = D["percent_edges"] * m / n
-            x_er = D["percent_edges_std"]
+            x = D["pc_edges"] * m / n
+            x_er = D["pc_edges_std"]
             n = D["n"]
             m = D["m"]
 
@@ -873,8 +832,8 @@ function plot_comparison_sync(
 
         elseif method == "iid LS"
             D = D_all[method]
-            x = D["percent_edges"] * m / n
-            x_er = D["percent_edges_std"]
+            x = D["pc_edges"] * m / n
+            x_er = D["pc_edges_std"]
             n = D["n"]
             m = D["m"]
 
@@ -900,7 +859,7 @@ function plot_comparison_sync(
             n = D["n"]
             m = D["m"]
 
-            x = D["percent_edges"] * m / n
+            x = D["pc_edges"] * m / n
             y = D[metric]
             y_er = D[metric_std]
 
@@ -924,7 +883,7 @@ function plot_comparison_sync(
             n = D["n"]
             m = D["m"]
 
-            x = D["percent_edges"] * m / n
+            x = D["pc_edges"] * m / n
             y = D[metric]
             y_er = D[metric_std]
 
@@ -949,7 +908,7 @@ function plot_comparison_sync(
             n = D["n"]
             m = D["m"]
 
-            x = D["percent_edges"] * m / n
+            x = D["pc_edges"] * m / n
             y = D[metric]
             y_er = D[metric_std]
 
@@ -978,7 +937,7 @@ function plot_comparison_sync(
         yaxis!(:log)
 
     elseif metric === "tau"
-        x = D["percent_edges"] * m / n
+        x = D["pc_edges"] * m / n
         y = D["tau_full"] * ones(size(x))
         Plots.plot!(x, y; labels="full")
         ylabel!("Kendall's tau ")
@@ -987,24 +946,24 @@ function plot_comparison_sync(
         ylabel!("number of upsets in top 10 ")
 
     elseif metric === "spear"
-        x = D["percent_edges"] * m / n
+        x = D["pc_edges"] * m / n
         y = D["spear_full"] * ones(size(x))
         Plots.plot!(x, y; labels="full")
         ylabel!("Spearman")
     elseif metric === "cond_nb"
         yaxis!(:log)
         ylabel!("cond")
-        x = D["percent_edges"] * m / n
+        x = D["pc_edges"] * m / n
         y = D["condL"] * ones(size(x))
         Plots.plot!(x, y; labels="no precond.")
     elseif metric === "least_eig"
         ylabel!("least eigenvalue")
-        x = D["percent_edges"] * m / n
+        x = D["pc_edges"] * m / n
         y = D["exact_least_eig"] * ones(size(x))
         Plots.plot!(x, y; labels="exact")
     elseif metric === "top_eig"
         ylabel!("top eigenvalue")
-        x = D["percent_edges"] * m / n
+        x = D["pc_edges"] * m / n
         y = D["exact_top_eig"] * ones(size(x))
         Plots.plot!(x, y; labels="exact")
     end
@@ -1040,7 +999,7 @@ function plot_comparison_cond(
             n = D["n"]
             m = D["m"]
 
-            x = D["percent_edges"] * m / n
+            x = D["pc_edges"] * m / n
             y = D["cnd"]
             y_er = D["cnd_std"]
 
@@ -1067,7 +1026,7 @@ function plot_comparison_cond(
             n = D["n"]
             m = D["m"]
 
-            x = D["percent_edges"] * m / n
+            x = D["pc_edges"] * m / n
             y = D["cnd"]
             y_er = D["cnd_std"]
 
@@ -1087,7 +1046,7 @@ function plot_comparison_cond(
         elseif method == "DPP(K) LS"
             D = D_all[method]
 
-            x = D["percent_edges"] * m / n
+            x = D["pc_edges"] * m / n
             y = D["cnd"]
             y_er = D["cnd_std"]
 
@@ -1109,7 +1068,7 @@ function plot_comparison_cond(
             n = D["n"]
             m = D["m"]
 
-            x = D["percent_edges"] * m / n
+            x = D["pc_edges"] * m / n
             y = D["cnd"]
             y_er = D["cnd_std"]
 
@@ -1132,7 +1091,7 @@ function plot_comparison_cond(
             n = D["n"]
             m = D["m"]
 
-            x = D["percent_edges"] * m / n
+            x = D["pc_edges"] * m / n
             y = D["cnd"]
             y_er = D["cnd_std"]
 
@@ -1155,7 +1114,7 @@ function plot_comparison_cond(
             n = D["n"]
             m = D["m"]
 
-            x = D["percent_edges"] * m / n
+            x = D["pc_edges"] * m / n
             y = D["cnd"]
             y_er = D["cnd_std"]
 
@@ -1178,7 +1137,7 @@ function plot_comparison_cond(
             n = D["n"]
             m = D["m"]
 
-            x = D["percent_edges"] * m / n
+            x = D["pc_edges"] * m / n
             y = D["cnd"]
             y_er = D["cnd_std"]
 
@@ -1200,7 +1159,7 @@ function plot_comparison_cond(
             n = D["n"]
             m = D["m"]
 
-            x = D["percent_edges"] * m / n
+            x = D["pc_edges"] * m / n
             y = D["cnd"]
             y_er = D["cnd_std"]
 
@@ -1222,7 +1181,7 @@ function plot_comparison_cond(
             n = D["n"]
             m = D["m"]
 
-            x = D["percent_edges"] * m / n
+            x = D["pc_edges"] * m / n
             y = D["cnd"]
             y_er = D["cnd_std"]
 
@@ -1240,7 +1199,7 @@ function plot_comparison_cond(
             )
         end
     end
-    x = D["percent_edges"] * m / n
+    x = D["pc_edges"] * m / n
     cdL = D["cdL"]
     n = D["n"]
     m = D["m"]
@@ -1275,7 +1234,7 @@ function plot_nb_cycles(
     n = D["n"]
     m = D["m"]
 
-    x = D["percent_edges"] * m / n
+    x = D["pc_edges"] * m / n
     y = D["cycles"]
     y_err = D["cycles_std"]
 
@@ -1311,7 +1270,7 @@ function plot_nb_roots(D_all::AbstractDict, method::String; legendposition::Symb
     n = D["n"]
     m = D["m"]
 
-    x = D["percent_edges"] * m / n
+    x = D["pc_edges"] * m / n
     y = D["roots"]
 
     y_err = D["roots_std"]
