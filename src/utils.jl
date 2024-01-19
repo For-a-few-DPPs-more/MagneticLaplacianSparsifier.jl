@@ -236,9 +236,8 @@ function cond_numbers(
                     n_rts = out[3]
                     time = vec[2]
                 end
-                # by default q_system = q
-                #pcd_L, R = pcond_Lap(L_av, q_system, Lap)
                 L_av = Hermitian(L_av)
+                # by default q_system = q
                 pcd_L, R = sp_pcond_Lap(L_av, q_system, Lap)
 
                 sparsity_L_tp[j] = nnz(R)
@@ -776,7 +775,7 @@ function plot_comparison_sync(
     for method in methods
         if method == "DPP(K) unif"
             D = D_all[method]
-            x = D["percent_edges"] * m/n
+            x = D["percent_edges"] * m / n
             y = D[metric]
             y_er = D[metric_std]
             n = D["n"]
@@ -802,7 +801,7 @@ function plot_comparison_sync(
 
         elseif method == "DPP(K) JL-LS"
             D = D_all[method]
-            x = D["percent_edges"] * m/n
+            x = D["percent_edges"] * m / n
             y = D[metric]
             y_er = D[metric_std]
             n = D["n"]
@@ -822,7 +821,7 @@ function plot_comparison_sync(
 
         elseif method == "DPP(K) LS"
             D = D_all[method]
-            x = D["percent_edges"] * m/n
+            x = D["percent_edges"] * m / n
             y = D[metric]
             y_er = D[metric_std]
             n = D["n"]
@@ -842,7 +841,7 @@ function plot_comparison_sync(
 
         elseif method == "iid unif"
             D = D_all[method]
-            x = D["percent_edges"] * m/n
+            x = D["percent_edges"] * m / n
             x_er = D["percent_edges_std"]
             n = D["n"]
             m = D["m"]
@@ -866,7 +865,7 @@ function plot_comparison_sync(
 
         elseif method == "iid JL-LS"
             D = D_all[method]
-            x = D["percent_edges"] * m/n
+            x = D["percent_edges"] * m / n
             x_er = D["percent_edges_std"]
             n = D["n"]
             m = D["m"]
@@ -890,7 +889,7 @@ function plot_comparison_sync(
 
         elseif method == "iid LS"
             D = D_all[method]
-            x = D["percent_edges"] * m/n
+            x = D["percent_edges"] * m / n
             x_er = D["percent_edges_std"]
             n = D["n"]
             m = D["m"]
@@ -917,7 +916,7 @@ function plot_comparison_sync(
             n = D["n"]
             m = D["m"]
 
-            x = D["percent_edges"] * m/n
+            x = D["percent_edges"] * m / n
             y = D[metric]
             y_er = D[metric_std]
 
@@ -941,7 +940,7 @@ function plot_comparison_sync(
             n = D["n"]
             m = D["m"]
 
-            x = D["percent_edges"] * m/n
+            x = D["percent_edges"] * m / n
             y = D[metric]
             y_er = D[metric_std]
 
@@ -966,7 +965,7 @@ function plot_comparison_sync(
             n = D["n"]
             m = D["m"]
 
-            x = D["percent_edges"] * m/n
+            x = D["percent_edges"] * m / n
             y = D[metric]
             y_er = D[metric_std]
 
@@ -995,7 +994,7 @@ function plot_comparison_sync(
         yaxis!(:log)
 
     elseif metric === "tau"
-        x = D["percent_edges"] * m/n
+        x = D["percent_edges"] * m / n
         y = D["tau_full"] * ones(size(x))
         Plots.plot!(x, y; labels="full")
         ylabel!("Kendall's tau ")
@@ -1004,24 +1003,24 @@ function plot_comparison_sync(
         ylabel!("number of upsets in top 10 ")
 
     elseif metric === "spear"
-        x = D["percent_edges"] * m/n
+        x = D["percent_edges"] * m / n
         y = D["spear_full"] * ones(size(x))
         Plots.plot!(x, y; labels="full")
         ylabel!("Spearman")
     elseif metric === "cond_nb"
         yaxis!(:log)
         ylabel!("cond")
-        x = D["percent_edges"] * m/n
+        x = D["percent_edges"] * m / n
         y = D["condL"] * ones(size(x))
         Plots.plot!(x, y; labels="no precond.")
     elseif metric === "least_eig"
         ylabel!("least eigenvalue")
-        x = D["percent_edges"] * m/n
+        x = D["percent_edges"] * m / n
         y = D["exact_least_eig"] * ones(size(x))
         Plots.plot!(x, y; labels="exact")
     elseif metric === "top_eig"
         ylabel!("top eigenvalue")
-        x = D["percent_edges"] * m/n
+        x = D["percent_edges"] * m / n
         y = D["exact_top_eig"] * ones(size(x))
         Plots.plot!(x, y; labels="exact")
     end
@@ -1057,7 +1056,7 @@ function plot_comparison_cond(
             n = D["n"]
             m = D["m"]
 
-            x = D["percent_edges"] * m/n
+            x = D["percent_edges"] * m / n
             y = D["cnd"]
             y_er = D["cnd_std"]
 
@@ -1084,7 +1083,7 @@ function plot_comparison_cond(
             n = D["n"]
             m = D["m"]
 
-            x = D["percent_edges"] * m/n
+            x = D["percent_edges"] * m / n
             y = D["cnd"]
             y_er = D["cnd_std"]
 
@@ -1104,7 +1103,7 @@ function plot_comparison_cond(
         elseif method == "DPP(K) LS"
             D = D_all[method]
 
-            x = D["percent_edges"] * m/n
+            x = D["percent_edges"] * m / n
             y = D["cnd"]
             y_er = D["cnd_std"]
 
@@ -1126,7 +1125,7 @@ function plot_comparison_cond(
             n = D["n"]
             m = D["m"]
 
-            x = D["percent_edges"] * m/n
+            x = D["percent_edges"] * m / n
             y = D["cnd"]
             y_er = D["cnd_std"]
 
@@ -1149,7 +1148,7 @@ function plot_comparison_cond(
             n = D["n"]
             m = D["m"]
 
-            x = D["percent_edges"] * m/n
+            x = D["percent_edges"] * m / n
             y = D["cnd"]
             y_er = D["cnd_std"]
 
@@ -1172,7 +1171,7 @@ function plot_comparison_cond(
             n = D["n"]
             m = D["m"]
 
-            x = D["percent_edges"] * m/n
+            x = D["percent_edges"] * m / n
             y = D["cnd"]
             y_er = D["cnd_std"]
 
@@ -1195,7 +1194,7 @@ function plot_comparison_cond(
             n = D["n"]
             m = D["m"]
 
-            x = D["percent_edges"] * m/n
+            x = D["percent_edges"] * m / n
             y = D["cnd"]
             y_er = D["cnd_std"]
 
@@ -1217,7 +1216,7 @@ function plot_comparison_cond(
             n = D["n"]
             m = D["m"]
 
-            x = D["percent_edges"] * m/n
+            x = D["percent_edges"] * m / n
             y = D["cnd"]
             y_er = D["cnd_std"]
 
@@ -1239,7 +1238,7 @@ function plot_comparison_cond(
             n = D["n"]
             m = D["m"]
 
-            x = D["percent_edges"] * m/n
+            x = D["percent_edges"] * m / n
             y = D["cnd"]
             y_er = D["cnd_std"]
 
@@ -1257,7 +1256,7 @@ function plot_comparison_cond(
             )
         end
     end
-    x = D["percent_edges"] * m/n
+    x = D["percent_edges"] * m / n
     cdL = D["cdL"]
     n = D["n"]
     m = D["m"]
@@ -1292,7 +1291,7 @@ function plot_nb_cycles(
     n = D["n"]
     m = D["m"]
 
-    x = D["percent_edges"] * m/n
+    x = D["percent_edges"] * m / n
     y = D["cycles"]
     y_err = D["cycles_std"]
 
@@ -1328,7 +1327,7 @@ function plot_nb_roots(D_all::AbstractDict, method::String; legendposition::Symb
     n = D["n"]
     m = D["m"]
 
-    x = D["percent_edges"] * m/n
+    x = D["percent_edges"] * m / n
     y = D["roots"]
 
     y_err = D["roots_std"]
