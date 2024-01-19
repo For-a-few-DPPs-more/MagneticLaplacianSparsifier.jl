@@ -227,16 +227,26 @@ function average_sparsifier_iid(
     m = ne(meta_g)
     e_weights = get_edges_prop(meta_g, :e_weight, true, 1.0)
 
+    if ls !== nothing
+        p = vec(ls / sum(ls))
+    end
+
     w = 1
     w_tot = 0
-    L = spzeros(n, n)
     # for storing weights of edges in the sparsifier
     sp_e_weight_diag_el = spzeros(m)
 
-    for i_sample in 1:nb_samples
+    for _ in 1:nb_samples
         w_tot += w
+        ind_e = zeros(batch)
 
-        ind_e = diag_elements = ones(length(ind_e))
+        if ls === nothing
+            ind_e = rand(rng, 1:m, batch)
+        else
+            ind_e = rand(rng, Categorical(p), batch)
+        end
+
+        diag_elements = ones(length(ind_e))
 
         if ls === nothing
             diag_elements /= (length(ind_e) / m)
@@ -251,6 +261,8 @@ function average_sparsifier_iid(
         sp_e_weight_diag_el[ind_e] += w * diag_elements
     end
 
+    sparseB = sp_magnetic_incidence(meta_g; oriented=true)
+    L = spzeros(n,n)
     L = (1 / w_tot) * sparseB' * spdiagm(sp_e_weight_diag_el) * sparseB
 
     return L
