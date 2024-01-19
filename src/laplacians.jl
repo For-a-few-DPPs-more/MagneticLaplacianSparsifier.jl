@@ -96,7 +96,6 @@ function average_sparsifier(
     absorbing_node::Bool=false,
     ust::Bool=false,
 )
-    n = nv(meta_g)
     m = ne(meta_g)
     edge_weights = get_edges_prop(meta_g, :e_weight, true, 1.0)
 
@@ -143,77 +142,11 @@ function average_sparsifier(
     nb_sampled_roots = sum(nb_roots)
 
     sparseB = sp_magnetic_incidence(meta_g; oriented=true)
-
-    L = spzeros(n, n)
     L = (1 / w_tot) * sparseB' * spdiagm(sp_e_weight_diag_el) * sparseB
 
     return L, nb_sampled_cycles, nb_sampled_roots, subgraph_weights
 end
 
-function sample_subgraph_iid(
-    rng::Random.AbstractRNG,
-    meta_g::AbstractMetaGraph,
-    ls::Union{Array,Nothing},
-    batch::Integer,
-)
-    n = nv(meta_g)
-    m = ne(meta_g)
-    subgraph = MetaGraph(n)
-    if ls === nothing
-        ind_rd = rand(rng, 1:m, (batch, 1))
-    else
-        p = vec(ls / sum(ls))
-        ind_rd = rand(rng, Categorical(p), (batch, 1))
-    end
-    all_edges = collect(edges(meta_g))
-    subset_edges = all_edges[ind_rd]
-
-    for e in subset_edges
-        add_edge!(subgraph, e)
-        angle = get_edge_prop(meta_g, e, :angle, true)
-        set_prop!(subgraph, e, :angle, angle)
-    end
-
-    return subgraph
-end
-
-function old_average_sparsifier_iid(
-    rng::Random.AbstractRNG,
-    meta_g::AbstractMetaGraph,
-    ls::Union{Array,Nothing},
-    batch::Integer,
-    nb_samples::Integer;
-    weighted::Bool=false,
-)
-    n = nv(meta_g)
-    m = ne(meta_g)
-    L = spzeros(n, n)
-    w_tot = 0
-
-    for _ in 1:nb_samples
-        subgraph = sample_subgraph_iid(rng::Random.AbstractRNG, meta_g, ls, batch)
-        w = 1
-        w_tot += w
-        sparseB = sp_magnetic_incidence(subgraph; oriented=true)
-        ind_e = mtsf_edge_indices(subgraph, meta_g)
-        if ls === nothing
-            nb_e = length(ind_e)
-            W = I / (nb_e / m)
-        else
-            W = spdiagm(1 ./ ls[ind_e])
-        end
-
-        if weighted
-            e_weights = edge_weights(meta_g)
-            W *= spdiagm(e_weights[ind_e])
-        end
-
-        L = L + w * sparseB' * W * sparseB
-    end
-    L = L / w_tot
-
-    return L
-end
 
 function average_sparsifier_iid(
     rng::Random.AbstractRNG,
@@ -262,7 +195,6 @@ function average_sparsifier_iid(
     end
 
     sparseB = sp_magnetic_incidence(meta_g; oriented=true)
-    L = spzeros(n,n)
     L = (1 / w_tot) * sparseB' * spdiagm(sp_e_weight_diag_el) * sparseB
 
     return L
