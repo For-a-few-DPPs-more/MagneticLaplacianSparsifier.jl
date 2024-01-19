@@ -314,6 +314,10 @@ function cond_numbers(
             "cycles" => cycles,
             #
             "cycles_std" => cycles_std,
+            #
+            "n" => n,
+            #
+            "m" => m,
         )
         push!(D_all, method => D)
     end
@@ -516,7 +520,7 @@ function benchmark_syncrank(
                 av_weight_tp[j] = mean(weights)
 
                 L_av = Hermitian(L_av)
-                pcLap,_ = sp_pcond_Lap(L_av, q, L)
+                pcLap, _ = sp_pcond_Lap(L_av, q, L)
                 cond_tp[j] = cond_nb_pp(pcLap)
 
                 ranking = syncrank(L_av, meta_g; singular)
@@ -596,6 +600,10 @@ function benchmark_syncrank(
             "cond_nb_std" => cond_nb_std,
             #
             "condL" => condL,
+            #
+            "n" => n,
+            #
+            "m" => m,
         )
         push!(D_all, method => D)
     end
@@ -729,6 +737,10 @@ function eigenvalue_approx(
             "weight_std" => weight_std,
             #
             "lambda" => lambda_0,
+            #
+            "n" => n,
+            #
+            "m" => m,
         )
         push!(D_all, method => D)
     end
@@ -764,9 +776,11 @@ function plot_comparison_sync(
     for method in methods
         if method == "DPP(K) unif"
             D = D_all[method]
-            x = D["percent_edges"]
+            x = D["percent_edges"] * m/n
             y = D[metric]
             y_er = D[metric_std]
+            n = D["n"]
+            m = D["m"]
 
             Plots.plot!(
                 x,
@@ -788,9 +802,11 @@ function plot_comparison_sync(
 
         elseif method == "DPP(K) JL-LS"
             D = D_all[method]
-            x = D["percent_edges"]
+            x = D["percent_edges"] * m/n
             y = D[metric]
             y_er = D[metric_std]
+            n = D["n"]
+            m = D["m"]
 
             Plots.plot!(
                 x,
@@ -806,9 +822,11 @@ function plot_comparison_sync(
 
         elseif method == "DPP(K) LS"
             D = D_all[method]
-            x = D["percent_edges"]
+            x = D["percent_edges"] * m/n
             y = D[metric]
             y_er = D[metric_std]
+            n = D["n"]
+            m = D["m"]
 
             Plots.plot!(
                 x,
@@ -824,8 +842,10 @@ function plot_comparison_sync(
 
         elseif method == "iid unif"
             D = D_all[method]
-            x = D["percent_edges"]
+            x = D["percent_edges"] * m/n
             x_er = D["percent_edges_std"]
+            n = D["n"]
+            m = D["m"]
 
             y = D[metric]
             y_er = D[metric_std]
@@ -846,8 +866,10 @@ function plot_comparison_sync(
 
         elseif method == "iid JL-LS"
             D = D_all[method]
-            x = D["percent_edges"]
+            x = D["percent_edges"] * m/n
             x_er = D["percent_edges_std"]
+            n = D["n"]
+            m = D["m"]
 
             y = D[metric]
             y_er = D[metric_std]
@@ -868,8 +890,10 @@ function plot_comparison_sync(
 
         elseif method == "iid LS"
             D = D_all[method]
-            x = D["percent_edges"]
+            x = D["percent_edges"] * m/n
             x_er = D["percent_edges_std"]
+            n = D["n"]
+            m = D["m"]
 
             y = D[metric]
             y_er = D[metric_std]
@@ -890,8 +914,10 @@ function plot_comparison_sync(
 
         elseif method == "ST unif"
             D = D_all[method]
+            n = D["n"]
+            m = D["m"]
 
-            x = D["percent_edges"]
+            x = D["percent_edges"] * m/n
             y = D[metric]
             y_er = D[metric_std]
 
@@ -912,8 +938,10 @@ function plot_comparison_sync(
 
         elseif method == "ST JL-LS"
             D = D_all[method]
+            n = D["n"]
+            m = D["m"]
 
-            x = D["percent_edges"]
+            x = D["percent_edges"] * m/n
             y = D[metric]
             y_er = D[metric_std]
 
@@ -935,8 +963,10 @@ function plot_comparison_sync(
 
         elseif method == "ST LS"
             D = D_all[method]
+            n = D["n"]
+            m = D["m"]
 
-            x = D["percent_edges"]
+            x = D["percent_edges"] * m/n
             y = D[metric]
             y_er = D[metric_std]
 
@@ -957,7 +987,7 @@ function plot_comparison_sync(
             )
         end
     end
-    xlabel!("percentage of edges")
+    xlabel!("number of edges over number of nodes")
     ylims!(y_limits)
 
     if metric === "err"
@@ -965,7 +995,7 @@ function plot_comparison_sync(
         yaxis!(:log)
 
     elseif metric === "tau"
-        x = D["percent_edges"]
+        x = D["percent_edges"] * m/n
         y = D["tau_full"] * ones(size(x))
         Plots.plot!(x, y; labels="full")
         ylabel!("Kendall's tau ")
@@ -974,24 +1004,24 @@ function plot_comparison_sync(
         ylabel!("number of upsets in top 10 ")
 
     elseif metric === "spear"
-        x = D["percent_edges"]
+        x = D["percent_edges"] * m/n
         y = D["spear_full"] * ones(size(x))
         Plots.plot!(x, y; labels="full")
         ylabel!("Spearman")
     elseif metric === "cond_nb"
         yaxis!(:log)
         ylabel!("cond")
-        x = D["percent_edges"]
+        x = D["percent_edges"] * m/n
         y = D["condL"] * ones(size(x))
         Plots.plot!(x, y; labels="no precond.")
     elseif metric === "least_eig"
         ylabel!("least eigenvalue")
-        x = D["percent_edges"]
+        x = D["percent_edges"] * m/n
         y = D["exact_least_eig"] * ones(size(x))
         Plots.plot!(x, y; labels="exact")
     elseif metric === "top_eig"
         ylabel!("top eigenvalue")
-        x = D["percent_edges"]
+        x = D["percent_edges"] * m/n
         y = D["exact_top_eig"] * ones(size(x))
         Plots.plot!(x, y; labels="exact")
     end
@@ -1024,8 +1054,10 @@ function plot_comparison_cond(
     for method in methods
         if method == "DPP(K) unif"
             D = D_all[method]
+            n = D["n"]
+            m = D["m"]
 
-            x = D["percent_edges"]
+            x = D["percent_edges"] * m/n
             y = D["cnd"]
             y_er = D["cnd_std"]
 
@@ -1033,7 +1065,7 @@ function plot_comparison_cond(
                 x,
                 y;
                 yerror=y_er,
-                xlabel="percentage of edges",
+                xlabel="number of edges over number of nodes",
                 yaxis=:log,
                 labels=method,
                 markerstrokecolor=:auto,
@@ -1049,8 +1081,10 @@ function plot_comparison_cond(
 
         elseif method == "DPP(K) JL-LS"
             D = D_all[method]
+            n = D["n"]
+            m = D["m"]
 
-            x = D["percent_edges"]
+            x = D["percent_edges"] * m/n
             y = D["cnd"]
             y_er = D["cnd_std"]
 
@@ -1070,7 +1104,7 @@ function plot_comparison_cond(
         elseif method == "DPP(K) LS"
             D = D_all[method]
 
-            x = D["percent_edges"]
+            x = D["percent_edges"] * m/n
             y = D["cnd"]
             y_er = D["cnd_std"]
 
@@ -1089,8 +1123,10 @@ function plot_comparison_cond(
 
         elseif method == "iid unif"
             D = D_all[method]
+            n = D["n"]
+            m = D["m"]
 
-            x = D["percent_edges"]
+            x = D["percent_edges"] * m/n
             y = D["cnd"]
             y_er = D["cnd_std"]
 
@@ -1110,8 +1146,10 @@ function plot_comparison_cond(
 
         elseif method == "iid JL-LS"
             D = D_all[method]
+            n = D["n"]
+            m = D["m"]
 
-            x = D["percent_edges"]
+            x = D["percent_edges"] * m/n
             y = D["cnd"]
             y_er = D["cnd_std"]
 
@@ -1131,8 +1169,10 @@ function plot_comparison_cond(
 
         elseif method == "iid LS"
             D = D_all[method]
+            n = D["n"]
+            m = D["m"]
 
-            x = D["percent_edges"]
+            x = D["percent_edges"] * m/n
             y = D["cnd"]
             y_er = D["cnd_std"]
 
@@ -1152,8 +1192,10 @@ function plot_comparison_cond(
 
         elseif method == "ST unif"
             D = D_all[method]
+            n = D["n"]
+            m = D["m"]
 
-            x = D["percent_edges"]
+            x = D["percent_edges"] * m/n
             y = D["cnd"]
             y_er = D["cnd_std"]
 
@@ -1172,8 +1214,10 @@ function plot_comparison_cond(
 
         elseif method == "ST JL-LS"
             D = D_all[method]
+            n = D["n"]
+            m = D["m"]
 
-            x = D["percent_edges"]
+            x = D["percent_edges"] * m/n
             y = D["cnd"]
             y_er = D["cnd_std"]
 
@@ -1192,8 +1236,10 @@ function plot_comparison_cond(
 
         elseif method == "ST LS"
             D = D_all[method]
+            n = D["n"]
+            m = D["m"]
 
-            x = D["percent_edges"]
+            x = D["percent_edges"] * m/n
             y = D["cnd"]
             y_er = D["cnd_std"]
 
@@ -1211,8 +1257,11 @@ function plot_comparison_cond(
             )
         end
     end
-    x = D["percent_edges"]
+    x = D["percent_edges"] * m/n
     cdL = D["cdL"]
+    n = D["n"]
+    m = D["m"]
+
     y = cdL * ones(size(x))
     plot!(
         x,
@@ -1240,7 +1289,10 @@ function plot_nb_cycles(
 )
     D = D_all[method]
 
-    x = D["percent_edges"]
+    n = D["n"]
+    m = D["m"]
+
+    x = D["percent_edges"] * m/n
     y = D["cycles"]
     y_err = D["cycles_std"]
 
@@ -1251,7 +1303,7 @@ function plot_nb_cycles(
         y;
         yerr=y_err,
         labels="number of CRTs",
-        xlabel="percentage of edges",
+        xlabel="number of edges over number of nodes",
         markersize=5,
         markershape=:circle,
         markerstrokecolor=:auto,
@@ -1273,9 +1325,12 @@ end
 
 function plot_nb_roots(D_all::AbstractDict, method::String; legendposition::Symbol=:topleft)
     D = D_all[method]
+    n = D["n"]
+    m = D["m"]
 
-    x = D["percent_edges"]
+    x = D["percent_edges"] * m/n
     y = D["roots"]
+
     y_err = D["roots_std"]
 
     n_batch = length(x)
@@ -1284,7 +1339,7 @@ function plot_nb_roots(D_all::AbstractDict, method::String; legendposition::Symb
         x,
         y;
         yerr=y_err,
-        xlabel="percentage of edges",
+        xlabel="number of edges over number of nodes",
         labels="average number of roots",
         markersize=5,
         markershape=:circle,
