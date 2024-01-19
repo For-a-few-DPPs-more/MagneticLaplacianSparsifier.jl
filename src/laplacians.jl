@@ -26,65 +26,11 @@ function magnetic_incidence_matrix(
     return B
 end
 
-# todo naming mtsf, csrf
+
 function mtsf_edge_indices(mtsf, graph)
     return [i for (i, e) in enumerate(edges(graph)) if has_edge(mtsf, src(e), dst(e))]
 end
 
-# function average_sparsifier(
-#     rng::Random.AbstractRNG,
-#     meta_g::AbstractMetaGraph,
-#     ls::Union{Array,Nothing},
-#     q::Real,
-#     nb_samples::Integer;
-#     weighted::Bool=false,
-#     absorbing_node::Bool=false,
-#     ust::Bool=false,
-# )
-#     n = nv(meta_g)
-#     m = ne(meta_g)
-#     L = spzeros(n, n)
-#     nb_cycles = zeros(nb_samples, 1)
-#     nb_roots = zeros(nb_samples, 1)
-#     weights = zeros(nb_samples, 1)
-#     w_tot = 0
-
-#     for i_sample in 1:nb_samples
-#         mtsf = multi_type_spanning_forest(rng, meta_g, q; weighted, absorbing_node, ust)
-#         # todo simply refactor to retain edges and weights (avoiding averaging Laplacians)
-#         # check nb roots and cycles
-#         cycles = get_prop(mtsf, :cycle_nodes)
-#         nb_cycles[i_sample] = length(cycles)
-#         roots = get_prop(mtsf, :roots)
-#         nb_roots[i_sample] = length(roots)
-
-#         D = props(mtsf)
-#         w = D[:weight]
-#         weights[i_sample] = w
-
-#         w_tot += w
-#         sparseB = sp_magnetic_incidence(mtsf; oriented=true)
-#         ind_e = mtsf_edge_indices(mtsf, meta_g)
-#         if ls === nothing
-#             nb_e = length(ind_e)
-#             W = I / (nb_e / m)
-#         else
-#             W = spdiagm(1 ./ ls[ind_e])
-#         end
-#         if weighted
-#             e_weights = get_edges_prop(meta_g, :e_weight, true, 1.0)
-#             W *= spdiagm(e_weights[ind_e])
-#         end
-
-#         L = L + w * sparseB' * W * sparseB
-#     end
-#     nb_sampled_cycles = sum(nb_cycles)
-#     nb_sampled_roots = sum(nb_roots)
-
-#     L = L / w_tot
-
-#     return L, nb_sampled_cycles, nb_sampled_roots, weights
-# end
 
 function average_sparsifier(
     rng::Random.AbstractRNG,
@@ -156,7 +102,6 @@ function average_sparsifier_iid(
     nb_samples::Integer;
     weighted::Bool=false,
 )
-    n = nv(meta_g)
     m = ne(meta_g)
     e_weights = get_edges_prop(meta_g, :e_weight, true, 1.0)
 
@@ -270,15 +215,8 @@ function optimal_perm(mtsf::AbstractMetaGraph)
     return ind_perm
 end
 
-function pcond_Lap(avgL, q, Lap)
-    avgL = Matrix((avgL + avgL') / 2)
-    R = cholesky(avgL + q * I).L
-    temp = Matrix(Lap + q * I) / R'
-    pd_Lap = R \ temp
-    return pd_Lap, R
-end
-
 function sp_pcond_Lap(avgL, q, Lap)
+
     C = cholesky(avgL + q * I)
     R = sparse(C.L)[invperm(C.p), :] # since sparse cholesky is pivoted
 
