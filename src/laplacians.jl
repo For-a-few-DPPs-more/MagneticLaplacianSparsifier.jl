@@ -26,11 +26,9 @@ function magnetic_incidence_matrix(
     return B
 end
 
-
 function mtsf_edge_indices(mtsf, graph)
     return [i for (i, e) in enumerate(edges(graph)) if has_edge(mtsf, src(e), dst(e))]
 end
-
 
 function average_sparsifier(
     rng::Random.AbstractRNG,
@@ -92,7 +90,6 @@ function average_sparsifier(
 
     return L, nb_sampled_cycles, nb_sampled_roots, subgraph_weights
 end
-
 
 function average_sparsifier_iid(
     rng::Random.AbstractRNG,
@@ -215,12 +212,11 @@ function optimal_perm(mtsf::AbstractMetaGraph)
     return ind_perm
 end
 
-function sp_pcond_Lap(avgL, q, Lap)
-
-    C = cholesky(avgL + q * I)
+function sp_pcond_Lap(spL, q, L)
+    C = cholesky(spL + q * I)
     R = sparse(C.L)[invperm(C.p), :] # since sparse cholesky is pivoted
 
-    T = linear_solve_matrix_system(R, Lap + q * I) # sparse matrix AX=B
+    T = linear_solve_matrix_system(R, L + q * I) # sparse matrix AX=B
     pL = linear_solve_matrix_system(R, T') # sparse matrix AX=B
 
     return pL, R

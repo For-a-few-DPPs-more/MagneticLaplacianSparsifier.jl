@@ -72,27 +72,8 @@ function cond_numbers(
 
     Lap = B' * W * B
 
-    # magnetic leverage scores
-    lev = leverage_score(B, q; e_weights)
-
-    # JL-estimates of magnetic leverage scores
-    lev_JL = JL_lev_score_estimates(B, q; e_weights)
-
-    # magnetic Laplacian eigenvalues
-    _, exact_least_eig = power_method_least_eigenvalue(Lap)
-    _, exact_top_eig = power_method_least_eigenvalue(Lap)
-
     # magnetic Laplacian condition number
     cdL = cond_nb_pp(Lap + q_system * I)
-
-    # combinatorial Laplacian
-    B_ust = magnetic_incidence_matrix(meta_g; oriented=true, phases=false)
-
-    # JL-estimates of magnetic leverage scores
-    lev_ust_JL = JL_lev_score_estimates(B_ust, q; e_weights)
-
-    # combinatorial leverage scores (non-magnetic)
-    lev_ust = leverage_score(B_ust, 0; e_weights)
 
     if methods === nothing
         methods = [
@@ -108,16 +89,38 @@ function cond_numbers(
         ]
     end
 
+    lev, lev_JL, lev_ust_JL, lev_ust = [0 for _ in 1:4]
+    time_lev, time_lev_JL, time_lev_ust_JL, time_lev_ust = [0 for _ in 1:4]
+    # magnetic leverage scores
+    if ("iid LS" in methods) || ("DPP(K) LS" in methods)
+        lev, time_lev = @timed leverage_score(B, q; e_weights)
+    end
+    # JL-estimates of magnetic leverage scores
+    if ("DPP(K) JL-LS" in methods) || ("iid JL-LS" in methods)
+        lev_JL, time_lev_JL = @timed JL_lev_score_estimates(B, q; e_weights)
+    end
+    # JL-estimates of combinatorial leverage scores
+    if  ("ST JL-LS" in methods)
+        B_ust = magnetic_incidence_matrix(meta_g; oriented=true, phases=false)
+        lev_ust_JL, time_lev_ust_JL = @timed JL_lev_score_estimates(B_ust, q; e_weights)
+    end
+    # combinatorial leverage scores (non-magnetic)
+    if ("ST LS" in methods)
+        B_ust = magnetic_incidence_matrix(meta_g; oriented=true, phases=false)
+        lev_ust, time_lev_ust  = @timed leverage_score(B_ust, 0; e_weights)
+    end
+
+    # initialization
+
     D_all = Dict()
 
     for method in methods
-
+        print("method: ", method)
         # initialization
 
         # metrics
         cnd, cnd_std = [zeros(n_tot) for _ in 1:2]
-        least_eig, least_eig_std = [zeros(n_tot) for _ in 1:2]
-        top_eig, top_eig_std = [zeros(n_tot) for _ in 1:2]
+
         # properties
         sparsity_L, sparsity_L_std = [zeros(n_tot) for _ in 1:2]
         timing, timing_std = [zeros(n_tot) for _ in 1:2]
@@ -128,9 +131,11 @@ function cond_numbers(
         for i in 1:n_tot
 
             # temporary arrays
-            cnd_tp, least_eig_tp, top_eig_tp = [zeros(n_rep) for _ in 1:3]
+            cnd_tp = zeros(n_rep)
             #
-            sparsity_L_tp, time_tp, pc_edges_tp, roots_tp, cycles_tp = [zeros(n_rep) for _ in 1:5]
+            sparsity_L_tp, time_tp, pc_edges_tp, roots_tp, cycles_tp = [
+                zeros(n_rep) for _ in 1:5
+            ]
 
             for j in 1:n_rep
                 sp_L = spzeros(n, n)
@@ -223,18 +228,12 @@ function cond_numbers(
                     time = vec[2]
                 end
                 sp_L = Hermitian(sp_L)
+
                 # by default q_system = q
                 pcd_L, R = sp_pcond_Lap(sp_L, q_system, Lap)
-
-                sparsity_L_tp[j] = nnz(R)
-
-                _, least_eigval = power_method_least_eigenvalue(pcd_L)
-                _, top_eigval = power_method_least_eigenvalue(pcd_L)
                 cnd_tp[j] = cond_nb_pp(pcd_L)
 
-                least_eig_tp[j] = real(least_eigval)
-                top_eig_tp[j] = real(top_eigval)
-
+                sparsity_L_tp[j] = nnz(R)
                 pc_edges_tp[j] = nb_of_edges(sp_L) / m
                 time_tp[j] = time
                 roots_tp[j] = n_rts
@@ -242,15 +241,12 @@ function cond_numbers(
             end
 
             cnd[i], cnd_std[i] = mean(cnd_tp), std(cnd_tp)
-            least_eig[i], least_eig_std[i] = mean(least_eig_tp), std(least_eig_tp)
-            top_eig[i], top_eig_std[i] = mean(top_eig_tp), std(top_eig_tp)
             #
             sparsity_L[i], sparsity_L_std[i] = mean(sparsity_L_tp), std(sparsity_L_tp)
             pc_edges[i], pc_edges_std[i] = mean(pc_edges_tp), std(pc_edges_tp)
             timing[i], timing_std[i] = mean(time_tp), std(time_tp)
             roots[i], roots_std[i] = mean(roots_tp), std(roots_tp)
             cycles[i], cycles_std[i] = mean(cycles_tp), std(cycles_tp)
-
         end
         D = Dict(
             "cdL" => cdL,
@@ -258,18 +254,6 @@ function cond_numbers(
             "cnd" => cnd,
             #
             "cnd_std" => cnd_std,
-            #
-            "least_eig" => least_eig,
-            #
-            "least_eig_std" => least_eig_std,
-            #
-            "exact_least_eig" => exact_least_eig,
-            #
-            "top_eig" => top_eig,
-            #
-            "top_eig_std" => top_eig_std,
-            #
-            "exact_top_eig" => exact_top_eig,
             #
             "sparsity_L" => sparsity_L,
             #
@@ -294,6 +278,14 @@ function cond_numbers(
             "n" => n,
             #
             "m" => m,
+            #
+            "time_lev" => time_lev,
+            #
+            "time_lev_JL" => time_lev_JL,
+            #
+            "time_lev_ust_JL" => time_lev_ust_JL,
+            #
+            "time_lev_ust" => time_lev_ust
         )
         push!(D_all, method => D)
     end
@@ -328,7 +320,6 @@ function benchmark_syncrank(
 
     # incidence matrix
     B = sp_magnetic_incidence(meta_g)
-    B_ust = magnetic_incidence_matrix(meta_g; oriented=true, phases=false)
 
     #######################################
     # syncrank with full magnetic Laplacian
@@ -341,19 +332,6 @@ function benchmark_syncrank(
     L = B' * W * B
 
     condL = cond_nb_pp(L)
-
-    # magnetic leverage scores
-    q = 0
-    lev = leverage_score(B, q; e_weights)
-
-    # JL-estimates of magnetic leverage scores
-    lev_JL = JL_lev_score_estimates(B, q; e_weights)
-
-    # leverage scores
-    lev_ust = leverage_score(B_ust, q; e_weights)
-
-    # JL-estimates of magnetic leverage scores
-    lev_ust_JL = JL_lev_score_estimates(B_ust, q; e_weights)
 
     # least eigenvector full Laplacian
     v, _ = power_method_least_eigenvalue(L)
@@ -381,12 +359,35 @@ function benchmark_syncrank(
             "ST LS",
         ]
     end
+
+    q = 0
+
+    lev, lev_JL, lev_ust_JL, lev_ust = [0 for _ in 1:4]
+    # magnetic leverage scores
+    if ("iid LS" in methods) || ("DPP(K) LS" in methods)
+        lev = leverage_score(B, q; e_weights)
+    end
+    # JL-estimates of magnetic leverage scores
+    if ("DPP(K) JL-LS" in methods) || ("iid JL-LS" in methods)
+        lev_JL = JL_lev_score_estimates(B, q; e_weights)
+    end
+    # JL-estimates of combinatorial leverage scores
+    if  ("ST JL-LS" in methods)
+        B_ust = magnetic_incidence_matrix(meta_g; oriented=true, phases=false)
+        lev_ust_JL = JL_lev_score_estimates(B_ust, q; e_weights)
+    end
+    # combinatorial leverage scores (non-magnetic)
+    if ("ST LS" in methods)
+        B_ust = magnetic_incidence_matrix(meta_g; oriented=true, phases=false)
+        lev_ust = leverage_score(B_ust, 0; e_weights)
+    end
+
     D_all = Dict()
 
     for method in methods
 
         # initialization
-
+        println("method: ", method)
         # metrics mean and stds
         err, err_std = [zeros(n_batch) for _ in 1:2]
         tau, tau_std = [zeros(n_batch) for _ in 1:2]
@@ -478,14 +479,15 @@ function benchmark_syncrank(
                 end
 
                 # least eigenvector
-                v_av, _ = power_method_least_eigenvalue(sp_L)
+                v_least, eig_least = power_method_least_eigenvalue(sp_L)
+                println("least eigenvalue of sparsifier: ", eig_least)
 
                 sp_L = Hermitian(sp_L)
 
                 ranking = syncrank(sp_L, meta_g; singular)
 
                 # metrics
-                err_tp[j] = eigenvec_dist(v, v_av)
+                err_tp[j] = eigenvec_dist(v, v_least)
                 tau_tp[j] = corkendall(planted_ranking, ranking)
                 spear_tp[j] = corspearman(planted_ranking, ranking)
                 upsets_in_top_tp[j] = nb_upsets_in_top(meta_g, ranking, k)
@@ -497,7 +499,8 @@ function benchmark_syncrank(
                 weight_tp[j] = mean(weights)
 
                 # cond number
-                pcLap, _ = sp_pcond_Lap(sp_L, q, L)
+                q_plus_eps = q + 1e-12 # adding small value st cholesky has no error
+                pcLap, _ = sp_pcond_Lap(sp_L, q_plus_eps, L)
                 cond_tp[j] = cond_nb_pp(pcLap)
             end
             # metrics
@@ -616,7 +619,7 @@ function eigenvalue_approx(
     D_all = Dict()
 
     for method in methods
-
+        print("method: ", method)
         # initialization
         lambda_sp, lambda_sp_std = zeros(n_batch), zeros(n_batch)
         pc_edges, pc_edges_std = zeros(n_batch), zeros(n_batch)
@@ -718,11 +721,11 @@ function plot_comparison_sync(
     for method in methods
         if method == "DPP(K) unif"
             D = D_all[method]
+            n = D["n"]
+            m = D["m"]
             x = D["pc_edges"] * m / n
             y = D[metric]
             y_er = D[metric_std]
-            n = D["n"]
-            m = D["m"]
 
             Plots.plot!(
                 x,
@@ -744,11 +747,11 @@ function plot_comparison_sync(
 
         elseif method == "DPP(K) JL-LS"
             D = D_all[method]
+            n = D["n"]
+            m = D["m"]
             x = D["pc_edges"] * m / n
             y = D[metric]
             y_er = D[metric_std]
-            n = D["n"]
-            m = D["m"]
 
             Plots.plot!(
                 x,
@@ -764,11 +767,11 @@ function plot_comparison_sync(
 
         elseif method == "DPP(K) LS"
             D = D_all[method]
+            n = D["n"]
+            m = D["m"]
             x = D["pc_edges"] * m / n
             y = D[metric]
             y_er = D[metric_std]
-            n = D["n"]
-            m = D["m"]
 
             Plots.plot!(
                 x,
@@ -784,6 +787,8 @@ function plot_comparison_sync(
 
         elseif method == "iid unif"
             D = D_all[method]
+            n = D["n"]
+            m = D["m"]
             x = D["pc_edges"] * m / n
             x_er = D["pc_edges_std"]
             n = D["n"]
@@ -808,10 +813,10 @@ function plot_comparison_sync(
 
         elseif method == "iid JL-LS"
             D = D_all[method]
-            x = D["pc_edges"] * m / n
-            x_er = D["pc_edges_std"]
             n = D["n"]
             m = D["m"]
+            x = D["pc_edges"] * m / n
+            x_er = D["pc_edges_std"]
 
             y = D[metric]
             y_er = D[metric_std]
@@ -832,10 +837,10 @@ function plot_comparison_sync(
 
         elseif method == "iid LS"
             D = D_all[method]
-            x = D["pc_edges"] * m / n
-            x_er = D["pc_edges_std"]
             n = D["n"]
             m = D["m"]
+            x = D["pc_edges"] * m / n
+            x_er = D["pc_edges_std"]
 
             y = D[metric]
             y_er = D[metric_std]
@@ -937,6 +942,8 @@ function plot_comparison_sync(
         yaxis!(:log)
 
     elseif metric === "tau"
+        n = D["n"]
+        m = D["m"]
         x = D["pc_edges"] * m / n
         y = D["tau_full"] * ones(size(x))
         Plots.plot!(x, y; labels="full")
@@ -946,6 +953,8 @@ function plot_comparison_sync(
         ylabel!("number of upsets in top 10 ")
 
     elseif metric === "spear"
+        n = D["n"]
+        m = D["m"]
         x = D["pc_edges"] * m / n
         y = D["spear_full"] * ones(size(x))
         Plots.plot!(x, y; labels="full")
@@ -953,16 +962,22 @@ function plot_comparison_sync(
     elseif metric === "cond_nb"
         yaxis!(:log)
         ylabel!("cond")
+        n = D["n"]
+        m = D["m"]
         x = D["pc_edges"] * m / n
         y = D["condL"] * ones(size(x))
         Plots.plot!(x, y; labels="no precond.")
     elseif metric === "least_eig"
         ylabel!("least eigenvalue")
+        n = D["n"]
+        m = D["m"]
         x = D["pc_edges"] * m / n
         y = D["exact_least_eig"] * ones(size(x))
         Plots.plot!(x, y; labels="exact")
     elseif metric === "top_eig"
         ylabel!("top eigenvalue")
+        n = D["n"]
+        m = D["m"]
         x = D["pc_edges"] * m / n
         y = D["exact_top_eig"] * ones(size(x))
         Plots.plot!(x, y; labels="exact")
