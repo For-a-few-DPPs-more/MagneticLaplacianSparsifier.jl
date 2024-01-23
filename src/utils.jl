@@ -73,7 +73,11 @@ function cond_numbers(
     Lap = B' * W * B
 
     # magnetic Laplacian condition number
-    cdL = cond_nb_pp(Lap + q_system * I)
+    cdL, l_min, _ = cond_nb_pp(Lap + q_system * I)
+
+    # print least eigenvalues
+
+    println("least eigenvalue of Laplacian: ", real(l_min))
 
     if methods === nothing
         methods = [
@@ -100,14 +104,14 @@ function cond_numbers(
         lev_JL, time_lev_JL = @timed JL_lev_score_estimates(B, q; e_weights)
     end
     # JL-estimates of combinatorial leverage scores
-    if  ("ST JL-LS" in methods)
+    if ("ST JL-LS" in methods)
         B_ust = magnetic_incidence_matrix(meta_g; oriented=true, phases=false)
         lev_ust_JL, time_lev_ust_JL = @timed JL_lev_score_estimates(B_ust, q; e_weights)
     end
     # combinatorial leverage scores (non-magnetic)
     if ("ST LS" in methods)
         B_ust = magnetic_incidence_matrix(meta_g; oriented=true, phases=false)
-        lev_ust, time_lev_ust  = @timed leverage_score(B_ust, 0; e_weights)
+        lev_ust, time_lev_ust = @timed leverage_score(B_ust, 0; e_weights)
     end
 
     # initialization
@@ -128,6 +132,8 @@ function cond_numbers(
         cycles, cycles_std = [zeros(n_tot) for _ in 1:2]
         roots, roots_std = [zeros(n_tot) for _ in 1:2]
 
+        connected = ones(n_tot)
+
         for i in 1:n_tot
 
             # temporary arrays
@@ -136,12 +142,14 @@ function cond_numbers(
             sparsity_L_tp, time_tp, pc_edges_tp, roots_tp, cycles_tp = [
                 zeros(n_rep) for _ in 1:5
             ]
+            connected_tp = ones(n_rep)
 
             for j in 1:n_rep
                 sp_L = spzeros(n, n)
                 time = 0
                 n_cls = 0
                 n_rts = 0
+                isconnected = 1
                 if method == "DPP(K) unif"
                     # DPP(K) uniform weighting
                     vec = @timed average_sparsifier(rng, meta_g, nothing, q, i; weighted)
@@ -171,21 +179,27 @@ function cond_numbers(
                     vec = @timed average_sparsifier_iid(
                         rng, meta_g, nothing, batch, i; weighted
                     )
-                    sp_L = vec[1]
+                    out = vec[1]
+                    sp_L = out[1]
+                    isconnected = out[2]
                     time = vec[2]
                 elseif method == "iid LS"
                     # iid leverage score with leverage score weighting
                     vec = @timed average_sparsifier_iid(
                         rng, meta_g, lev, batch, i; weighted
                     )
-                    sp_L = vec[1]
+                    out = vec[1]
+                    sp_L = out[1]
+                    isconnected = out[2]
                     time = vec[2]
                 elseif method == "iid JL-LS"
                     # iid leverage score with leverage score weighting
                     vec = @timed average_sparsifier_iid(
                         rng, meta_g, lev_JL, batch, i; weighted
                     )
-                    sp_L = vec[1]
+                    out = vec[1]
+                    sp_L = out[1]
+                    isconnected = out[2]
                     time = vec[2]
                 elseif method == "ST unif"
                     # ST uniform weighting
@@ -231,15 +245,16 @@ function cond_numbers(
 
                 # by default q_system = q
                 pcd_L, R = sp_pcond_Lap(sp_L, q_system, Lap)
-                cnd_tp[j] = cond_nb_pp(pcd_L)
+                cnd_tp[j], _, _ = cond_nb_pp(pcd_L)
 
                 sparsity_L_tp[j] = nnz(R)
                 pc_edges_tp[j] = nb_of_edges(sp_L) / m
                 time_tp[j] = time
                 roots_tp[j] = n_rts
                 cycles_tp[j] = n_cls
+                connected_tp[j] = isconnected
             end
-
+            # computing mean and std's
             cnd[i], cnd_std[i] = mean(cnd_tp), std(cnd_tp)
             #
             sparsity_L[i], sparsity_L_std[i] = mean(sparsity_L_tp), std(sparsity_L_tp)
@@ -247,6 +262,7 @@ function cond_numbers(
             timing[i], timing_std[i] = mean(time_tp), std(time_tp)
             roots[i], roots_std[i] = mean(roots_tp), std(roots_tp)
             cycles[i], cycles_std[i] = mean(cycles_tp), std(cycles_tp)
+            connected[i] = mean(connected_tp)
         end
         D = Dict(
             "cdL" => cdL,
@@ -285,7 +301,9 @@ function cond_numbers(
             #
             "time_lev_ust_JL" => time_lev_ust_JL,
             #
-            "time_lev_ust" => time_lev_ust
+            "time_lev_ust" => time_lev_ust,
+            #
+            "connected" => connected,
         )
         push!(D_all, method => D)
     end
@@ -331,10 +349,12 @@ function benchmark_syncrank(
     end
     L = B' * W * B
 
-    condL = cond_nb_pp(L)
+    condL, _, _ = cond_nb_pp(L)
 
     # least eigenvector full Laplacian
-    v, _ = power_method_least_eigenvalue(L)
+    v, l_min = power_method_least_eigenvalue(L)
+
+    println("least eigval of Laplacian= ", l_min)
 
     # recovered ranking full Laplacian
     ranking_full = syncrank(L, meta_g; singular)
@@ -372,7 +392,7 @@ function benchmark_syncrank(
         lev_JL = JL_lev_score_estimates(B, q; e_weights)
     end
     # JL-estimates of combinatorial leverage scores
-    if  ("ST JL-LS" in methods)
+    if ("ST JL-LS" in methods)
         B_ust = magnetic_incidence_matrix(meta_g; oriented=true, phases=false)
         lev_ust_JL = JL_lev_score_estimates(B_ust, q; e_weights)
     end
@@ -501,7 +521,7 @@ function benchmark_syncrank(
                 # cond number
                 q_plus_eps = q + 1e-12 # adding small value st cholesky has no error
                 pcLap, _ = sp_pcond_Lap(sp_L, q_plus_eps, L)
-                cond_tp[j] = cond_nb_pp(pcLap)
+                cond_tp[j], _, _ = cond_nb_pp(pcLap)
             end
             # metrics
             err[i], err_std[i] = mean(err_tp), std(err_tp)

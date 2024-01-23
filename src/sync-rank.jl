@@ -125,7 +125,7 @@ end
 function cond_nb_pp(spL)
     _, est_least_eigenval = power_method_least_eigenvalue(spL)
     _, est_top_eigenval = power_method_top_eigenvalue(spL)
-    return est_top_eigenval / est_least_eigenval
+    return est_top_eigenval / est_least_eigenval, est_least_eigenval, est_top_eigenval
 end
 
 function eigenvec_dist(u, v)
