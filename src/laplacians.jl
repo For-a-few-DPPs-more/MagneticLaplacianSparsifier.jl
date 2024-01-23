@@ -136,10 +136,24 @@ function average_sparsifier_iid(
         sp_e_weight_diag_el[ind_e] += w * diag_elements
     end
 
+    # checking connectivity
+
+    ind_tot = vec(1:m) # vec with all edge indices
+    ind_edges_sparsifier = ind_tot[sp_e_weight_diag_el .!= 0] # vec with edge indices in sparsifier
+    subgraph = MetaGraph(nv(meta_g))
+    all_edges = collect(edges(meta_g))
+    subset_edges = all_edges[ind_edges_sparsifier]
+
+    for e in subset_edges
+        add_edge!(subgraph, e)
+    end
+
+    isconnected = is_connected(subgraph)
+
     sparseB = sp_magnetic_incidence(meta_g; oriented=true)
     L = (1 / w_tot) * sparseB' * spdiagm(sp_e_weight_diag_el) * sparseB
 
-    return L
+    return L, isconnected
 end
 
 function leverage_score(
