@@ -236,6 +236,16 @@ function sp_pcond_Lap(spL, q, L)
     return pL, R
 end
 
+function pcond_Lap(spL, q, L)
+
+    C = cholesky(Hermitian(spL + q * I))
+    R = sparse(C.L)[invperm(C.p), :]
+    T = Matrix(R) \ Matrix(L + q * I)
+    pL = Matrix(R) \ (T')
+
+    return pL, R
+end
+
 function linear_solve_matrix_system(A, B)
     if size(A)[1] != size(A)[2]
         error("A is not square in AX = B")
