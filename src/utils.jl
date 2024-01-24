@@ -244,10 +244,15 @@ function cond_numbers(
                 sp_L = Hermitian(sp_L)
 
                 # by default q_system = q
-                pcd_L, R = sp_pcond_Lap(sp_L, q_system, Lap)
-                cnd_tp[j], _, _ = cond_nb_pp(pcd_L)
 
+                # sparse implementation but not fast
+                #pcd_L, R = sp_pcond_Lap(sp_L, q_system, Lap) # not fast
+
+                pcd_L, R = pcond_Lap(sp_L, q_system, Lap)
+
+                cnd_tp[j], _, _, = cond_nb_pp(Hermitian(pcd_L)) # rather fast
                 sparsity_L_tp[j] = nnz(R)
+
                 pc_edges_tp[j] = nb_of_edges(sp_L) / m
                 time_tp[j] = time
                 roots_tp[j] = n_rts
@@ -349,7 +354,7 @@ function benchmark_syncrank(
     end
     L = B' * W * B
 
-    condL, _, _ = cond_nb_pp(L)
+    # condL, _, _ = cond_nb_pp(L)
 
     # least eigenvector full Laplacian
     v, l_min = power_method_least_eigenvalue(L)
@@ -420,8 +425,8 @@ function benchmark_syncrank(
         cycles, cycles_std = [zeros(n_batch) for _ in 1:2]
         weight, weight_std = [zeros(n_batch) for _ in 1:2]
 
-        # cond number mean and std
-        cond_nb, cond_nb_std = [zeros(n_batch) for _ in 1:2]
+        # # cond number mean and std
+        # cond_nb, cond_nb_std = [zeros(n_batch) for _ in 1:2]
 
         for i in 1:n_batch
 
@@ -430,7 +435,7 @@ function benchmark_syncrank(
             # graph properties
             pc_edges_tp, roots_tp, cycles_tp, weight_tp = [zeros(n_rep) for _ in 1:4]
             # cond number
-            cond_tp = zeros(n_rep)
+            # cond_tp = zeros(n_rep)
 
             # batch size (nb of spanning subgraphs)
             t = rangebatch[i]
@@ -503,7 +508,6 @@ function benchmark_syncrank(
                 println("least eigenvalue of sparsifier: ", eig_least)
 
                 sp_L = Hermitian(sp_L)
-
                 ranking = syncrank(sp_L, meta_g; singular)
 
                 # metrics
@@ -518,10 +522,10 @@ function benchmark_syncrank(
                 cycles_tp[j] = n_cles
                 weight_tp[j] = mean(weights)
 
-                # cond number
-                q_plus_eps = q + 1e-12 # adding small value st cholesky has no error
-                pcLap, _ = sp_pcond_Lap(sp_L, q_plus_eps, L)
-                cond_tp[j], _, _ = cond_nb_pp(pcLap)
+                # # cond number
+                # q_plus_eps = q + 1e-12 # adding small value st cholesky has no error
+                # pcLap, _ = sp_pcond_Lap(sp_L, q_plus_eps, L)
+                # cond_tp[j], _, _ = cond_nb_pp(pcLap)
             end
             # metrics
             err[i], err_std[i] = mean(err_tp), std(err_tp)
@@ -537,7 +541,7 @@ function benchmark_syncrank(
             weight[i], weight_std[i] = mean(weight_tp), std(weight_tp)
 
             # cond number
-            cond_nb[i], cond_nb_std[i] = mean(cond_tp), std(cond_tp)
+            # cond_nb[i], cond_nb_std[i] = mean(cond_tp), std(cond_tp)
         end
 
         D = Dict(
@@ -577,11 +581,11 @@ function benchmark_syncrank(
             #
             "weight_std" => weight_std,
             #
-            "cond_nb" => cond_nb,
+            # "cond_nb" => cond_nb,
+            # #
+            # "cond_nb_std" => cond_nb_std,
             #
-            "cond_nb_std" => cond_nb_std,
-            #
-            "condL" => condL,
+            # "condL" => condL,
             #
             "n" => n,
             #
