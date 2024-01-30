@@ -181,6 +181,7 @@ function JL_lev_score_estimates(spB, q; e_weights=ones(size(spB)[1]))
     M = sqrt.(e_weights) .* (spB * (spL \ (spB' * (sqrt.(e_weights) .* Q))))
     lev_score_estimates = (abs.(M) .^ 2) * ones(k)
     lev_score_estimates /= k # normalization of sketching matrix
+    # todo include correction for q not zero (this is currently biased)
     return lev_score_estimates
 end
 
@@ -237,7 +238,6 @@ function sp_pcond_Lap(spL, q, L)
 end
 
 function pcond_Lap(spL, q, L)
-
     C = cholesky(Hermitian(spL + q * I))
     R = sparse(C.L)[invperm(C.p), :]
     T = Matrix(R) \ Matrix(L + q * I)
