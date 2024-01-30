@@ -467,15 +467,15 @@ function benchmark_syncrank(
 
                 elseif method == "iid unif"
                     # iid uniform with uniform weighting
-                    sp_L = average_sparsifier_iid(rng, meta_g, nothing, batch, t; weighted)
+                    sp_L, _ = average_sparsifier_iid(rng, meta_g, nothing, batch, t; weighted)
 
                 elseif method == "iid JL-LS"
                     # iid leverage score with leverage score weighting (JL approx)
-                    sp_L = average_sparsifier_iid(rng, meta_g, lev_JL, batch, t; weighted)
+                    sp_L, _ = average_sparsifier_iid(rng, meta_g, lev_JL, batch, t; weighted)
 
                 elseif method == "iid LS"
                     # iid leverage score with leverage score weighting
-                    sp_L = average_sparsifier_iid(rng, meta_g, lev, batch, t; weighted)
+                    sp_L, _ = average_sparsifier_iid(rng, meta_g, lev, batch, t; weighted)
 
                 elseif method == "ST unif"
                     # ST uniform weighting
