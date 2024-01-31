@@ -101,12 +101,14 @@ function cond_numbers(
     end
     # JL-estimates of magnetic leverage scores
     if ("DPP(K) JL-LS" in methods) || ("iid JL-LS" in methods)
-        lev_JL, time_lev_JL = @timed JL_lev_score_estimates(B, q; e_weights)
+        cst = 40
+        lev_JL, time_lev_JL = @timed JL_lev_score_estimates(B, q; e_weights,cst)
     end
     # JL-estimates of combinatorial leverage scores
     if ("ST JL-LS" in methods)
+        cst = 40
         B_ust = magnetic_incidence_matrix(meta_g; oriented=true, phases=false)
-        lev_ust_JL, time_lev_ust_JL = @timed JL_lev_score_estimates(B_ust, q; e_weights)
+        lev_ust_JL, time_lev_ust_JL = @timed JL_lev_score_estimates(B_ust, q; e_weights,cst)
     end
     # combinatorial leverage scores (non-magnetic)
     if ("ST LS" in methods)
@@ -394,12 +396,14 @@ function benchmark_syncrank(
     end
     # JL-estimates of magnetic leverage scores
     if ("DPP(K) JL-LS" in methods) || ("iid JL-LS" in methods)
-        lev_JL = JL_lev_score_estimates(B, q; e_weights)
+        cst = 40
+        lev_JL = JL_lev_score_estimates(B, q; e_weights,cst)
     end
     # JL-estimates of combinatorial leverage scores
     if ("ST JL-LS" in methods)
+        cst = 40
         B_ust = magnetic_incidence_matrix(meta_g; oriented=true, phases=false)
-        lev_ust_JL = JL_lev_score_estimates(B_ust, q; e_weights)
+        lev_ust_JL = JL_lev_score_estimates(B_ust, q; e_weights,cst)
     end
     # combinatorial leverage scores (non-magnetic)
     if ("ST LS" in methods)

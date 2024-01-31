@@ -48,9 +48,9 @@
         spL = B' * B
 
         exact_cond = cond(Matrix(spL))
-        approx_cond = cond_nb_pp(spL)
+        approx_cond, _, _ = cond_nb_pp(spL)
 
-        rel_err_cond = abs(exact_cond - approx_cond) / exact_cond
+        rel_err_cond = abs(exact_cond - approx_cond) / abs(exact_cond)
         print("relative error on cond nb: ", rel_err_cond, "\n")
         @test rel_err_cond < 1e-01
     end

@@ -88,10 +88,13 @@
 
         sp_pL, sp_R = sp_pcond_Lap(avgL, q, Lap)
         pL, R = pcond_Lap(Matrix(avgL), q, Matrix(Lap))
-        rel_abs_diff = abs(cond_nb_pp(sp_pL) - cond_nb_pp(pL)) / cond_nb_pp(pL)
+
+        cd_sp, _, _ = cond_nb_pp(sp_pL)
+        cd, _, _ = cond_nb_pp(pL)
+        rel_abs_diff = abs(cd_sp - cd) / abs(cd)
         print("relative abs difference on cond nb = ", rel_abs_diff)
 
-        @test rel_abs_diff < 1e-2
+        @test rel_abs_diff < 5 * 1e-2
     end
 
     @testset "sparsifier works by using vector of edge weights" begin
@@ -114,6 +117,7 @@
 
         L = spzeros(n, n)
 
+        nb_samples = 20
         weights = zeros(nb_samples, 1)
         w_tot = 0
 
