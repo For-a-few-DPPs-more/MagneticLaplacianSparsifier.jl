@@ -182,26 +182,6 @@ function JL_lev_score_estimates(spB, q; e_weights=ones(size(spB)[1]), cst=40)
         lev_score_estimates = (abs.(M) .^ 2) * ones(k)
         lev_score_estimates /= k # normalization of sketching matrix
     else
-        # # adaptation to the regularized case
-        # k = Int(ceil(cst * log(m + n) + 1)) # number of samples
-        # Q_1 = (2 * bitrand((m, k)) .- 1) # sketching with Rademacher random variables
-        # Q_2 = (2 * bitrand((n, k)) .- 1) # sketching with Rademacher random variables
-        # spL = spB' * diagm(e_weights) * spB + q * sparse(I, n, n)
-        # T_1 = sqrt.(e_weights) .* (spB * (spL \ (spB' * (sqrt.(e_weights) .* Q_1))))
-        # T_2 = sqrt.(e_weights) .* (spB * (spL \ (q * Q_2)))
-        # lev_score_estimates = (abs.(T_1) .^ 2) * ones(k) + (abs.(T_2) .^ 2) * ones(k)
-        # lev_score_estimates /= k # normalization of sketching matrix
-
-        ## this works !!!
-        # k = Int(ceil(cst * log(m + n) + 1)) # number of samples
-        # Q = (2 * bitrand((m + n, k)) .- 1) / sqrt(k) # sketching with Rademacher random variables
-        # # reg_spL = spB' * diagm(e_weights) * spB + q * sparse(I, n, n)
-        # BigB = [sqrt(q) * sparse(I, n, n); diagm(sqrt.(e_weights)) * spB]
-        # reg_spL = BigB' * BigB
-        # M = BigB * (reg_spL \ (BigB' * Q))
-        # ind_edges = (n + 1):(n + m)
-        # lev_score_estimates = (abs.(M[ind_edges, :]) .^ 2) * ones(k)
-
         k = Int(ceil(cst * log(m + n) + 1)) # number of samples
         Q = (2 * bitrand((m + n, k)) .- 1) / sqrt(k) # sketching with Rademacher random variables
         wB = diagm(sqrt.(e_weights)) * spB
