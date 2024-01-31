@@ -109,12 +109,15 @@ end
     end
 
     @testset "JL approximation of LS with weights and q = 1." begin
+        # requiring much too large number of cols for the JL sketching
+        # for checking consistency
+        cst = 10000
         q = 1.0
         lev = leverage_score(B, q; e_weights)
-        lev_JL = JL_lev_score_estimates(B, q; e_weights)
+        lev_JL = JL_lev_score_estimates(B, q; e_weights, cst)
 
         relative_error = (norm(lev_JL - lev) / norm(lev))
         print("relative_error: ", relative_error, "\n")
-        @test relative_error < 0.5
+        @test relative_error < 0.01
     end
 end
