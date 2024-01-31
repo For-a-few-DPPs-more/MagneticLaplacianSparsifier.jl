@@ -190,6 +190,8 @@ function JL_lev_score_estimates(spB, q; e_weights=ones(size(spB)[1]), cst=40)
         M = wB * (reg_spL \ (BigB' * Q))
         lev_score_estimates = (abs.(M) .^ 2) * ones(k)
     end
+    println("k = ",k, " vs nb edges= ", m, "\n ")
+
     return lev_score_estimates
 end
 
