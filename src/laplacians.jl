@@ -85,10 +85,25 @@ function average_sparsifier(
     nb_sampled_cycles = sum(nb_cycles)
     nb_sampled_roots = sum(nb_roots)
 
+
+    # checking connectivity
+
+    ind_tot = vec(1:m) # vec with all edge indices
+    ind_edges_sparsifier = ind_tot[sp_e_weight_diag_el .!= 0] # vec with edge indices in sparsifier
+    subgraph = MetaGraph(nv(meta_g))
+    all_edges = collect(edges(meta_g))
+    subset_edges = all_edges[ind_edges_sparsifier]
+
+    for e in subset_edges
+        add_edge!(subgraph, e)
+    end
+
+    isconnected = is_connected(subgraph)
+
     sparseB = sp_magnetic_incidence(meta_g; oriented=true)
     L = (1 / w_tot) * sparseB' * spdiagm(sp_e_weight_diag_el) * sparseB
 
-    return L, nb_sampled_cycles, nb_sampled_roots, subgraph_weights
+    return L, nb_sampled_cycles, nb_sampled_roots, subgraph_weights, isconnected
 end
 
 function average_sparsifier_iid(
@@ -190,7 +205,7 @@ function JL_lev_score_estimates(spB, q; e_weights=ones(size(spB)[1]), cst=40)
         M = wB * (reg_spL \ (BigB' * Q))
         lev_score_estimates = (abs.(M) .^ 2) * ones(k)
     end
-    println("k = ",k, " vs nb edges= ", m, "\n ")
+    println("k = ", k, " vs nb edges= ", m, "\n ")
 
     return lev_score_estimates
 end
@@ -248,8 +263,9 @@ function sp_pcond_Lap(spL::SparseMatrixCSC{ComplexF64,Int64}, q, L)
 end
 
 function pcond_Lap(spL, q, L)
-    C = cholesky(Hermitian(spL + q * I))
-    R = C.L
+    C = cholesky(spL + q * I)
+    R = sparse(C.L)
+    R = R[invperm(C.p), :]
     #R = sparse(C.L)[invperm(C.p), :]
     T = Matrix(R) \ Matrix(L + q * I)
     pL = Matrix(R) \ (T')

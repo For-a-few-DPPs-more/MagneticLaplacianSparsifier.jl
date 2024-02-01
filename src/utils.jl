@@ -102,13 +102,15 @@ function cond_numbers(
     # JL-estimates of magnetic leverage scores
     if ("DPP(K) JL-LS" in methods) || ("iid JL-LS" in methods)
         cst = 40
-        lev_JL, time_lev_JL = @timed JL_lev_score_estimates(B, q; e_weights,cst)
+        lev_JL, time_lev_JL = @timed JL_lev_score_estimates(B, q; e_weights, cst)
     end
     # JL-estimates of combinatorial leverage scores
     if ("ST JL-LS" in methods)
         cst = 40
         B_ust = magnetic_incidence_matrix(meta_g; oriented=true, phases=false)
-        lev_ust_JL, time_lev_ust_JL = @timed JL_lev_score_estimates(B_ust, q; e_weights,cst)
+        lev_ust_JL, time_lev_ust_JL = @timed JL_lev_score_estimates(
+            B_ust, q; e_weights, cst
+        )
     end
     # combinatorial leverage scores (non-magnetic)
     if ("ST LS" in methods)
@@ -159,6 +161,7 @@ function cond_numbers(
                     sp_L = out[1]
                     n_cls = out[2]
                     n_rts = out[3]
+                    isconnected = out[4]
                     time = vec[2]
                 elseif method == "DPP(K) LS"
                     # DPP(K) leverage score weighting
@@ -167,6 +170,7 @@ function cond_numbers(
                     sp_L = out[1]
                     n_cls = out[2]
                     n_rts = out[3]
+                    isconnected = out[4]
                     time = vec[2]
                 elseif method == "DPP(K) JL-LS"
                     # DPP(K) leverage score weighting computed with JL sketching
@@ -175,6 +179,7 @@ function cond_numbers(
                     sp_L = out[1]
                     n_cls = out[2]
                     n_rts = out[3]
+                    isconnected = out[4]
                     time = vec[2]
                 elseif method == "iid unif"
                     # iid uniform with uniform weighting
@@ -215,6 +220,7 @@ function cond_numbers(
                     sp_L = out[1]
                     n_cls = out[2]
                     n_rts = out[3]
+                    isconnected = out[4]
                     time = vec[2]
                 elseif method == "ST LS"
                     # ST LS weighting
@@ -228,6 +234,7 @@ function cond_numbers(
                     sp_L = out[1]
                     n_cls = out[2]
                     n_rts = out[3]
+                    isconnected = out[4]
                     time = vec[2]
                 elseif method == "ST JL-LS"
                     # ST LS weighting with JL estimate
@@ -241,6 +248,7 @@ function cond_numbers(
                     sp_L = out[1]
                     n_cls = out[2]
                     n_rts = out[3]
+                    isconnected = out[4]
                     time = vec[2]
                 end
                 sp_L = Hermitian(sp_L)
@@ -397,13 +405,13 @@ function benchmark_syncrank(
     # JL-estimates of magnetic leverage scores
     if ("DPP(K) JL-LS" in methods) || ("iid JL-LS" in methods)
         cst = 40
-        lev_JL = JL_lev_score_estimates(B, q; e_weights,cst)
+        lev_JL = JL_lev_score_estimates(B, q; e_weights, cst)
     end
     # JL-estimates of combinatorial leverage scores
     if ("ST JL-LS" in methods)
         cst = 40
         B_ust = magnetic_incidence_matrix(meta_g; oriented=true, phases=false)
-        lev_ust_JL = JL_lev_score_estimates(B_ust, q; e_weights,cst)
+        lev_ust_JL = JL_lev_score_estimates(B_ust, q; e_weights, cst)
     end
     # combinatorial leverage scores (non-magnetic)
     if ("ST LS" in methods)
@@ -453,29 +461,33 @@ function benchmark_syncrank(
 
                 if method == "DPP(K) unif"
                     # DPP(K) uniform weighting
-                    sp_L, n_cles, n_rts, weights = average_sparsifier(
+                    sp_L, n_cles, n_rts, weights, isconnected = average_sparsifier(
                         rng, meta_g, nothing, q, t; weighted
                     )
 
                 elseif method == "DPP(K) JL-LS"
                     # DPP(K) leverage score weighting (JL approx)
-                    sp_L, n_cles, n_rts, weights = average_sparsifier(
+                    sp_L, n_cles, n_rts, weights, isconnected = average_sparsifier(
                         rng, meta_g, lev_JL, q, t; weighted
                     )
 
                 elseif method == "DPP(K) LS"
                     # DPP(K) leverage score weighting
-                    sp_L, n_cles, n_rts, weights = average_sparsifier(
+                    sp_L, n_cles, n_rts, weights, isconnected = average_sparsifier(
                         rng, meta_g, lev, q, t; weighted
                     )
 
                 elseif method == "iid unif"
                     # iid uniform with uniform weighting
-                    sp_L, _ = average_sparsifier_iid(rng, meta_g, nothing, batch, t; weighted)
+                    sp_L, _ = average_sparsifier_iid(
+                        rng, meta_g, nothing, batch, t; weighted
+                    )
 
                 elseif method == "iid JL-LS"
                     # iid leverage score with leverage score weighting (JL approx)
-                    sp_L, _ = average_sparsifier_iid(rng, meta_g, lev_JL, batch, t; weighted)
+                    sp_L, _ = average_sparsifier_iid(
+                        rng, meta_g, lev_JL, batch, t; weighted
+                    )
 
                 elseif method == "iid LS"
                     # iid leverage score with leverage score weighting
@@ -486,7 +498,7 @@ function benchmark_syncrank(
                     absorbing_node = true
                     ust = true
                     q_ust = 0
-                    sp_L, n_cles, n_rts, weights = average_sparsifier(
+                    sp_L, n_cles, n_rts, weights, isconnected = average_sparsifier(
                         rng, meta_g, nothing, q_ust, t; weighted, absorbing_node, ust
                     )
                 elseif method == "ST JL-LS"
@@ -494,7 +506,7 @@ function benchmark_syncrank(
                     absorbing_node = true
                     ust = true
                     q_ust = 0
-                    sp_L, n_cles, n_rts, weights = average_sparsifier(
+                    sp_L, n_cles, n_rts, weights, isconnected = average_sparsifier(
                         rng, meta_g, lev_ust_JL, q_ust, t; weighted, absorbing_node, ust
                     )
                 elseif method == "ST LS"
@@ -502,7 +514,7 @@ function benchmark_syncrank(
                     absorbing_node = true
                     ust = true
                     q_ust = 0
-                    sp_L, n_cles, n_rts, weights = average_sparsifier(
+                    sp_L, n_cles, n_rts, weights, isconnected = average_sparsifier(
                         rng, meta_g, lev_ust, q_ust, t; weighted, absorbing_node, ust
                     )
                 end
@@ -741,6 +753,30 @@ function plot_comparison_sync(
             "ST LS",
         ]
     end
+    D_color_method = Dict(
+        "DPP(K) unif" => :blue,
+        "DPP(K) JL-LS" => :skyblue,
+        "DPP(K) LS" => :purple,
+        "iid unif" => :cyan,
+        "iid JL-LS" => :red,
+        "iid LS" => :teal,
+        "ST unif" => :gold4,
+        "ST JL-LS" => :teal,
+        "ST LS" => :maroon,
+    )
+
+    D_symbol_method = Dict(
+        "DPP(K) unif" => :xcross,
+        "DPP(K) JL-LS" => :plus,
+        "DPP(K) LS" => :square,
+        "iid unif" => :rtriangle,
+        "iid JL-LS" => :utriangle,
+        "iid LS" => :ltriangle,
+        "ST unif" => :circle,
+        "ST JL-LS" => :octagon,
+        "ST LS" => :pentagon,
+    )
+
     metric_std = metric * "_std"
     D = Dict()
 
@@ -760,8 +796,10 @@ function plot_comparison_sync(
                 y;
                 yerror=y_er,
                 labels=method,
-                markerstrokecolor=:auto,
-                markershape=:xcross,
+                markerstrokecolor=D_color_method[method],
+                markercolor=D_color_method[method],
+                linecolor=D_color_method[method],
+                markershape=D_symbol_method[method],
                 markersize=5,
                 linewidth=2,
                 markerstrokewidth=2,
@@ -786,8 +824,10 @@ function plot_comparison_sync(
                 y;
                 yerror=y_er,
                 labels=method,
-                markerstrokecolor=:auto,
-                markershape=:circle,
+                markerstrokecolor=D_color_method[method],
+                markercolor=D_color_method[method],
+                linecolor=D_color_method[method],
+                markershape=D_symbol_method[method],
                 markersize=5,
                 linewidth=2,
                 markerstrokewidth=2,
@@ -806,8 +846,10 @@ function plot_comparison_sync(
                 y;
                 yerror=y_er,
                 labels=method,
-                markerstrokecolor=:auto,
-                markershape=:circle,
+                markerstrokecolor=D_color_method[method],
+                markercolor=D_color_method[method],
+                linecolor=D_color_method[method],
+                markershape=D_symbol_method[method],
                 markersize=5,
                 linewidth=2,
                 markerstrokewidth=2,
@@ -831,10 +873,11 @@ function plot_comparison_sync(
                 xerror=x_er,
                 yerror=y_er,
                 labels=method,
-                markerstrokecolor=:auto,
-                markersize=5,
+                markerstrokecolor=D_color_method[method],
+                markercolor=D_color_method[method],
+                linecolor=D_color_method[method],
+                markershape=D_symbol_method[method],                markersize=5,
                 linestyle=:dash,
-                markershape=:rtriangle,
                 linewidth=2,
                 markerstrokewidth=2,
             )
@@ -855,10 +898,11 @@ function plot_comparison_sync(
                 xerror=x_er,
                 yerror=y_er,
                 labels=method,
-                markerstrokecolor=:auto,
-                markersize=5,
+                markerstrokecolor=D_color_method[method],
+                markercolor=D_color_method[method],
+                linecolor=D_color_method[method],
+                markershape=D_symbol_method[method],                markersize=5,
                 linestyle=:dash,
-                markershape=:rtriangle,
                 linewidth=2,
                 markerstrokewidth=2,
             )
@@ -879,10 +923,11 @@ function plot_comparison_sync(
                 xerror=x_er,
                 yerror=y_er,
                 labels=method,
-                markerstrokecolor=:auto,
-                markersize=5,
+                markerstrokecolor=D_color_method[method],
+                markercolor=D_color_method[method],
+                linecolor=D_color_method[method],
+                markershape=D_symbol_method[method],                markersize=5,
                 linestyle=:dash,
-                markershape=:utriangle,
                 linewidth=2,
                 markerstrokewidth=2,
             )
@@ -902,9 +947,10 @@ function plot_comparison_sync(
                 xerror=x_er,
                 yerror=y_er,
                 labels=method,
-                markerstrokecolor=:auto,
-                markersize=5,
-                markershape=:dtriangle,
+                markerstrokecolor=D_color_method[method],
+                markercolor=D_color_method[method],
+                linecolor=D_color_method[method],
+                markershape=D_symbol_method[method],                markersize=5,
                 linewidth=2,
                 markerstrokewidth=2,
                 framestyle=:box,
@@ -926,9 +972,10 @@ function plot_comparison_sync(
                 xerror=x_er,
                 yerror=y_er,
                 labels=method,
-                markerstrokecolor=:auto,
-                markersize=5,
-                markershape=:octagon,
+                markerstrokecolor=D_color_method[method],
+                markercolor=D_color_method[method],
+                linecolor=D_color_method[method],
+                markershape=D_symbol_method[method],                markersize=5,
                 linewidth=2,
                 markerstrokewidth=2,
                 framestyle=:box,
@@ -951,9 +998,10 @@ function plot_comparison_sync(
                 xerror=x_er,
                 yerror=y_er,
                 labels=method,
-                markerstrokecolor=:auto,
-                markersize=5,
-                markershape=:octagon,
+                markerstrokecolor=D_color_method[method],
+                markercolor=D_color_method[method],
+                linecolor=D_color_method[method],
+                markershape=D_symbol_method[method],                markersize=5,
                 linewidth=2,
                 markerstrokewidth=2,
                 framestyle=:box,
@@ -1033,9 +1081,35 @@ function plot_comparison_cond(
         ]
     end
 
+    D_color_method = Dict(
+        "DPP(K) unif" => :blue,
+        "DPP(K) JL-LS" => :skyblue,
+        "DPP(K) LS" => :purple,
+        "iid unif" => :cyan,
+        "iid JL-LS" => :red,
+        "iid LS" => :teal,
+        "ST unif" => :gold4,
+        "ST JL-LS" => :teal,
+        "ST LS" => :maroon,
+    )
+
+    D_symbol_method = Dict(
+        "DPP(K) unif" => :xcross,
+        "DPP(K) JL-LS" => :plus,
+        "DPP(K) LS" => :square,
+        "iid unif" => :rtriangle,
+        "iid JL-LS" => :utriangle,
+        "iid LS" => :ltriangle,
+        "ST unif" => :circle,
+        "ST JL-LS" => :octagon,
+        "ST LS" => :pentagon,
+    )
+
     D = Dict()
 
     plt = Plots.plot()
+    plt_ic = Plots.plot()
+
     for method in methods
         if method == "DPP(K) unif"
             D = D_all[method]
@@ -1046,22 +1120,50 @@ function plot_comparison_cond(
             y = D["cnd"]
             y_er = D["cnd_std"]
 
-            plt = plot(
+            plot!(
+                plt,
                 x,
                 y;
                 yerror=y_er,
-                xlabel="number of edges over number of nodes",
+                #xlabel="number of edges over number of nodes",
                 yaxis=:log,
                 labels=method,
-                markerstrokecolor=:auto,
-                markershape=:xcross,
+                markerstrokecolor=D_color_method[method],
+                markercolor=D_color_method[method],
+                linecolor=D_color_method[method],
+                markershape=D_symbol_method[method],
                 markersize=5,
-                xtickfont=font(13),
-                ytickfont=font(13),
-                guidefont=font(13),
-                legendfont=font(13),
                 linewidth=2,
                 markerstrokewidth=2,
+                size=(500, 500),
+            )
+
+            connected = D["connected"]
+
+            plot!(
+                plt_ic,
+                x,
+                connected;
+                xlabel="number of edges over number of nodes",
+                labels=method,
+                markerstrokecolor=D_color_method[method],
+                markercolor=D_color_method[method],
+                linecolor=D_color_method[method],
+                markershape=D_symbol_method[method],
+                markersize=5,
+                xtickfontsize=13,
+                ytickfontsize=13,
+                xguidefontsize=13,
+                yguidefontsize=13,
+                legendfontsize=10,
+                linewidth=2,
+                framestyle=:box,
+                markerstrokewidth=2,
+                ylims=(-0.2, 1.2),
+                yaxis=:identity,
+                size=(500, 100),
+                ylabel="connectivity",
+                yticks=0:1:1,
             )
 
         elseif method == "DPP(K) JL-LS"
@@ -1074,16 +1176,46 @@ function plot_comparison_cond(
             y_er = D["cnd_std"]
 
             plot!(
+                plt,
                 x,
                 y;
                 yerror=y_er,
                 yaxis=:log,
                 labels=method,
-                markerstrokecolor=:auto,
-                markershape=:circle,
+                markerstrokecolor=D_color_method[method],
+                markercolor=D_color_method[method],
+                linecolor=D_color_method[method],
+                markershape=D_symbol_method[method],
                 markersize=5,
                 linewidth=2,
                 markerstrokewidth=2,
+            )
+
+            connected = D["connected"]
+
+            plot!(
+                plt_ic,
+                x,
+                connected;
+                xlabel="number of edges over number of nodes",
+                labels=method,
+                markerstrokecolor=D_color_method[method],
+                markercolor=D_color_method[method],
+                linecolor=D_color_method[method],
+                markershape=D_symbol_method[method],
+                markersize=5,
+                xtickfontsize=13,
+                ytickfontsize=13,
+                xguidefontsize=13,
+                yguidefontsize=13,
+                legendfontsize=10,
+                linewidth=2,
+                framestyle=:box,
+                markerstrokewidth=2,
+                ylims=(-0.2, 1.2),
+                yaxis=:identity,
+                ylabel="connectivity",
+                yticks=0:1:1,
             )
 
         elseif method == "DPP(K) LS"
@@ -1094,16 +1226,46 @@ function plot_comparison_cond(
             y_er = D["cnd_std"]
 
             plot!(
+                plt,
                 x,
                 y;
                 yerror=y_er,
                 yaxis=:log,
                 labels=method,
-                markerstrokecolor=:auto,
-                markershape=:circle,
+                markerstrokecolor=D_color_method[method],
+                markercolor=D_color_method[method],
+                linecolor=D_color_method[method],
+                markershape=D_symbol_method[method],
                 markersize=5,
                 linewidth=2,
                 markerstrokewidth=2,
+            )
+
+            connected = D["connected"]
+
+            plot!(
+                plt_ic,
+                x,
+                connected;
+                xlabel="number of edges over number of nodes",
+                labels=method,
+                markerstrokecolor=D_color_method[method],
+                markercolor=D_color_method[method],
+                linecolor=D_color_method[method],
+                markershape=D_symbol_method[method],
+                markersize=5,
+                xtickfontsize=13,
+                ytickfontsize=13,
+                xguidefontsize=13,
+                yguidefontsize=13,
+                legendfontsize=10,
+                linewidth=2,
+                framestyle=:box,
+                markerstrokewidth=2,
+                ylims=(-0.2, 1.2),
+                yaxis=:identity,
+                ylabel="connectivity",
+                yticks=0:1:1,
             )
 
         elseif method == "iid unif"
@@ -1116,17 +1278,48 @@ function plot_comparison_cond(
             y_er = D["cnd_std"]
 
             plot!(
+                plt,
                 x,
                 y;
                 #yerror=y_er, # too large
                 yaxis=:log,
                 labels=method,
-                markerstrokecolor=:auto,
-                markershape=:rtriangle,
+                markerstrokecolor=D_color_method[method],
+                markercolor=D_color_method[method],
+                linecolor=D_color_method[method],
+                markershape=D_symbol_method[method],
                 markersize=5,
                 linestyle=:dash,
                 linewidth=2,
                 markerstrokewidth=2,
+            )
+
+            connected = D["connected"]
+
+            plot!(
+                plt_ic,
+                x,
+                connected;
+                xlabel="number of edges over number of nodes",
+                labels=method,
+                markerstrokecolor=D_color_method[method],
+                markercolor=D_color_method[method],
+                linecolor=D_color_method[method],
+                markershape=D_symbol_method[method],
+                markersize=5,
+                xtickfontsize=13,
+                ytickfontsize=13,
+                xguidefontsize=13,
+                yguidefontsize=13,
+                legendfontsize=10,
+                linewidth=2,
+                framestyle=:box,
+                markerstrokewidth=2,
+                ylims=(-0.2, 1.2),
+                yaxis=:identity,
+                ylabel="connectivity",
+                yticks=0:1:1,
+                linestyle=:dash,
             )
 
         elseif method == "iid JL-LS"
@@ -1139,17 +1332,46 @@ function plot_comparison_cond(
             y_er = D["cnd_std"]
 
             plot!(
+                plt,
                 x,
                 y;
                 #yerror=y_er, # too large
                 yaxis=:log,
                 labels=method,
-                markerstrokecolor=:auto,
-                markershape=:utriangle,
+                markerstrokecolor=D_color_method[method],
+                markercolor=D_color_method[method],
+                linecolor=D_color_method[method],
+                markershape=D_symbol_method[method],
                 markersize=5,
                 linestyle=:dash,
                 linewidth=2,
                 markerstrokewidth=2,
+            )
+            connected = D["connected"]
+
+            plot!(
+                plt_ic,
+                x,
+                connected;
+                xlabel="number of edges over number of nodes",
+                labels=method,
+                markerstrokecolor=D_color_method[method],
+                markercolor=D_color_method[method],
+                linecolor=D_color_method[method],
+                markershape=D_symbol_method[method],
+                markersize=5,
+                xtickfontsize=13,
+                ytickfontsize=13,
+                xguidefontsize=13,
+                yguidefontsize=13,
+                legendfontsize=10,
+                linewidth=2,
+                framestyle=:box,
+                markerstrokewidth=2,
+                ylims=(-0.2, 1.2),
+                ylabel="connectivity",
+                yticks=0:1:1,
+                linestyle=:dash,
             )
 
         elseif method == "iid LS"
@@ -1162,17 +1384,47 @@ function plot_comparison_cond(
             y_er = D["cnd_std"]
 
             plot!(
+                plt,
                 x,
                 y;
                 #yerror=y_er, # too large
                 yaxis=:log,
                 labels=method,
-                markerstrokecolor=:auto,
-                markershape=:utriangle,
+                markerstrokecolor=D_color_method[method],
+                markercolor=D_color_method[method],
+                linecolor=D_color_method[method],
+                markershape=D_symbol_method[method],
                 markersize=5,
                 linestyle=:dash,
                 linewidth=2,
                 markerstrokewidth=2,
+            )
+            connected = D["connected"]
+
+            plot!(
+                plt_ic,
+                x,
+                connected;
+                xlabel="number of edges over number of nodes",
+                labels=method,
+                markerstrokecolor=D_color_method[method],
+                markercolor=D_color_method[method],
+                linecolor=D_color_method[method],
+                markershape=D_symbol_method[method],
+                markersize=5,
+                xtickfontsize=13,
+                ytickfontsize=13,
+                xguidefontsize=13,
+                yguidefontsize=13,
+                legendfontsize=10,
+                linewidth=2,
+                framestyle=:box,
+                markerstrokewidth=2,
+                ylims=(-0.2, 1.2),
+                yaxis=:identity,
+                ylabel="connectivity",
+                yticks=0:1:1,
+                linestyle=:dash,
             )
 
         elseif method == "ST unif"
@@ -1185,16 +1437,45 @@ function plot_comparison_cond(
             y_er = D["cnd_std"]
 
             plot!(
+                plt,
                 x,
                 y;
                 yerror=y_er,
                 yaxis=:log,
                 labels=method,
-                markerstrokecolor=:auto,
-                markershape=:dtriangle,
+                markerstrokecolor=D_color_method[method],
+                markercolor=D_color_method[method],
+                linecolor=D_color_method[method],
+                markershape=D_symbol_method[method],
                 markersize=5,
                 linewidth=2,
                 markerstrokewidth=2,
+            )
+            connected = D["connected"]
+
+            plot!(
+                plt_ic,
+                x,
+                connected;
+                xlabel="number of edges over number of nodes",
+                labels=method,
+                markerstrokecolor=D_color_method[method],
+                markercolor=D_color_method[method],
+                linecolor=D_color_method[method],
+                markershape=D_symbol_method[method],
+                markersize=5,
+                xtickfontsize=13,
+                ytickfontsize=13,
+                xguidefontsize=13,
+                yguidefontsize=13,
+                legendfontsize=10,
+                linewidth=2,
+                framestyle=:box,
+                markerstrokewidth=2,
+                ylims=(-0.2, 1.2),
+                yaxis=:identity,
+                ylabel="connectivity",
+                yticks=0:1:1,
             )
 
         elseif method == "ST JL-LS"
@@ -1207,16 +1488,41 @@ function plot_comparison_cond(
             y_er = D["cnd_std"]
 
             plot!(
+                plt,
                 x,
                 y;
                 yerror=y_er,
                 yaxis=:log,
                 labels=method,
-                markerstrokecolor=:auto,
-                markershape=:octagon,
+                markerstrokecolor=D_color_method[method],
+                markercolor=D_color_method[method],
+                linecolor=D_color_method[method],
+                markershape=D_symbol_method[method],
                 markersize=5,
                 linewidth=2,
                 markerstrokewidth=2,
+            )
+            plot!(
+                plt_ic,
+                x,
+                connected;
+                xlabel="number of edges over number of nodes",
+                labels=method,
+                markerstrokecolor=D_color_method[method],
+                markercolor=D_color_method[method],
+                linecolor=D_color_method[method],
+                markershape=D_symbol_method[method],
+                markersize=5,
+                xtickfont=font(13),
+                ytickfont=font(13),
+                guidefont=font(13),
+                legendfont=font(13),
+                linewidth=2,
+                markerstrokewidth=2,
+                ylims=(-0.2, 1.2),
+                yaxis=:identity,
+                ylabel="connectivity",
+                yticks=0:1:1,
             )
 
         elseif method == "ST LS"
@@ -1229,16 +1535,43 @@ function plot_comparison_cond(
             y_er = D["cnd_std"]
 
             plot!(
+                plt,
                 x,
                 y;
                 yerror=y_er,
                 yaxis=:log,
                 labels=method,
-                markerstrokecolor=:auto,
-                markershape=:octagon,
+                markerstrokecolor=D_color_method[method],
+                markercolor=D_color_method[method],
+                linecolor=D_color_method[method],
+                markershape=D_symbol_method[method],
                 markersize=5,
                 linewidth=2,
                 markerstrokewidth=2,
+            )
+            plot!(
+                plt_ic,
+                x,
+                connected;
+                xlabel="number of edges over number of nodes",
+                labels=method,
+                markerstrokecolor=D_color_method[method],
+                markercolor=D_color_method[method],
+                linecolor=D_color_method[method],
+                markershape=:octagon,
+                markersize=5,
+                xtickfontsize=13,
+                ytickfontsize=13,
+                xguidefontsize=13,
+                yguidefontsize=13,
+                legendfontsize=10,
+                linewidth=2,
+                framestyle=:box,
+                markerstrokewidth=2,
+                ylims=(-0.2, 1.2),
+                yaxis=:identity,
+                ylabel="connectivity",
+                yticks=0:1:1,
             )
         end
     end
@@ -1249,6 +1582,7 @@ function plot_comparison_cond(
 
     y = cdL * ones(size(x))
     plot!(
+        plt,
         x,
         y;
         labels="no precond.",
@@ -1259,13 +1593,15 @@ function plot_comparison_cond(
         yguidefontsize=13,
         legendfontsize=10,
         linewidth=2,
+        linecolor=:black,
         framestyle=:box,
         margins=0.1 * 2Plots.cm,
         markerstrokewidth=2,
         legend=legendposition,
     )
     ylims!(y_limits)
-    display(plt)
+
+    display(plot(plt, plt_ic; layout=(2, 1)))
     return nothing
 end
 
