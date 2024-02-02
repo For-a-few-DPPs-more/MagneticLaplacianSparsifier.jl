@@ -161,7 +161,7 @@ function cond_numbers(
                     sp_L = out[1]
                     n_cls = out[2]
                     n_rts = out[3]
-                    isconnected = out[4]
+                    isconnected = out[5]
                     time = vec[2]
                 elseif method == "DPP(K) LS"
                     # DPP(K) leverage score weighting
@@ -170,7 +170,7 @@ function cond_numbers(
                     sp_L = out[1]
                     n_cls = out[2]
                     n_rts = out[3]
-                    isconnected = out[4]
+                    isconnected = out[5]
                     time = vec[2]
                 elseif method == "DPP(K) JL-LS"
                     # DPP(K) leverage score weighting computed with JL sketching
@@ -179,7 +179,7 @@ function cond_numbers(
                     sp_L = out[1]
                     n_cls = out[2]
                     n_rts = out[3]
-                    isconnected = out[4]
+                    isconnected = out[5]
                     time = vec[2]
                 elseif method == "iid unif"
                     # iid uniform with uniform weighting
@@ -220,7 +220,7 @@ function cond_numbers(
                     sp_L = out[1]
                     n_cls = out[2]
                     n_rts = out[3]
-                    isconnected = out[4]
+                    isconnected = out[5]
                     time = vec[2]
                 elseif method == "ST LS"
                     # ST LS weighting
@@ -234,7 +234,7 @@ function cond_numbers(
                     sp_L = out[1]
                     n_cls = out[2]
                     n_rts = out[3]
-                    isconnected = out[4]
+                    isconnected = out[5]
                     time = vec[2]
                 elseif method == "ST JL-LS"
                     # ST LS weighting with JL estimate
@@ -248,7 +248,7 @@ function cond_numbers(
                     sp_L = out[1]
                     n_cls = out[2]
                     n_rts = out[3]
-                    isconnected = out[4]
+                    isconnected = out[5]
                     time = vec[2]
                 end
                 sp_L = Hermitian(sp_L)
@@ -876,7 +876,8 @@ function plot_comparison_sync(
                 markerstrokecolor=D_color_method[method],
                 markercolor=D_color_method[method],
                 linecolor=D_color_method[method],
-                markershape=D_symbol_method[method],                markersize=5,
+                markershape=D_symbol_method[method],
+                markersize=5,
                 linestyle=:dash,
                 linewidth=2,
                 markerstrokewidth=2,
@@ -901,7 +902,8 @@ function plot_comparison_sync(
                 markerstrokecolor=D_color_method[method],
                 markercolor=D_color_method[method],
                 linecolor=D_color_method[method],
-                markershape=D_symbol_method[method],                markersize=5,
+                markershape=D_symbol_method[method],
+                markersize=5,
                 linestyle=:dash,
                 linewidth=2,
                 markerstrokewidth=2,
@@ -926,7 +928,8 @@ function plot_comparison_sync(
                 markerstrokecolor=D_color_method[method],
                 markercolor=D_color_method[method],
                 linecolor=D_color_method[method],
-                markershape=D_symbol_method[method],                markersize=5,
+                markershape=D_symbol_method[method],
+                markersize=5,
                 linestyle=:dash,
                 linewidth=2,
                 markerstrokewidth=2,
@@ -950,7 +953,8 @@ function plot_comparison_sync(
                 markerstrokecolor=D_color_method[method],
                 markercolor=D_color_method[method],
                 linecolor=D_color_method[method],
-                markershape=D_symbol_method[method],                markersize=5,
+                markershape=D_symbol_method[method],
+                markersize=5,
                 linewidth=2,
                 markerstrokewidth=2,
                 framestyle=:box,
@@ -975,7 +979,8 @@ function plot_comparison_sync(
                 markerstrokecolor=D_color_method[method],
                 markercolor=D_color_method[method],
                 linecolor=D_color_method[method],
-                markershape=D_symbol_method[method],                markersize=5,
+                markershape=D_symbol_method[method],
+                markersize=5,
                 linewidth=2,
                 markerstrokewidth=2,
                 framestyle=:box,
@@ -1001,7 +1006,8 @@ function plot_comparison_sync(
                 markerstrokecolor=D_color_method[method],
                 markercolor=D_color_method[method],
                 linecolor=D_color_method[method],
-                markershape=D_symbol_method[method],                markersize=5,
+                markershape=D_symbol_method[method],
+                markersize=5,
                 linewidth=2,
                 markerstrokewidth=2,
                 framestyle=:box,
@@ -1120,7 +1126,7 @@ function plot_comparison_cond(
             y = D["cnd"]
             y_er = D["cnd_std"]
 
-            plot!(
+           Plots.plot!(
                 plt,
                 x,
                 y;
@@ -1140,7 +1146,7 @@ function plot_comparison_cond(
 
             connected = D["connected"]
 
-            plot!(
+           Plots.plot!(
                 plt_ic,
                 x,
                 connected;
@@ -1175,7 +1181,7 @@ function plot_comparison_cond(
             y = D["cnd"]
             y_er = D["cnd_std"]
 
-            plot!(
+           Plots.plot!(
                 plt,
                 x,
                 y;
@@ -1193,7 +1199,7 @@ function plot_comparison_cond(
 
             connected = D["connected"]
 
-            plot!(
+           Plots.plot!(
                 plt_ic,
                 x,
                 connected;
@@ -1225,7 +1231,7 @@ function plot_comparison_cond(
             y = D["cnd"]
             y_er = D["cnd_std"]
 
-            plot!(
+           Plots.plot!(
                 plt,
                 x,
                 y;
@@ -1243,7 +1249,7 @@ function plot_comparison_cond(
 
             connected = D["connected"]
 
-            plot!(
+           Plots.plot!(
                 plt_ic,
                 x,
                 connected;
@@ -1277,7 +1283,7 @@ function plot_comparison_cond(
             y = D["cnd"]
             y_er = D["cnd_std"]
 
-            plot!(
+           Plots.plot!(
                 plt,
                 x,
                 y;
@@ -1296,7 +1302,7 @@ function plot_comparison_cond(
 
             connected = D["connected"]
 
-            plot!(
+           Plots.plot!(
                 plt_ic,
                 x,
                 connected;
@@ -1331,7 +1337,7 @@ function plot_comparison_cond(
             y = D["cnd"]
             y_er = D["cnd_std"]
 
-            plot!(
+           Plots.plot!(
                 plt,
                 x,
                 y;
@@ -1349,7 +1355,7 @@ function plot_comparison_cond(
             )
             connected = D["connected"]
 
-            plot!(
+           Plots.plot!(
                 plt_ic,
                 x,
                 connected;
@@ -1383,7 +1389,7 @@ function plot_comparison_cond(
             y = D["cnd"]
             y_er = D["cnd_std"]
 
-            plot!(
+           Plots.plot!(
                 plt,
                 x,
                 y;
@@ -1401,7 +1407,7 @@ function plot_comparison_cond(
             )
             connected = D["connected"]
 
-            plot!(
+           Plots.plot!(
                 plt_ic,
                 x,
                 connected;
@@ -1436,7 +1442,7 @@ function plot_comparison_cond(
             y = D["cnd"]
             y_er = D["cnd_std"]
 
-            plot!(
+           Plots.plot!(
                 plt,
                 x,
                 y;
@@ -1453,7 +1459,7 @@ function plot_comparison_cond(
             )
             connected = D["connected"]
 
-            plot!(
+           Plots.plot!(
                 plt_ic,
                 x,
                 connected;
@@ -1487,7 +1493,7 @@ function plot_comparison_cond(
             y = D["cnd"]
             y_er = D["cnd_std"]
 
-            plot!(
+           Plots.plot!(
                 plt,
                 x,
                 y;
@@ -1502,7 +1508,7 @@ function plot_comparison_cond(
                 linewidth=2,
                 markerstrokewidth=2,
             )
-            plot!(
+           Plots.plot!(
                 plt_ic,
                 x,
                 connected;
@@ -1534,7 +1540,7 @@ function plot_comparison_cond(
             y = D["cnd"]
             y_er = D["cnd_std"]
 
-            plot!(
+           Plots.plot!(
                 plt,
                 x,
                 y;
@@ -1549,7 +1555,7 @@ function plot_comparison_cond(
                 linewidth=2,
                 markerstrokewidth=2,
             )
-            plot!(
+           Plots.plot!(
                 plt_ic,
                 x,
                 connected;
@@ -1581,7 +1587,7 @@ function plot_comparison_cond(
     m = D["m"]
 
     y = cdL * ones(size(x))
-    plot!(
+   Plots.plot!(
         plt,
         x,
         y;
@@ -1619,7 +1625,7 @@ function plot_nb_cycles(
 
     n_batch = length(x)
 
-    plt = plot(
+    plt =Plots.plot(
         x,
         y;
         yerr=y_err,
@@ -1638,7 +1644,7 @@ function plot_nb_cycles(
         margins=0.1 * 2cm,
     )
     # baseline
-    plot!(x, 1:n_batch; linewidth=2, labels="minimum number of CRTs", legend=legendposition)
+   Plots.plot!(x, 1:n_batch; linewidth=2, labels="minimum number of CRTs", legend=legendposition)
     display(plt)
 
     return nothing
@@ -1675,7 +1681,7 @@ function plot_nb_roots(D_all::AbstractDict, method::String; legendposition::Symb
         margins=0.1 * 2cm,
     )
     # baseline
-    plot!(
+   Plots.plot!(
         x, 1:n_batch; linewidth=2, labels="minimum number of roots", legend=legendposition
     )
     display(plt)
