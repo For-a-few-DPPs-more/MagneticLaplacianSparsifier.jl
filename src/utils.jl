@@ -1070,6 +1070,8 @@ function plot_comparison_sync(
     return nothing
 end
 
+######
+
 function plot_comparison_cond(
     D_all::AbstractDict, y_limits; legendposition::Symbol=:bottomright, methods=nothing
 )
@@ -1126,7 +1128,7 @@ function plot_comparison_cond(
             y = D["cnd"]
             y_er = D["cnd_std"]
 
-           Plots.plot!(
+            Plots.plot!(
                 plt,
                 x,
                 y;
@@ -1146,10 +1148,11 @@ function plot_comparison_cond(
 
             connected = D["connected"]
 
-           Plots.plot!(
+            Plots.plot!(
                 plt_ic,
                 x,
                 connected;
+                legend=false,
                 xlabel="number of edges over number of nodes",
                 labels=method,
                 markerstrokecolor=D_color_method[method],
@@ -1181,7 +1184,7 @@ function plot_comparison_cond(
             y = D["cnd"]
             y_er = D["cnd_std"]
 
-           Plots.plot!(
+            Plots.plot!(
                 plt,
                 x,
                 y;
@@ -1199,10 +1202,11 @@ function plot_comparison_cond(
 
             connected = D["connected"]
 
-           Plots.plot!(
+            Plots.plot!(
                 plt_ic,
                 x,
                 connected;
+                legend=false,
                 xlabel="number of edges over number of nodes",
                 labels=method,
                 markerstrokecolor=D_color_method[method],
@@ -1231,7 +1235,7 @@ function plot_comparison_cond(
             y = D["cnd"]
             y_er = D["cnd_std"]
 
-           Plots.plot!(
+            Plots.plot!(
                 plt,
                 x,
                 y;
@@ -1249,10 +1253,11 @@ function plot_comparison_cond(
 
             connected = D["connected"]
 
-           Plots.plot!(
+            Plots.plot!(
                 plt_ic,
                 x,
                 connected;
+                legend=false,
                 xlabel="number of edges over number of nodes",
                 labels=method,
                 markerstrokecolor=D_color_method[method],
@@ -1283,7 +1288,7 @@ function plot_comparison_cond(
             y = D["cnd"]
             y_er = D["cnd_std"]
 
-           Plots.plot!(
+            Plots.plot!(
                 plt,
                 x,
                 y;
@@ -1302,10 +1307,11 @@ function plot_comparison_cond(
 
             connected = D["connected"]
 
-           Plots.plot!(
+            Plots.plot!(
                 plt_ic,
                 x,
                 connected;
+                legend=false,
                 xlabel="number of edges over number of nodes",
                 labels=method,
                 markerstrokecolor=D_color_method[method],
@@ -1337,7 +1343,7 @@ function plot_comparison_cond(
             y = D["cnd"]
             y_er = D["cnd_std"]
 
-           Plots.plot!(
+            Plots.plot!(
                 plt,
                 x,
                 y;
@@ -1355,10 +1361,11 @@ function plot_comparison_cond(
             )
             connected = D["connected"]
 
-           Plots.plot!(
+            Plots.plot!(
                 plt_ic,
                 x,
                 connected;
+                legend=false,
                 xlabel="number of edges over number of nodes",
                 labels=method,
                 markerstrokecolor=D_color_method[method],
@@ -1389,7 +1396,7 @@ function plot_comparison_cond(
             y = D["cnd"]
             y_er = D["cnd_std"]
 
-           Plots.plot!(
+            Plots.plot!(
                 plt,
                 x,
                 y;
@@ -1407,10 +1414,11 @@ function plot_comparison_cond(
             )
             connected = D["connected"]
 
-           Plots.plot!(
+            Plots.plot!(
                 plt_ic,
                 x,
                 connected;
+                legend=false,
                 xlabel="number of edges over number of nodes",
                 labels=method,
                 markerstrokecolor=D_color_method[method],
@@ -1442,7 +1450,7 @@ function plot_comparison_cond(
             y = D["cnd"]
             y_er = D["cnd_std"]
 
-           Plots.plot!(
+            Plots.plot!(
                 plt,
                 x,
                 y;
@@ -1459,10 +1467,11 @@ function plot_comparison_cond(
             )
             connected = D["connected"]
 
-           Plots.plot!(
+            Plots.plot!(
                 plt_ic,
                 x,
                 connected;
+                legend=false,
                 xlabel="number of edges over number of nodes",
                 labels=method,
                 markerstrokecolor=D_color_method[method],
@@ -1493,7 +1502,7 @@ function plot_comparison_cond(
             y = D["cnd"]
             y_er = D["cnd_std"]
 
-           Plots.plot!(
+            Plots.plot!(
                 plt,
                 x,
                 y;
@@ -1508,10 +1517,11 @@ function plot_comparison_cond(
                 linewidth=2,
                 markerstrokewidth=2,
             )
-           Plots.plot!(
+            Plots.plot!(
                 plt_ic,
                 x,
                 connected;
+                legend=false,
                 xlabel="number of edges over number of nodes",
                 labels=method,
                 markerstrokecolor=D_color_method[method],
@@ -1540,7 +1550,7 @@ function plot_comparison_cond(
             y = D["cnd"]
             y_er = D["cnd_std"]
 
-           Plots.plot!(
+            Plots.plot!(
                 plt,
                 x,
                 y;
@@ -1555,10 +1565,11 @@ function plot_comparison_cond(
                 linewidth=2,
                 markerstrokewidth=2,
             )
-           Plots.plot!(
+            Plots.plot!(
                 plt_ic,
                 x,
                 connected;
+                legend=false,
                 xlabel="number of edges over number of nodes",
                 labels=method,
                 markerstrokecolor=D_color_method[method],
@@ -1587,7 +1598,7 @@ function plot_comparison_cond(
     m = D["m"]
 
     y = cdL * ones(size(x))
-   Plots.plot!(
+    Plots.plot!(
         plt,
         x,
         y;
@@ -1607,86 +1618,13 @@ function plot_comparison_cond(
     )
     ylims!(y_limits)
 
-    display(plot(plt, plt_ic; layout=(2, 1)))
+    display(plot(plt, plt_ic; layout = Plots.grid(2, 1, heights=[0.8 ,0.2])))
     return nothing
 end
 
-function plot_nb_cycles(
-    D_all::AbstractDict, method::String; legendposition::Symbol=:topleft
-)
-    D = D_all[method]
+##########
 
-    n = D["n"]
-    m = D["m"]
 
-    x = D["pc_edges"] * m / n
-    y = D["cycles"]
-    y_err = D["cycles_std"]
-
-    n_batch = length(x)
-
-    plt =Plots.plot(
-        x,
-        y;
-        yerr=y_err,
-        labels="number of CRTs",
-        xlabel="number of edges over number of nodes",
-        markersize=5,
-        markershape=:circle,
-        markerstrokecolor=:auto,
-        linewidth=2,
-        markerstrokewidth=2,
-        xtickfont=font(13),
-        ytickfont=font(13),
-        guidefont=font(13),
-        legendfont=font(13),
-        framestyle=:box,
-        margins=0.1 * 2cm,
-    )
-    # baseline
-   Plots.plot!(x, 1:n_batch; linewidth=2, labels="minimum number of CRTs", legend=legendposition)
-    display(plt)
-
-    return nothing
-end
-
-function plot_nb_roots(D_all::AbstractDict, method::String; legendposition::Symbol=:topleft)
-    D = D_all[method]
-    n = D["n"]
-    m = D["m"]
-
-    x = D["pc_edges"] * m / n
-    y = D["roots"]
-
-    y_err = D["roots_std"]
-
-    n_batch = length(x)
-
-    plt = plot(
-        x,
-        y;
-        yerr=y_err,
-        xlabel="number of edges over number of nodes",
-        labels="average number of roots",
-        markersize=5,
-        markershape=:circle,
-        markerstrokecolor=:auto,
-        linewidth=2,
-        markerstrokewidth=2,
-        xtickfont=font(13),
-        ytickfont=font(13),
-        guidefont=font(13),
-        legendfont=font(13),
-        framestyle=:box,
-        margins=0.1 * 2cm,
-    )
-    # baseline
-   Plots.plot!(
-        x, 1:n_batch; linewidth=2, labels="minimum number of roots", legend=legendposition
-    )
-    display(plt)
-    return nothing
-end
 
 """
     flat_square_2d_grid(n, a, b)
