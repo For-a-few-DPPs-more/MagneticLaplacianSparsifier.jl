@@ -190,6 +190,10 @@ function cond_numbers(
                     sp_L = out[1]
                     isconnected = out[2]
                     time = vec[2]
+
+                    # for avoiding laplacian matrix to have negative eigvals when
+                    # graphs has many connected components
+                    q_system = q_system + 1e-12
                 elseif method == "iid LS"
                     # iid leverage score with leverage score weighting
                     vec = @timed average_sparsifier_iid(
@@ -199,6 +203,10 @@ function cond_numbers(
                     sp_L = out[1]
                     isconnected = out[2]
                     time = vec[2]
+
+                    # for avoiding laplacian matrix to have negative eigvals when
+                    # graphs has many connected components
+                    q_system = q_system + 1e-12
                 elseif method == "iid JL-LS"
                     # iid leverage score with leverage score weighting
                     vec = @timed average_sparsifier_iid(
@@ -208,6 +216,10 @@ function cond_numbers(
                     sp_L = out[1]
                     isconnected = out[2]
                     time = vec[2]
+
+                    # for avoiding laplacian matrix to have negative eigvals when
+                    # graphs has many connected components
+                    q_system = q_system + 1e-12
                 elseif method == "ST unif"
                     # ST uniform weighting
                     absorbing_node = true
