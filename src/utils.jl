@@ -1502,6 +1502,8 @@ function plot_comparison_cond(
             y = D["cnd"]
             y_er = D["cnd_std"]
 
+            connected = D["connected"]
+
             Plots.plot!(
                 plt,
                 x,
@@ -1618,13 +1620,11 @@ function plot_comparison_cond(
     )
     ylims!(y_limits)
 
-    display(plot(plt, plt_ic; layout = Plots.grid(2, 1, heights=[0.8 ,0.2])))
+    display(plot(plt, plt_ic; layout=Plots.grid(2, 1; heights=[0.8, 0.2])))
     return nothing
 end
 
 ##########
-
-
 
 """
     flat_square_2d_grid(n, a, b)
