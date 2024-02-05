@@ -87,7 +87,7 @@
         avgL = ((avgL + avgL') / 2)
 
         sp_pL, sp_R = sp_pcond_Lap(avgL, q, Lap)
-        pL, R = pcond_Lap(Matrix(avgL), q, Matrix(Lap))
+        pL, R = pcond_Lap(avgL, q, Lap)
 
         cd_sp, _, _ = cond_nb_pp(sp_pL)
         cd, _, _ = cond_nb_pp(pL)
