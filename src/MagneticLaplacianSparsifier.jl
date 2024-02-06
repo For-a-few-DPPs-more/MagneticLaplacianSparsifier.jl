@@ -20,6 +20,7 @@ include("mtsf.jl")
 include("graphs.jl")
 include("laplacians.jl")
 include("sync-rank.jl")
+include("hkpv.jl")
 
 # todo cleamtidy up exports
 export multi_type_spanning_forest,
@@ -81,5 +82,6 @@ export multi_type_spanning_forest,
     cond_nb_pp,
     JL_lev_score_estimates,
     linear_solve_matrix_system,
-    sp_pcond_Lap
+    sp_pcond_Lap,
+    sample_pdpp
 end

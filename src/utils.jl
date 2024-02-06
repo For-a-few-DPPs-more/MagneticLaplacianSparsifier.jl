@@ -355,6 +355,7 @@ function benchmark_syncrank(
     n_rep::Integer,
     rng::Random.AbstractRNG;
     methods::Vector{String}=nothing,
+    hkpv::Bool=false
 )::AbstractDict
     n = nv(meta_g)
     m = ne(meta_g)
@@ -477,7 +478,7 @@ function benchmark_syncrank(
 
                 if method == "DPP(K) unif"
                     # DPP(K) uniform weighting
-                    vec = @timed average_sparsifier(rng, meta_g, nothing, q, i; weighted)
+                    vec = @timed average_sparsifier(rng, meta_g, nothing, q, i; weighted,hkpv)
                     out = vec[1]
                     sp_L = out[1]
                     n_cls = out[2]
@@ -488,7 +489,7 @@ function benchmark_syncrank(
 
                 elseif method == "DPP(K) JL-LS"
                     # DPP(K) leverage score weighting (JL approx)
-                    vec = @timed average_sparsifier(rng, meta_g, lev_JL, q, i; weighted)
+                    vec = @timed average_sparsifier(rng, meta_g, lev_JL, q, i; weighted,hkpv)
                     out = vec[1]
                     sp_L = out[1]
                     n_cls = out[2]
@@ -499,7 +500,7 @@ function benchmark_syncrank(
 
                 elseif method == "DPP(K) LS"
                     # DPP(K) leverage score weighting
-                    vec = @timed average_sparsifier(rng, meta_g, lev, q, i; weighted)
+                    vec = @timed average_sparsifier(rng, meta_g, lev, q, i; weighted,hkpv)
                     out = vec[1]
                     sp_L = out[1]
                     n_cls = out[2]
@@ -543,7 +544,7 @@ function benchmark_syncrank(
                     ust = true
                     q_ust = 0
                     vec = @timed average_sparsifier(
-                        rng, meta_g, nothing, q_ust, i; weighted, absorbing_node, ust
+                        rng, meta_g, nothing, q_ust, i; weighted, absorbing_node, ust,hkpv
                     )
                     out = vec[1]
                     sp_L = out[1]
@@ -557,7 +558,7 @@ function benchmark_syncrank(
                     ust = true
                     q_ust = 0
                     vec = @timed average_sparsifier(
-                        rng, meta_g, lev_ust_JL, q_ust, i; weighted, absorbing_node, ust
+                        rng, meta_g, lev_ust_JL, q_ust, i; weighted, absorbing_node, ust,hkpv
                     )
                     out = vec[1]
                     sp_L = out[1]
@@ -572,7 +573,7 @@ function benchmark_syncrank(
                     ust = true
                     q_ust = 0
                     vec = @timed average_sparsifier(
-                        rng, meta_g, lev_ust, q_ust, i; weighted, absorbing_node, ust
+                        rng, meta_g, lev_ust, q_ust, i; weighted, absorbing_node, ust,hkpv
                     )
                     out = vec[1]
                     sp_L = out[1]

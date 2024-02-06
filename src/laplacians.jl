@@ -39,6 +39,7 @@ function average_sparsifier(
     weighted::Bool=false,
     absorbing_node::Bool=false,
     ust::Bool=false,
+    hkpv::Bool=false,
 )
     m = ne(meta_g)
     edge_weights = get_edges_prop(meta_g, :e_weight, true, 1.0)
@@ -52,22 +53,51 @@ function average_sparsifier(
     # for storing weights of edges in the sparsifier
     sp_e_weight_diag_el = spzeros(m)
 
+    sparseB = sp_magnetic_incidence(meta_g; oriented=true)
+
+    if hkpv == true
+        if q < 1e-10
+            # QR is strangely so slow
+            V = Matrix(qr(Matrix(sparseB)).Q)
+        else
+            # dilating to a DPP on the edges + nodes
+            # so that it becomes projective
+            BigB = [sparseB; sqrt(q) * sparse(I, n, n)]
+            V = Matrix(qr(Matrix(BigB)).Q)
+        end
+    end
+
     for i_sample in 1:nb_samples
-        mtsf = multi_type_spanning_forest(rng, meta_g, q; weighted, absorbing_node, ust)
+        #
+        if hkpv == true
+            # standard algorithm by Hough et al (HKPV)
+            if q < 1e-10
+                id = sample_pdpp(V)
+            else
+                ind_e = sample_pdpp(V)
+                # restricting the extension to the edges only
+                ind_e = ind_e[ind_e .< (m + 1)]
+            end
+            ind_e = vec(id)
+            w = 1
+            w_tot = 1
+        else
+            # cycle popping for weakly inconsistent cycles
+            mtsf = multi_type_spanning_forest(rng, meta_g, q; weighted, absorbing_node, ust)
+            # check nb roots and cycles
+            cycles = get_prop(mtsf, :cycle_nodes)
+            nb_cycles[i_sample] = length(cycles)
+            roots = get_prop(mtsf, :roots)
+            nb_roots[i_sample] = length(roots)
 
-        # check nb roots and cycles
-        cycles = get_prop(mtsf, :cycle_nodes)
-        nb_cycles[i_sample] = length(cycles)
-        roots = get_prop(mtsf, :roots)
-        nb_roots[i_sample] = length(roots)
+            D = props(mtsf)
+            w = D[:weight]
+            subgraph_weights[i_sample] = w
+            w_tot += w
+            ind_e = mtsf_edge_indices(mtsf, meta_g)
+        end
+        #
 
-        D = props(mtsf)
-        w = D[:weight]
-        subgraph_weights[i_sample] = w
-
-        w_tot += w
-
-        ind_e = mtsf_edge_indices(mtsf, meta_g)
         diag_elements = ones(length(ind_e))
 
         if ls === nothing
@@ -85,7 +115,6 @@ function average_sparsifier(
     nb_sampled_cycles = sum(nb_cycles)
     nb_sampled_roots = sum(nb_roots)
 
-
     # checking connectivity
 
     ind_tot = vec(1:m) # vec with all edge indices
@@ -100,7 +129,6 @@ function average_sparsifier(
 
     isconnected = is_connected(subgraph)
 
-    sparseB = sp_magnetic_incidence(meta_g; oriented=true)
     L = (1 / w_tot) * sparseB' * spdiagm(sp_e_weight_diag_el) * sparseB
 
     return L, nb_sampled_cycles, nb_sampled_roots, subgraph_weights, isconnected
@@ -218,12 +246,37 @@ function emp_leverage_score(
     weighted::Bool=false,
     absorbing_node::Bool=false,
     ust::Bool=false,
+    hkpv::Bool=false,
 )
     m = ne(meta_g)
+    n = nv(meta_g)
     emp_lev = zeros(m, 1)
+
+    if hkpv
+        sparseB = sp_magnetic_incidence(meta_g; oriented=true)
+        if q < 1e-10
+            V = Matrix(qr(Matrix(sparseB)).Q)
+        else
+            # dilating to a DPP on the edges + nodes
+            # so that it becomes projective
+            BigB = [sparseB; sqrt(q) * sparse(I, n, n)]
+            V = Matrix(qr(Matrix(BigB)).Q)
+        end
+        println("HKPV")
+    end
     for _ in 1:t
-        mtsf = multi_type_spanning_forest(rng, meta_g, q; weighted, absorbing_node, ust)
-        ind_e = mtsf_edge_indices(mtsf, meta_g)
+        if hkpv
+            if q < 1e-10
+                ind_e = sample_pdpp(V)
+            else
+                ind_e = sample_pdpp(V)
+                # restricting the dilation to the edges only
+                ind_e = ind_e[ind_e .< (m + 1)]
+            end
+        else
+            mtsf = multi_type_spanning_forest(rng, meta_g, q; weighted, absorbing_node, ust)
+            ind_e = mtsf_edge_indices(mtsf, meta_g)
+        end
         emp_lev[ind_e] = emp_lev[ind_e] .+ 1
     end
     emp_lev /= t
