@@ -56,7 +56,7 @@ function multi_type_spanning_forest(
     walk = T[]
     unvisited = Set{T}(vertices(g))
 
-    #fix a root if necessary
+    # fix an absorbing root if necessary
     if absorbing_node
         ab_node = rand(rng, unvisited)
         push!(roots, ab_node)
@@ -72,7 +72,6 @@ function multi_type_spanning_forest(
     setdiff!(unvisited, n0)
 
     while nv_mtsf < nv(g)
-
         n0_is_root = false
         # check if n0 is a root
         if q > 1e-10
