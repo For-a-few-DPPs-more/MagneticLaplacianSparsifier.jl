@@ -57,8 +57,10 @@ function average_sparsifier(
 
     if hkpv == true
         if q < 1e-10
+            full = false
             # QR is strangely so slow
             V = Matrix(qr(Matrix(sparseB)).Q)
+            V = Matrix(svd(Matrix(sparseB);full).U)
         else
             # dilating to a DPP on the edges + nodes
             # so that it becomes projective
