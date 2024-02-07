@@ -1018,7 +1018,7 @@ function plot_comparison_sync(
             n = D["n"]
             m = D["m"]
             x = D["pc_edges"] * m / n
-            x_er = D["pc_edges_std"]
+            #x_er = D["pc_edges_std"]
             n = D["n"]
             m = D["m"]
 
@@ -1029,7 +1029,7 @@ function plot_comparison_sync(
                 plt,
                 x,
                 y;
-                xerror=x_er,
+                #xerror=x_er,
                 yerror=y_er,
                 labels=method,
                 markerstrokecolor=D_color_method[method],
@@ -1077,7 +1077,7 @@ function plot_comparison_sync(
             n = D["n"]
             m = D["m"]
             x = D["pc_edges"] * m / n
-            x_er = D["pc_edges_std"]
+            #x_er = D["pc_edges_std"]
 
             y = D[metric]
             y_er = D[metric_std]
@@ -1086,7 +1086,7 @@ function plot_comparison_sync(
                 plt,
                 x,
                 y;
-                xerror=x_er,
+                #xerror=x_er,
                 yerror=y_er,
                 labels=method,
                 markerstrokecolor=D_color_method[method],
@@ -1133,7 +1133,7 @@ function plot_comparison_sync(
             n = D["n"]
             m = D["m"]
             x = D["pc_edges"] * m / n
-            x_er = D["pc_edges_std"]
+            #x_er = D["pc_edges_std"]
 
             y = D[metric]
             y_er = D[metric_std]
@@ -1142,7 +1142,7 @@ function plot_comparison_sync(
                 plt,
                 x,
                 y;
-                xerror=x_er,
+                #xerror=x_er,
                 yerror=y_er,
                 labels=method,
                 markerstrokecolor=D_color_method[method],
@@ -1198,7 +1198,7 @@ function plot_comparison_sync(
                 plt,
                 x,
                 y;
-                xerror=x_er,
+                #xerror=x_er,
                 yerror=y_er,
                 labels=method,
                 markerstrokecolor=D_color_method[method],
@@ -1254,7 +1254,7 @@ function plot_comparison_sync(
                 plt,
                 x,
                 y;
-                xerror=x_er,
+                #xerror=x_er,
                 yerror=y_er,
                 labels=method,
                 markerstrokecolor=D_color_method[method],
@@ -1311,7 +1311,7 @@ function plot_comparison_sync(
                 plt,
                 x,
                 y;
-                xerror=x_er,
+                #xerror=x_er,
                 yerror=y_er,
                 labels=method,
                 markerstrokecolor=D_color_method[method],
