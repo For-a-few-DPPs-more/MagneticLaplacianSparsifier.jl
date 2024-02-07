@@ -585,7 +585,7 @@ function benchmark_syncrank(
 
                 # least eigenvector
                 v_least, eig_least = power_method_least_eigenvalue(sp_L)
-                println("least eigenvalue of sparsifier: ", eig_least)
+                #println("least eigenvalue of sparsifier: ", eig_least)
 
                 sp_L = Hermitian(sp_L)
                 ranking = syncrank(sp_L, meta_g; singular)
