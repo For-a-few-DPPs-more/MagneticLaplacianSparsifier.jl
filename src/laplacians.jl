@@ -307,8 +307,31 @@ function optimal_perm(mtsf::AbstractMetaGraph)
     return ind_perm
 end
 
+function arpack_rel_cond(L, spL)
+    # warning ! "Arpack", version="0.5.3" NOT "0.5.4" (broken)
+    λ_min, _ = eigs(L, spL; nev=2, which=:SM, tol=1e-1, maxiter=600)
+    λ_max, _ = eigs(L, spL; nev=2, which=:LM, tol=1e-1, maxiter=600)
+
+    cnd = real(λ_max[1]) / real(λ_min[1])
+
+    return cnd[1]
+end
+
+
+function arpack_cond(L)
+    # warning ! "Arpack", version="0.5.3" NOT "0.5.4" (broken)
+    λ_min, _ = eigs(L; nev=1, which=:SM)
+    λ_max, _ = eigs(L; nev=1, which=:LM)
+
+    cnd = real(λ_max[1]) / real(λ_min[1])
+
+    return cnd
+end
+
 function sp_pcond_Lap(spL::SparseMatrixCSC{ComplexF64,Int64}, q, L)
-    C = cholesky(Hermitian(spL + q * I))
+    temp = spL + q * I
+    temp = 0.5 * (temp + temp')
+    C = cholesky(temp)
     R = sparse(C.L)[invperm(C.p), :] # since sparse cholesky is pivoted
 
     T = linear_solve_matrix_system(R, L + q * I) # sparse matrix AX=B

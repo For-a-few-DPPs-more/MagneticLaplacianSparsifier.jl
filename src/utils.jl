@@ -53,7 +53,7 @@ function cond_numbers(
     n_rep::Integer,
     rng::Random.AbstractRNG;
     q_system::Real=q,
-    methods::Vector{String}=nothing,
+    splg_methods::Vector{String}=nothing,
     weighted::Bool=false,
 )::AbstractDict
     m = ne(meta_g)
@@ -71,16 +71,19 @@ function cond_numbers(
     end
 
     Lap = B' * W * B
+    Lap = 0.5 * (Lap + Lap')
 
     # magnetic Laplacian condition number
-    cdL, l_min, _ = cond_nb_pp(Lap + q_system * I)
+    #cdL, l_min, _ = cond_nb_pp(Lap + q_system * I)
+
+    cdL = arpack_cond(Lap + q_system * I)
+    println("cond nb of Laplacian: ", cdL)
 
     # print least eigenvalues
+    # println("least eigenvalue of Laplacian: ", real(l_min))
 
-    println("least eigenvalue of Laplacian: ", real(l_min))
-
-    if methods === nothing
-        methods = [
+    if splg_methods === nothing
+        splg_methods = [
             "DPP(K) unif",
             "DPP(K) JL-LS",
             "DPP(K) LS",
@@ -96,16 +99,16 @@ function cond_numbers(
     lev, lev_JL, lev_ust_JL, lev_ust = [0 for _ in 1:4]
     time_lev, time_lev_JL, time_lev_ust_JL, time_lev_ust = [0 for _ in 1:4]
     # magnetic leverage scores
-    if ("iid LS" in methods) || ("DPP(K) LS" in methods)
+    if ("iid LS" in splg_methods) || ("DPP(K) LS" in splg_methods)
         lev, time_lev = @timed leverage_score(B, q; e_weights)
     end
     # JL-estimates of magnetic leverage scores
-    if ("DPP(K) JL-LS" in methods) || ("iid JL-LS" in methods)
+    if ("DPP(K) JL-LS" in splg_methods) || ("iid JL-LS" in splg_methods)
         cst = 40
         lev_JL, time_lev_JL = @timed JL_lev_score_estimates(B, q; e_weights, cst)
     end
     # JL-estimates of combinatorial leverage scores
-    if ("ST JL-LS" in methods)
+    if ("ST JL-LS" in splg_methods)
         cst = 40
         B_ust = magnetic_incidence_matrix(meta_g; oriented=true, phases=false)
         lev_ust_JL, time_lev_ust_JL = @timed JL_lev_score_estimates(
@@ -113,7 +116,7 @@ function cond_numbers(
         )
     end
     # combinatorial leverage scores (non-magnetic)
-    if ("ST LS" in methods)
+    if ("ST LS" in splg_methods)
         B_ust = magnetic_incidence_matrix(meta_g; oriented=true, phases=false)
         lev_ust, time_lev_ust = @timed leverage_score(B_ust, 0; e_weights)
     end
@@ -122,7 +125,7 @@ function cond_numbers(
 
     D_all = Dict()
 
-    for method in methods
+    for method in splg_methods
         print("method: ", method)
         # initialization
 
@@ -144,8 +147,8 @@ function cond_numbers(
             # temporary arrays
             cnd_tp = zeros(n_rep)
             #
-            sparsity_L_tp, time_tp, pc_edges_tp, roots_tp, cycles_tp = [
-                zeros(n_rep) for _ in 1:5
+            sparsity_L_tp, time_tp, pc_edges_tp, roots_tp, cycles_tp, weight_tp  = [
+                zeros(n_rep) for _ in 1:6
             ]
             connected_tp = ones(n_rep)
 
@@ -155,6 +158,8 @@ function cond_numbers(
                 n_cls = 0
                 n_rts = 0
                 isconnected = 1
+                weights = zeros(i)
+
                 if method == "DPP(K) unif"
                     # DPP(K) uniform weighting
                     vec = @timed average_sparsifier(rng, meta_g, nothing, q, i; weighted)
@@ -182,6 +187,7 @@ function cond_numbers(
                     sp_L = out[1]
                     n_cls = out[2]
                     n_rts = out[3]
+                    weights = out[4]
                     isconnected = out[5]
                     time = vec[2]
                 elseif method == "iid unif"
@@ -266,17 +272,19 @@ function cond_numbers(
                     isconnected = out[5]
                     time = vec[2]
                 end
-                sp_L = Hermitian(sp_L)
+                sp_L = 0.5 * (sp_L + sp_L')
 
                 # by default q_system = q
 
                 # sparse implementation but not fast
                 #pcd_L, R = sp_pcond_Lap(sp_L, q_system, Lap) # not fast
 
-                pcd_L, R = pcond_Lap(sp_L, q_system, Lap)
+                # pcd_L, R = pcond_Lap(sp_L, q_system, Lap)
+                # pcd_L = 0.5 * (pcd_L + pcd_L')
+                # cnd_tp[j], _, _, = cond_nb_pp(pcd_L) # rather fast
 
-                cnd_tp[j], _, _, = cond_nb_pp(Hermitian(pcd_L)) # rather fast
-                sparsity_L_tp[j] = nnz(R)
+                cnd_tp[j] = arpack_rel_cond(Lap + q_system * I,sp_L  + q_system * I)
+                sparsity_L_tp[j] = 0
 
                 pc_edges_tp[j] = nb_of_edges(sp_L) / m
                 time_tp[j] = time
@@ -354,7 +362,7 @@ function benchmark_syncrank(
     max_batchsize::Integer,
     n_rep::Integer,
     rng::Random.AbstractRNG;
-    methods::Vector{String}=nothing,
+    splg_methods::Vector{String}=nothing,
     hkpv::Bool=false
 )::AbstractDict
     n = nv(meta_g)
@@ -401,8 +409,8 @@ function benchmark_syncrank(
     #######################################
 
     # start benchmarking
-    if methods === nothing
-        methods = [
+    if splg_methods === nothing
+        splg_methods = [
             "DPP(K) unif",
             "DPP(K) JL-LS",
             "DPP(K) LS",
@@ -419,29 +427,29 @@ function benchmark_syncrank(
 
     lev, lev_JL, lev_ust_JL, lev_ust = [0 for _ in 1:4]
     # magnetic leverage scores
-    if ("iid LS" in methods) || ("DPP(K) LS" in methods)
+    if ("iid LS" in splg_methods) || ("DPP(K) LS" in splg_methods)
         lev = leverage_score(B, q; e_weights)
     end
     # JL-estimates of magnetic leverage scores
-    if ("DPP(K) JL-LS" in methods) || ("iid JL-LS" in methods)
+    if ("DPP(K) JL-LS" in splg_methods) || ("iid JL-LS" in splg_methods)
         cst = 40
         lev_JL = JL_lev_score_estimates(B, q; e_weights, cst)
     end
     # JL-estimates of combinatorial leverage scores
-    if ("ST JL-LS" in methods)
+    if ("ST JL-LS" in splg_methods)
         cst = 40
         B_ust = magnetic_incidence_matrix(meta_g; oriented=true, phases=false)
         lev_ust_JL = JL_lev_score_estimates(B_ust, q; e_weights, cst)
     end
     # combinatorial leverage scores (non-magnetic)
-    if ("ST LS" in methods)
+    if ("ST LS" in splg_methods)
         B_ust = magnetic_incidence_matrix(meta_g; oriented=true, phases=false)
         lev_ust = leverage_score(B_ust, 0; e_weights)
     end
 
     D_all = Dict()
 
-    for method in methods
+    for method in splg_methods
 
         # initialization
         println("method: ", method)
@@ -587,7 +595,8 @@ function benchmark_syncrank(
                 v_least, eig_least = power_method_least_eigenvalue(sp_L)
                 #println("least eigenvalue of sparsifier: ", eig_least)
 
-                sp_L = Hermitian(sp_L)
+                sp_L = 0.5 * (sp_L + sp_L')
+
                 ranking = syncrank(sp_L, meta_g; singular)
 
                 # metrics
@@ -682,7 +691,7 @@ end
 #     max_batchsize::Integer,
 #     n_rep::Integer,
 #     rng::Random.AbstractRNG;
-#     methods::Vector{String}=nothing,
+#     splg_methods::Vector{String}=nothing,
 # )::AbstractDict
 #     n = nv(meta_g)
 #     m = ne(meta_g)
@@ -717,12 +726,12 @@ end
 
 #     rangebatch = 1:max_batchsize
 
-#     if methods === nothing
-#         methods = ["DPP(K) unif", "DPP(K) LS"]
+#     if splg_methods === nothing
+#         splg_methods = ["DPP(K) unif", "DPP(K) LS"]
 #     end
 #     D_all = Dict()
 
-#     for method in methods
+#     for method in splg_methods
 #         print("method: ", method)
 #         # initialization
 #         lambda_sp, lambda_sp_std = zeros(max_batchsize), zeros(max_batchsize)
@@ -802,11 +811,11 @@ function plot_comparison_sync(
     D_all::AbstractDict,
     y_limits;
     legendposition::Symbol=:topright,
-    methods::Vector{String}=nothing,
+    splg_methods::Vector{String}=nothing,
     check_connected=false,
 )
-    if methods === nothing
-        methods = [
+    if splg_methods === nothing
+        splg_methods = [
             "DPP(K) unif",
             "DPP(K) JL-LS",
             "DPP(K) LS",
@@ -848,7 +857,7 @@ function plot_comparison_sync(
     plt = Plots.plot()
     plt_ic = Plots.plot()
 
-    for method in methods
+    for method in splg_methods
         if method == "DPP(K) unif"
             D = D_all[method]
             n = D["n"]
@@ -1417,10 +1426,10 @@ end
 ######
 
 function plot_comparison_cond(
-    D_all::AbstractDict, y_limits; legendposition::Symbol=:bottomright, methods=nothing
+    D_all::AbstractDict, y_limits; legendposition::Symbol=:bottomright, splg_methods=nothing
 )
-    if methods === nothing
-        methods = [
+    if splg_methods === nothing
+        splg_methods = [
             "DPP(K) unif",
             "DPP(K) JL-LS",
             "DPP(K) LS",
@@ -1462,7 +1471,7 @@ function plot_comparison_cond(
     plt_ic = Plots.plot()
     plt = Plots.plot()
 
-    for method in methods
+    for method in splg_methods
         if method == "DPP(K) unif"
             D = D_all[method]
             n = D["n"]
