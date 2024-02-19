@@ -313,3 +313,10 @@ function turn_into_connection_graph(rng,meta_g,eta,model,planted_score)
 
     return meta_g
 end
+
+
+function main_component(g)
+    c = connected_components(g)
+    _, i = findmax(length.(c))
+    return g[c[i]]
+end

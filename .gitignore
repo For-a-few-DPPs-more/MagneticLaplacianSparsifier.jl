@@ -2,7 +2,9 @@
 
 /notebooks/*
 !/notebooks/syncrank.ipynb
-!/notebooks/preconditioning.ipynb
+!/notebooks/precond_random_graphs.ipynb
+!/notebooks/precond_real_graphs.ipynb
+
 !/notebooks/plots.ipynb
 !/notebooks/ERO_locate_error_edges.ipynb
 !/notebooks/comparison_hkpv.ipynb

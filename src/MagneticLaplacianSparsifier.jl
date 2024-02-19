@@ -86,5 +86,6 @@ export multi_type_spanning_forest,
     linear_solve_matrix_system,
     sp_pcond_Lap,
     sample_pdpp,
-    turn_into_connection_graph
+    turn_into_connection_graph,
+    main_component
 end
