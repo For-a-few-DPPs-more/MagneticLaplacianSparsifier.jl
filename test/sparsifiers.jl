@@ -97,6 +97,33 @@
         @test rel_abs_diff < 5 * 1e-2
     end
 
+    @testset "arpack_cond works" begin
+        rng = getRNG()
+
+        n = 100
+        p = 0.5
+        eta = 0.05
+        q = 0
+
+        meta_g = gen_graph_mun(rng, n, p, eta)
+        B = sp_magnetic_incidence(meta_g; oriented=true)
+
+        Lap = B' * B
+        lev = leverage_score(B, q)
+        avgL, _, _, _ = average_sparsifier(rng, meta_g, lev, q, 3)
+        avgL = ((avgL + avgL') / 2)
+
+        pL, R = pcond_Lap(avgL, q, Lap)
+
+        cd, _, _ = cond_nb_pp(pL)
+        cd_arpack = arpack_rel_cond(Lap, avgL)
+
+        rel_abs_diff = abs(cd_arpack - cd) / abs(cd)
+
+        print("relative abs difference on cond nb = ", rel_abs_diff)
+
+        @test rel_abs_diff < 5 * 1e-2
+    end
     @testset "sparsifier works by using vector of edge weights" begin
         rng = Random.default_rng()
 

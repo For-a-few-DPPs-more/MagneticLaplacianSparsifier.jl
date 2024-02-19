@@ -292,9 +292,16 @@ function ero_located(
 end
 
 
-function turn_into_connection_graph(rng,meta_g,eta,model,planted_score)
+function turn_into_connection_graph(rng,meta_g,eta,type,planted_score)
 
     n = nv(meta_g)
+
+    model = :mun
+    if type=="MUN"
+        model = :mun
+    elseif type=="ERO"
+        model = :ero
+    end
 
     meta_g = MetaGraph(meta_g)
     for e in edges(meta_g)
