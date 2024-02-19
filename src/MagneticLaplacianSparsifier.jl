@@ -85,5 +85,6 @@ export multi_type_spanning_forest,
     JL_lev_score_estimates,
     linear_solve_matrix_system,
     sp_pcond_Lap,
-    sample_pdpp
+    sample_pdpp,
+    turn_into_connection_graph
 end

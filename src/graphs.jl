@@ -290,3 +290,26 @@ function ero_located(
     end
     return g, noisy_edges, err_edges
 end
+
+
+function turn_into_connection_graph(rng,meta_g,eta,model,planted_score)
+
+    n = nv(meta_g)
+
+    meta_g = MetaGraph(meta_g)
+    for e in edges(meta_g)
+        u = src(e)
+        v = dst(e)
+        h_u = planted_score[u]
+        h_v = planted_score[v]
+        θ = (h_u - h_v) * π / (n - 1)
+        if (model === :ero) && (rand(rng) < eta) # Erdos-Renyi Outliers
+            θ = rand(rng, (-n + 1):(n - 1)) * π / (n - 1)
+        elseif model === :mun # Multiplicative Uniform Noise
+            θ *= 1.0 + eta * 2 * (rand(rng) - 0.5)
+        end
+        set_prop!(meta_g, e, :angle, θ)
+    end
+
+    return meta_g
+end
