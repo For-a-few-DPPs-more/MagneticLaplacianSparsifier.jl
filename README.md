@@ -12,12 +12,6 @@ by [Michaël Fanuel](https://mrfanuel.github.io/) and [Rémi Bardenet](https://r
 
 This code uses multiple samples of Multi-Type Spanning Forests (MTSF) to sparsify the regularized magnetic Laplacian.
 
-Here are an illustration of a run MTSF sampling with Wilson's algorithm (left) and its output (right).
-
-![](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl/blob/main/notebooks/figures/MTSF_grid.gif)
-![](https://github.com/For-a-few-DPPs-more/MagneticLaplacianSparsifier.jl/blob/main/notebooks/figures/MTSF_95.png)
-
-The output is an MTSF with one cycle-rooted tree and one rooted tree (the cycle and the root are in red).
 
 
 
