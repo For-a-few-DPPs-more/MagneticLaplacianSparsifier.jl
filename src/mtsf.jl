@@ -279,13 +279,15 @@ function optim_multi_type_spanning_forest(
     weighted::Bool=false,
     absorbing_node::Bool=false,
     ust::Bool=false,
-)::MetaGraph{T,U} where {T,U}
+) where {T,U}
     # Initialize the multi type spanning forest
     n = nv(g)
-    mtsf = MetaGraph{T,U}(n)
+    node_list = zeros(Bool, n)
+    edge_list = zeros(Int, n, 2)
     nv_mtsf = 0
+    ne_mtsf = 0
     weight = 1.0
-    roots = T[]
+    ab_node = 1
 
     # Initialize the random walk
     walk = T[]
@@ -317,8 +319,8 @@ function optim_multi_type_spanning_forest(
 
         if v0_is_root
             # if v0 is indeed a root record the rooted branch in mtsf
-            push!(roots, v0)
-            add_edges_from!(mtsf, consecutive_pairs(walk))
+            add_edges_from_pairs!(edge_list, walk, ne_mtsf)
+            node_list[walk] .= 1
             nv_mtsf += length(walk)
             # mark nodes in walk as visited
             setdiff!(unvisited, walk)
@@ -337,10 +339,9 @@ function optim_multi_type_spanning_forest(
             setdiff!(unvisited, v1)
             v0 = v1  # and continue the walk
 
-        elseif (degree(mtsf, v1) > 0 || v1 in roots) || (v1 in roots && ust)
+        elseif (node_list[v1] == 1) || (v1 == ab_node)
             # otherwise if v1 is already visited and is in the mtsf or is a root
-            # record the walk as a branch
-            add_edges_from!(mtsf, consecutive_pairs(walk))
+            node_list[walk] .= 1
             nv_mtsf += length(walk) - 1
             setdiff!(unvisited, walk)
             # mark nodes in walk as visited
@@ -362,7 +363,9 @@ function optim_multi_type_spanning_forest(
             if keep # cycle is kept
                 # compute cycle weight in view of reweighted MC
                 weight *= max(alpha, 1)
-                add_edges_from!(mtsf, consecutive_pairs(walk))
+                add_edges_from_pairs!(edge_list, walk, ne_mtsf)
+                node_list[walk] .= 1
+                # add_edges_from!(mtsf, consecutive_pairs(walk))
                 nv_mtsf += length(walk) - 1 # since walk contains twice the knot
                 setdiff!(unvisited, walk)
                 # restart with a new v0 uniformly among the unvisited nodes
@@ -379,7 +382,5 @@ function optim_multi_type_spanning_forest(
             end
         end
     end
-    # store outputs
-    set_prop!(mtsf, :weight, weight)
-    return mtsf
+    return edge_list, weight
 end
