@@ -87,5 +87,6 @@ export multi_type_spanning_forest,
     sp_pcond_Lap,
     sample_pdpp,
     turn_into_connection_graph,
-    main_component
+    main_component,
+    optim_multi_type_spanning_forest
 end

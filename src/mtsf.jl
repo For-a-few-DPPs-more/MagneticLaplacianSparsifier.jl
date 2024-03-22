@@ -271,3 +271,115 @@ function step_to_root(rng::Random.AbstractRNG, g, n0, q::Real, weighted::Bool=fa
 
     return n0_is_root
 end
+
+function optim_multi_type_spanning_forest(
+    rng::Random.AbstractRNG,
+    g::MetaGraph{T,U},
+    q::Real;
+    weighted::Bool=false,
+    absorbing_node::Bool=false,
+    ust::Bool=false,
+)::MetaGraph{T,U} where {T,U}
+    # Initialize the multi type spanning forest
+    n = nv(g)
+    mtsf = MetaGraph{T,U}(n)
+    nv_mtsf = 0
+    weight = 1.0
+    roots = T[]
+
+    # Initialize the random walk
+    walk = T[]
+    unvisited = Set{T}(vertices(g))
+
+    # fix an absorbing root if necessary
+    if absorbing_node
+        ab_node = rand(rng, unvisited)
+        push!(roots, ab_node)
+        setdiff!(unvisited, ab_node)
+        nv_mtsf += 1
+    end
+
+    # Start the random walk
+    v0 = rand(rng, unvisited)
+    # add v0 to walk
+    push!(walk, v0)
+    # mark v0 as visited
+    setdiff!(unvisited, v0)
+
+    while nv_mtsf < n
+        v0_is_root = false
+        # check if v0 is a root
+        if q > 1e-10
+            # if q not too small
+            v0_is_root = step_to_root(rng, g, v0, q, weighted)
+            # explicitly v0_is_root = rand(rng) < q / (q + degree(g, v0))
+        end
+
+        if v0_is_root
+            # if v0 is indeed a root record the rooted branch in mtsf
+            push!(roots, v0)
+            add_edges_from!(mtsf, consecutive_pairs(walk))
+            nv_mtsf += length(walk)
+            # mark nodes in walk as visited
+            setdiff!(unvisited, walk)
+            # restart with a new v0 uniformly among the unvisited nodes
+            v0 = restart_walk_from_unvisited_node!(rng, walk, unvisited)
+            continue
+        end
+
+        # walk to a nb with proba propto edge weight
+        v1 = rand_step(rng, g, v0, weighted)
+        # add this nb to walk
+        push!(walk, v1)
+
+        if v1 in unvisited
+            # if v1 unvisited, mark it as visited
+            setdiff!(unvisited, v1)
+            v0 = v1  # and continue the walk
+
+        elseif (degree(mtsf, v1) > 0 || v1 in roots) || (v1 in roots && ust)
+            # otherwise if v1 is already visited and is in the mtsf or is a root
+            # record the walk as a branch
+            add_edges_from!(mtsf, consecutive_pairs(walk))
+            nv_mtsf += length(walk) - 1
+            setdiff!(unvisited, walk)
+            # mark nodes in walk as visited
+
+            # restart with a new v0 uniformly among the unvisited nodes
+            v0 = restart_walk_from_unvisited_node!(rng, walk, unvisited)
+
+        else  # else v1 is in walk.
+            # We identify unique cycle in walk with knot v1
+            idx_v1 = findfirst(x -> x == v1, walk)
+            cycle_nodes = @view walk[idx_v1:end]
+
+            keep = false # by default, cycle is popped
+            alpha = 0
+            if !ust # if not spanning tree, toss a coin to pop or not
+                keep, alpha = keep_cycle(rng, g, consecutive_pairs(cycle_nodes))
+            end
+
+            if keep # cycle is kept
+                # compute cycle weight in view of reweighted MC
+                weight *= max(alpha, 1)
+                add_edges_from!(mtsf, consecutive_pairs(walk))
+                nv_mtsf += length(walk) - 1 # since walk contains twice the knot
+                setdiff!(unvisited, walk)
+                # restart with a new v0 uniformly among the unvisited nodes
+                v0 = restart_walk_from_unvisited_node!(rng, walk, unvisited)
+
+            else  # pop cycle but keep loopy node
+                union!(unvisited, cycle_nodes)
+                # mark cycle nodes as unvisited
+                setdiff!(unvisited, v1)
+                # remove v1 which was part of cycle_nodes
+                resize!(walk, idx_v1)
+                # remove cycle nodes from the walk
+                v0 = v1
+            end
+        end
+    end
+    # store outputs
+    set_prop!(mtsf, :weight, weight)
+    return mtsf
+end

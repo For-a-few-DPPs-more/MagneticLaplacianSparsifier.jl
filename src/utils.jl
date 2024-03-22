@@ -12,6 +12,7 @@ function add_edges_from!(g::AbstractMetaGraph, edges)
     end
 end
 
+
 function rem_edges_from!(g::AbstractMetaGraph, edges)
     for e in edges
         edge = isa(e, Edge) ? e : Edge(e)
