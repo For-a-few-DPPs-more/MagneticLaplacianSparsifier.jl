@@ -88,5 +88,6 @@ export multi_type_spanning_forest,
     sample_pdpp,
     turn_into_connection_graph,
     main_component,
-    optim_multi_type_spanning_forest
+    simple_multi_type_spanning_forest,
+    approx_sparsifier
 end

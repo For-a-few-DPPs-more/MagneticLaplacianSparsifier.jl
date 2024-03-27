@@ -14,9 +14,9 @@ end
 
 function add_edges_from_pairs!(edge_list,walk, ne_mtsf)
     for pair in consecutive_pairs(walk)
-        ne_mtsf += 1
-        edge_list[ne_mtsf, 1] = pair[1]
-        edge_list[ne_mtsf, 2] = pair[2]
+        edge_list[ne_mtsf + 1, 1] = pair[1]
+        edge_list[ne_mtsf + 1, 2] = pair[2]
+        ne_mtsf +=1
     end
 end
 

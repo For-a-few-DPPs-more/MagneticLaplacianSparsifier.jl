@@ -317,7 +317,6 @@ function arpack_rel_cond(L, spL)
     return cnd[1]
 end
 
-
 function arpack_cond(L)
     # warning ! "Arpack", version="0.5.3" NOT "0.5.4" (broken)
     λ_min, _ = eigs(L; nev=1, which=:SM)
@@ -372,4 +371,68 @@ function linear_solve_matrix_system(A, B)
         X[:, i] = x
     end
     return X
+end
+
+function approx_sparsifier(
+    rng::Random.AbstractRNG,
+    meta_g::AbstractMetaGraph,
+    q::Real,
+    nb_samples::Integer;
+    weighted::Bool=false,
+    absorbing_node::Bool=false,
+    ust::Bool=false,
+    fast::Bool=true,
+)
+    m = ne(meta_g)
+    edge_weights = get_edges_prop(meta_g, :e_weight, true, 1.0)
+
+    # Initialization
+    w_tot = 0
+    w = 0
+
+    # for storing weights of edges in the sparsifier
+    sp_e_weight_diag_el = spzeros(m)
+
+    sparseB = sp_magnetic_incidence(meta_g; oriented=true)
+
+    for _ in 1:nb_samples
+        # cycle popping for weakly inconsistent cycles
+        if fast
+            mtsf, w = simple_multi_type_spanning_forest(
+                rng, meta_g, q; weighted, absorbing_node, ust
+            )
+            w_tot += w
+
+            ind_e = mtsf_edge_indices(mtsf, meta_g)
+            diag_elements = ones(length(ind_e))
+            diag_elements /= (length(ind_e) / m)
+
+            if weighted
+                diag_elements = diag_elements .* edge_weights[ind_e]
+            end
+
+            sp_e_weight_diag_el[ind_e] += w * diag_elements
+
+        else
+            mtsf = multi_type_spanning_forest(rng, meta_g, q; weighted, absorbing_node, ust)
+            D = props(mtsf)
+            w = D[:weight]
+            w_tot += w
+            ind_e = mtsf_edge_indices(mtsf, meta_g)
+
+            diag_elements = ones(length(ind_e))
+            diag_elements /= (length(ind_e) / m)
+
+            if weighted
+                diag_elements = diag_elements .* edge_weights[ind_e]
+            end
+
+            sp_e_weight_diag_el[ind_e] += w * diag_elements
+        end
+        #
+    end
+
+    L = (1 / w_tot) * sparseB' * spdiagm(sp_e_weight_diag_el) * sparseB
+
+    return L
 end
